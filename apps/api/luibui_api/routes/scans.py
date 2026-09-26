@@ -19,7 +19,9 @@ from luibui_scan.scan import Eingabe
 
 router = APIRouter(tags=["scans"])
 
-_ARTEN = {e.value: e for e in (Eingabe.DATEI, Eingabe.AUSWAHL, Eingabe.TEXT, Eingabe.ZIP)}
+_ARTEN = {
+    e.value: e for e in (Eingabe.DATEI, Eingabe.AUSWAHL, Eingabe.TEXT, Eingabe.ZIP, Eingabe.GIT)
+}
 
 
 class ScanStatus(BaseModel):
@@ -38,7 +40,7 @@ class ScanStatus(BaseModel):
     """The full report (spec/report.schema.json) once the scan is finished."""
 
 
-def _status(scan: Scan) -> ScanStatus:
+def scan_status_of(scan: Scan) -> ScanStatus:
     ampeln = None
     if scan.ampel_gesamt is not None:
         ampeln = {
@@ -88,6 +90,7 @@ def _check_size(request: Request) -> None:
                             },
                             "pfade": {"type": "array", "items": {"type": "string"}},
                             "text": {"type": "string"},
+                            "git_url": {"type": "string"},
                         },
                     }
                 }
@@ -98,8 +101,9 @@ def _check_size(request: Request) -> None:
 async def scan_starten(
     project_id: uuid.UUID, request: Request, caller: CurrentCaller, db: DbSession
 ) -> ScanStatus:
-    """``art``: datei, auswahl, zip or text. For ``auswahl`` the relative path of each file comes
-    in ``pfade`` (same order as ``dateien``), because browsers drop folders from file names."""
+    """``art``: datei, auswahl, zip, text or git. For ``auswahl`` the relative path of each file
+    comes in ``pfade`` (same order as ``dateien``), because browsers drop folders from file names.
+    For ``git`` the URL comes in ``git_url`` or from the project."""
     project = get_owned(db, Project, project_id, caller)
     _check_size(request)
     limit = DEFAULT_LIMITS.auswahl_dateien
@@ -116,19 +120,23 @@ async def scan_starten(
             )
         names = pfade if art is Eingabe.AUSWAHL else [u.filename or "" for u in uploads]
         text = form.get("text")
+        git_url = form.get("git_url")
         upload = Upload(
             art=art,
             files=[(n, u.file) for n, u in zip(names, uploads, strict=True)],
             text=text if isinstance(text, str) else None,
+            git_url=git_url if isinstance(git_url, str) and git_url else project.git_url,
         )
-        scan = await run_in_threadpool(create_scan, db, project, upload)
+        scan = await run_in_threadpool(
+            lambda: create_scan(db, upload, project=project, name=project.name)
+        )
     finally:
         await form.close()
     audit(db, caller.user.id, "scan.gestartet", "scan", scan.id, art=art.value)
     db.commit()
-    return _status(scan)
+    return scan_status_of(scan)
 
 
 @router.get("/api/scans/{scan_id}")
 def scan_status(scan_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> ScanStatus:
-    return _status(get_owned(db, Scan, scan_id, caller))
+    return scan_status_of(get_owned(db, Scan, scan_id, caller))

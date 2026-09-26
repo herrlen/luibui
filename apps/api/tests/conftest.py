@@ -74,6 +74,7 @@ def api(_migrated: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iter
 
     from luibui_api.main import create_app
     from luibui_api.routes.auth import login_limiter
+    from luibui_api.routes.quickscans import quickscan_limiter
 
     monkeypatch.setenv("DATABASE_URL", _migrated)
     monkeypatch.setenv("MASTER_KEY", MASTER_KEY_B64)
@@ -82,6 +83,7 @@ def api(_migrated: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iter
     (tmp_path / "scratch").mkdir()
     _clear_caches()
     login_limiter.cache_clear()
+    quickscan_limiter.cache_clear()
     engine = create_engine(_migrated)
     with engine.begin() as conn:
         conn.execute(text("TRUNCATE users, jobs, audit_log CASCADE"))

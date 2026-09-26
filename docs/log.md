@@ -320,3 +320,43 @@ der echte Worker mit Kindprozess, dann der Bericht über die API.
 - „Bekannte Schadsoftware nie ablegen“ braucht ClamAV oder Hash-Listen (Sprint 4). Bis dahin
   wird jede Datei abgelegt, die die Annahme besteht.
 - Dateiansicht und Download gespeicherter Dateien (Regel 10) gehören zu S2-9.
+
+## 2026-09-26 — S1-3 Sicherer Git-Clone und Schnellscan
+
+Len hat entschieden, dass **die API klont** (offene Frage 1 im Bedrohungsmodell).
+`packages/engine/luibui_scan/intake/safe_git.py` klont öffentliche Repositories. Projekte
+können jetzt per `art=git` geprüft werden, dazu gibt es den Schnellscan ohne Konto:
+`POST /api/quickscans` und `GET /api/quickscans/{id}`. 53 neue Tests. Ein echter Klon von
+GitHub wurde lokal und im gehärteten API-Image geprüft (Nutzer 10001, `read_only`,
+`cap_drop ALL`).
+
+**Entscheidungen, die im Code stecken:**
+- **URL:** Die URL wird streng geprüft und aus ihren Teilen neu gebaut. Erlaubt ist nur `https://`
+  auf github.com, codeberg.org und gitlab.com mit Besitzer und Repository (bei GitLab auch
+  Untergruppen). Nicht erlaubt: Zugangsdaten, Ports außer 443, Query, Fragment, `..`, Steuer-
+  und Leerzeichen. Die 26 abgelehnten Beispiele im Test umfassen `ext::`, `file://`, SSH,
+  `github.com@evil`, Metadaten-IP und ähnliche Hosts.
+- **git** läuft ohne System- und globale Config, mit eigenem leeren HOME, ohne Hooks,
+  `fsmonitor`, SSH, Credential-Helper, Umleitungen und Submodule, und nur mit dem Protokoll
+  HTTPS (`protocol.allow=never` und `GIT_ALLOW_PROTOCOL`), dazu `transfer.fsckObjects`. Gestartet
+  wird es über eine feste argv-Liste mit `--` vor der URL.
+- **Größe und Zeit:** Das Clone-Verzeichnis wird während des Klonens gemessen. Über 300 MB oder
+  nach 60 s wird die ganze Prozessgruppe beendet. Danach gelten die Grenzen wie bei einem ZIP:
+  10.000 Dateien und 200 MB.
+- **Der Arbeitsbaum läuft durch `accept_directory`**, also durch dieselben Pfad-, Namens- und
+  Grenzprüfungen wie ein Ordner-Upload. `.git` wird nicht übernommen.
+- **Symlinks** werden als Textdatei ausgecheckt (`core.symlinks=false`) und nicht abgelehnt,
+  weil `CLAUDE.md → AGENTS.md` in KI-Repos üblich ist. `CloneResult.symlinks` und `.submodules`
+  halten sie für spätere Befunde fest (Ebene A, sobald der Prüfkatalog da ist). Das
+  Bedrohungsmodell (T10, T11) ist angepasst.
+- **Schnellscan:** Ohne Konto, nichts wird gespeichert außer dem Bericht, der nach 7 Tagen
+  abläuft. Der Hinweis „ohne Gewähr“ steht im Bericht (Test). Höchstens 3 Schnellscans pro Tag
+  und IP (ungültige URLs zählen nicht) und höchstens 20 wartende, sonst 503. Job-Zeitlimit
+  60 s. Die zufällige Scan-ID ist der einzige Schlüssel zum Bericht. Die öffentliche Route
+  liefert **nur** Schnellscans ohne Eigentümer (Test: Scan eines Kontos über diese Route → 404).
+- Das API-Image enthält jetzt `git` und `ca-certificates`.
+
+**Offen:**
+- Abgelaufene Schnellscans werden noch nicht gelöscht; dafür braucht es einen Cronjob.
+- Die IP-Begrenzung hängt wie bei der Anmeldung an `X-Forwarded-For` hinter dem Proxy.
+- Der Schnellscan per Einzeldatei (bis 2 MB) und die reduzierte Pipeline folgen mit S2-13.

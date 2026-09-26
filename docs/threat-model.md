@@ -73,8 +73,8 @@ umgesetzt und getestet wird.
 | T7 | E | **Git-Hooks** oder `core.fsmonitor`, `core.sshCommand` aus dem Repo führen Code aus | K | `-c core.hooksPath=/dev/null`, `-c core.fsmonitor=false`, keine `.git/config` aus dem Repo übernehmen (Clone schreibt sie nicht); Clone läuft ohne globale/System-Config (`GIT_CONFIG_NOSYSTEM=1`, `GIT_CONFIG_GLOBAL=/dev/null`) | S1-3 |
 | T8 | I, E | **SSRF über die Git-URL:** `file:///`, `ext::`, `http://169.254.169.254`, interne Hostnamen, Umleitungen | K | Nur `https://` auf github.com, codeberg.org, gitlab.com; `-c protocol.allow=never -c protocol.https.allow=always`, `protocol.file.allow=never`; keine Umleitung auf fremde Hosts (`http.followRedirects=false`); URL-Parser streng, keine Zugangsdaten in der URL | S1-3 |
 | T9 | E, I | **Submodule** holen weitere, nicht geprüfte Quellen oder lokale Pfade | H | `--no-recurse-submodules`; `.gitmodules` wird nur als Datei gelesen und als Befund gemeldet | S1-3 |
-| T10 | D | **Riesige Repos**, Git-LFS, tiefe Historie | M | `--depth 1 --single-branch --filter=blob:limit=10m`, `GIT_LFS_SKIP_SMUDGE=1`, Größenlimit auf dem Scratch-Verzeichnis während des Clones, Timeout | S1-3 |
-| T11 | T | Symlinks und Pfadtricks **im Arbeitsbaum** des Clones (`core.symlinks`) | H | `-c core.symlinks=false`; danach dieselbe Pfadprüfung wie bei ZIP (T1, T2) über das Inventar | S1-3, S1-4 |
+| T10 | D | **Riesige Repos**, Git-LFS, tiefe Historie | M | `--depth 1 --single-branch --no-tags`, `GIT_LFS_SKIP_SMUDGE=1`, Größenlimit auf dem Clone-Verzeichnis während des Clones (300 MB, alle 0,2 s gemessen), Timeout 60 s. *Umgesetzt ohne `--filter=blob:limit=10m`: Beim Auschecken holt Git fehlende Blobs ohnehin nach, der Filter spart nichts.* | S1-3 |
+| T11 | T | Symlinks und Pfadtricks **im Arbeitsbaum** des Clones (`core.symlinks`) | H | `-c core.symlinks=false`: Symlinks werden als Textdatei mit dem Ziel ausgecheckt, ihre Pfade liest `git ls-tree` für einen späteren Befund aus. Der Arbeitsbaum läuft danach durch dieselbe Annahme wie ein Ordner-Upload (T1, T2). Ein Symlink führt nicht zum Abbruch, weil Repos wie `CLAUDE.md → AGENTS.md` üblich sind | S1-3, S1-4 |
 
 ### 4.3 Ausführung und Scanner
 
@@ -157,6 +157,6 @@ umgesetzt und getestet wird.
 
 ## 6. Offene Fragen an Len
 
-1. Soll der Worker **ohne jeden Netzwerkzugang** laufen (auch für Git-Clones), und die API klont? Das wäre strenger, bedeutet aber, dass Git-Inhalte über das Volume wandern. Vorschlag: Clone im API-Container über `safe_git.py`, Worker ohne Egress.
+1. ~~Soll der Worker **ohne jeden Netzwerkzugang** laufen (auch für Git-Clones), und die API klont?~~ **Entschieden (Len, 2026-09-26): Die API klont** über `intake/safe_git.py`, der Worker braucht dafür kein Netz. Umgesetzt mit S1-3.
 2. Erlaubt mittwald für einzelne Container, **ausgehenden Verkehr zu sperren**? Falls nicht, sperren wir ihn im Worker selbst: Scanner-Subprozesse laufen ohne Netz, per `unshare -n`, falls der Container das erlaubt, sonst über die Offline-Optionen der Werkzeuge.
 3. Postfach **security@luibui.com** für `SECURITY.md` einrichten?

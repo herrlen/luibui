@@ -12,6 +12,10 @@ COPY apps/worker apps/worker
 RUN uv sync --frozen --no-dev --no-editable --package luibui-api
 
 FROM python:3.12-slim-trixie
+# git for cloning public repositories (S1-3); ca-certificates for HTTPS.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui \
  && mkdir -p /projects /scratch && chown 10001:10001 /projects /scratch \
  && chmod 700 /projects /scratch

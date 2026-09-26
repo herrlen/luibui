@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -13,6 +13,7 @@ from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, get_owned
 from luibui_api.models import Project, ProjectVersion, StoredFile
 from luibui_api.storage import blob_store
+from luibui_scan.intake.safe_git import canonical_url
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -24,7 +25,13 @@ class ProjektNeu(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     typ: Typ
     quelle: Quelle = "zip"
+    git_url: str | None = Field(default=None, max_length=500)
     nach_pruefung_loeschen: bool = False
+
+    @field_validator("git_url")
+    @classmethod
+    def _git_url(cls, value: str | None) -> str | None:
+        return None if value is None else canonical_url(value)
 
 
 class Projekt(BaseModel):
@@ -32,6 +39,7 @@ class Projekt(BaseModel):
     name: str
     typ: str
     quelle: str
+    git_url: str | None
     nach_pruefung_loeschen: bool
     created_at: datetime
 
@@ -42,6 +50,7 @@ def _out(p: Project) -> Projekt:
         name=p.name,
         typ=p.typ,
         quelle=p.quelle,
+        git_url=p.git_url,
         nach_pruefung_loeschen=p.delete_files_after_scan,
         created_at=p.created_at,
     )
@@ -54,6 +63,7 @@ def anlegen(body: ProjektNeu, caller: CurrentCaller, db: DbSession) -> Projekt:
         name=body.name.strip(),
         typ=body.typ,
         quelle=body.quelle,
+        git_url=body.git_url,
         delete_files_after_scan=body.nach_pruefung_loeschen,
     )
     db.add(project)

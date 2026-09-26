@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     """Request body limit for uploads (ZIP 50 MB or selection 50 MB plus multipart overhead)."""
     account_quota_bytes: int = 500 * 1024 * 1024
     versions_per_project: int = 10
+    quickscans_per_ip_and_day: int = 3
+    quickscan_queue_max: int = 20
+    """Waiting quick scans; beyond that new ones get 503 instead of piling up (threat model T20)."""
 
     app_origin: str = "https://app.luibui.com"
     """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""

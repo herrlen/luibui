@@ -4,17 +4,18 @@ version = "0.0.0"
 description = "luibui monorepo workspace (not published)"
 requires-python = ">=3.12"
 license = "AGPL-3.0-only"
-dependencies = ["luibui-scan", "luibui"]
+dependencies = ["luibui-scan", "luibui", "luibui-api"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["packages/engine", "packages/cli"]
+members = ["packages/engine", "packages/cli", "apps/api"]
 
 [tool.uv.sources]
 luibui-scan = { workspace = true }
 luibui = { workspace = true }
+luibui-api = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -24,10 +25,11 @@ dev = [
   "ruff>=0.6",
   "mypy>=1.11",
   "types-jsonschema",
+  "httpx2",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests"]
+testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests", "apps/api/tests"]
 addopts = "-ra --strict-markers --import-mode=importlib"
 markers = ["db: needs a PostgreSQL database (DATABASE_URL)"]
 
@@ -45,9 +47,12 @@ known-first-party = ["luibui_scan", "luibui_cli", "luibui_api", "luibui_worker"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S108"]
+"**/alembic/versions/*" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]
+# Test dirs share module names (conftest.py); product code is checked strictly.
+exclude = ["/tests/"]

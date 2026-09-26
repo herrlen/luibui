@@ -50,3 +50,25 @@ Zugangsdaten, mittwald kann die privaten Images nicht ziehen. Braucht einen GitH
    Google Cloud Storage). Reine Downloads, aber Verbindungen zu US-Anbietern — vereinbar mit
    „keine US-Dienste“?
 5. Aus `threat-model.md`: Postfach `security@luibui.com` für `SECURITY.md` einrichten?
+
+## 2026-09-26, 21:00 — S0-12 Deploy auf mittwald
+
+Stack `default` in `p-yw5cv5` mit vier Containern auf `ec78e49`. `https://api.luibui.com/health`
+→ 200 mit Datenbank ok, `luibui.com` und `app.luibui.com` → 200, `luibui.de` und `www.*` →
+301 auf `https://luibui.com/`. Details, Container-IDs und Ausrollbefehl in
+`docs/infra-kapazitaet.md`.
+
+**Wichtig für Sprint 1:** mittwald übernimmt keine Netzwerke, kein `read_only` und kein
+`cap_drop`. Auf dem Server hat der Worker also Internetzugang, und alle Container im Projekt
+erreichen sich. Bevor der Worker Uploads verarbeitet, braucht es dafür eine Lösung
+(Bedrohungsmodell T13 und offene Frage 2). Ungeprüft ist außerdem, ob der Worker auf
+`luibui-scratch` schreiben darf.
+
+**Nicht gemessen:** RAM auf dem Server (keine Messwerte über API/CLI, kein SSH-Schlüssel).
+
+**Definition of Done Sprint 0 (aktualisiert):**
+- [x] `docker compose up` startet alle vier Container lokal
+- [x] `https://api.luibui.com/health` = 200
+- [x] Schemas validieren Beispiel-Befunde (Tests)
+- [ ] `scanner-tools.md` und `threat-model.md` freigegeben — wartet auf Len (S0-6)
+- [x] Worker räumt Scratch auch nach absichtlichem Absturz auf (Test)

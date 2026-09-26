@@ -1,0 +1,86 @@
+# luibui stack on mittwald (project p-yw5cv5, stack "default").
+#
+# Deploy (from the repository root, with MITTWALD_API_TOKEN set):
+#   mw stack deploy -s b8d0a6a8-83ef-4aba-b785-0b450c0ac551 \
+#     -c infra/mittwald-stack.yml --env-file <file with POSTGRES_PASSWORD and IMAGE_TAG>
+#
+# IMAGE_TAG is "sha-<full commit sha>" of a main commit whose CI run was green.
+# The env file is created for the deploy and deleted afterwards; the password lives only in the
+# stack configuration at mittwald.
+#
+# mittwald accepts only image, command, entrypoint, environment, ports, volumes, restartPolicy and
+# deploy.resources.limits. Unlike infra/docker-compose.yml there are NO internal networks,
+# read-only root fs, dropped capabilities, health checks or depends_on. Consequences:
+# - every container in the project can reach every other one, and the worker has internet access;
+#   this must be solved before the worker handles uploads (Sprint 1, see docs/threat-model.md)
+# - api and worker restart until postgres is ready (restartPolicy)
+# - containers still run as the non-root USER from their Dockerfile
+#
+# ⚠ `mw stack deploy` replaces the whole stack definition. Never deploy a file that lacks a
+# running service unless you mean to delete it.
+
+services:
+  postgres:
+    image: postgres:17
+    description: luibui – PostgreSQL 17
+    environment:
+      POSTGRES_DB: luibui
+      POSTGRES_USER: luibui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - luibui-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432/tcp"
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+  api:
+    image: ghcr.io/herrlen/luibui/api:${IMAGE_TAG}
+    description: luibui – API (api.luibui.com)
+    environment:
+      LUIBUI_ENV: prod
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+    volumes:
+      - luibui-projects:/projects
+    ports:
+      - "8000:8000/tcp"
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  worker:
+    image: ghcr.io/herrlen/luibui/worker:${IMAGE_TAG}
+    description: luibui – Worker (Prüfungen)
+    environment:
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+    volumes:
+      - luibui-scratch:/scratch
+      - luibui-rules:/rules
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1536m
+          cpus: "1.5"
+
+  web:
+    image: ghcr.io/herrlen/luibui/web:${IMAGE_TAG}
+    description: luibui – Web (luibui.com, app.luibui.com)
+    ports:
+      - "3000:3000/tcp"
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+
+volumes:
+  luibui-pgdata: {}
+  luibui-scratch: {}
+  luibui-rules: {}
+  luibui-projects: {}

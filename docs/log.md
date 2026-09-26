@@ -107,3 +107,41 @@ im Test und liegen nicht im Korpus.
   keinen `Finding`.
 - Die API-Routen (S1-1) und der Git-Clone (S1-3) rufen dieses Modul noch nicht auf. Wo geklont
   wird, hängt an der offenen Frage 1 im Bedrohungsmodell.
+
+## 2026-09-26 — S1-4 Inventar
+
+`packages/engine/luibui_scan/inventory.py`: `build_inventory(root)` geht den Scratch nach der
+Annahme durch und liefert pro Datei Pfad, Größe, SHA-256, echten Typ (Magic Bytes) und Sprache,
+dazu den Inventar-Hash, die Sprachen mit Dateianzahl, den erkannten Pakettyp und die Merkmale,
+auf denen dieser beruht. 54 neue Tests.
+
+**Entscheidungen, die im Code stecken:**
+- **Inventar-Hash** (`report.schema.json`, `paket.sha256`): SHA-256 über die Zeilen
+  `pfad NUL datei-sha256 LF`, sortiert nach den UTF-8-Bytes des Pfads. Damit ändert sich der Hash
+  bei jeder Umbenennung, nicht nur bei geänderten Inhalten.
+- **Dateityp** kommt aus den ersten 4 KiB: ELF, Mach-O, PE, Java-Class, WASM, ZIP, gzip, bzip2, xz,
+  7z, RAR, tar, PDF, PNG, JPEG, GIF, WebP, SQLite, OLE. Sonst gilt: `text`, oder `script` bei
+  Shebang, wenn kein NUL-Byte vorkommt und die Probe gültiges UTF-8 ist. Alles andere ist
+  `binary`. `MZ` am Anfang einer Textdatei ist kein PE. Die Dateiendung spielt beim Typ keine
+  Rolle; den Abgleich Endung ≠ Typ macht Analyzer A (S1-5).
+- **Sprache** kommt aus der Endung, bei Dateien ohne Endung aus dem Shebang, und wird nur bei
+  Textdateien gesetzt.
+- **Pakettyp** wird unabhängig vom Manifest erkannt; der Abgleich mit `luibui.json` gehört zu
+  Ebene G. Die Merkmale:
+  - Skill: `SKILL.md`
+  - Plugin: `.claude-plugin/plugin.json`, `.well-known/ai-plugin.json`, `gemini-extension.json`
+  - MCP-Server: MCP-SDK in `package.json`, `mcp`/`fastmcp` in `pyproject.toml` oder
+    `requirements.txt`, `server.json` der MCP-Registry, MCP-Importe im Code
+  - Tool: JSON-Liste von Tool-Definitionen mit Schema
+
+  Ein Plugin schlägt alles andere, weil es Skills und Server bündelt. Tool-Definitionen neben
+  einem Skill oder Server ändern den Typ nicht. Skill und Server zusammen ohne Plugin-Datei
+  ergeben `gemischt`. Nach Merkmalen gesucht wird nur in Textdateien bis 1 MiB, und nur als
+  Textmuster: nichts wird als Code geparst.
+- `Pakettyp` liegt in `models.py`; `ScanContext` hat dafür das Feld `pakettyp`,
+  `InventoryEntry` das Feld `sprache`.
+- Findet das Inventar im Scratch einen Symlink oder eine Sonderdatei, bricht es mit
+  `InventoryError` ab. Das darf nach der Annahme eigentlich nicht vorkommen.
+
+**Offen:** Das Inventar ist noch nicht in die Pipeline eingehängt. Das geschieht zusammen mit der
+Annahme, wenn der Worker Prüfungen annimmt (S1-1).

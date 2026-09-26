@@ -45,6 +45,17 @@ class ScanArt(StrEnum):
     LOKAL = "lokal"
 
 
+class Pakettyp(StrEnum):
+    """Detected by the inventory (S1-4), independent of what luibui.json declares."""
+
+    SKILL = "skill"
+    MCP_SERVER = "mcp-server"
+    PLUGIN = "plugin"
+    TOOL = "tool"
+    GEMISCHT = "gemischt"
+    UNBEKANNT = "unbekannt"
+
+
 class Pruefumfang(StrEnum):
     PAKET = "paket"
     AUSWAHL = "auswahl"

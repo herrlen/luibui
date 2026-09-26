@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from luibui_scan.models import Pruefumfang, ScanArt
+from luibui_scan.models import Pakettyp, Pruefumfang, ScanArt
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,7 +16,9 @@ class InventoryEntry:
     size: int
     sha256: str
     kind: str | None = None
-    """Detected type from magic bytes, e.g. 'text', 'elf', 'zip'."""
+    """Detected type from magic bytes, e.g. 'text', 'script', 'elf', 'zip'."""
+    sprache: str | None = None
+    """Language from extension or shebang, only for text files."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +33,7 @@ class ScanContext:
     scan_art: ScanArt
     pruefumfang: Pruefumfang
     inventory: tuple[InventoryEntry, ...] = ()
+    pakettyp: Pakettyp | None = None
     manifest: dict[str, Any] | None = None
     """Parsed luibui.json, if present and valid."""
     options: dict[str, Any] = field(default_factory=dict)

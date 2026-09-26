@@ -72,3 +72,38 @@ erreichen sich. Bevor der Worker Uploads verarbeitet, braucht es dafür eine Lö
 - [x] Schemas validieren Beispiel-Befunde (Tests)
 - [ ] `scanner-tools.md` und `threat-model.md` freigegeben — wartet auf Len (S0-6)
 - [x] Worker räumt Scratch auch nach absichtlichem Absturz auf (Test)
+
+## 2026-09-26 — S1-2 Sichere Annahme (vorgezogen)
+
+`packages/engine/luibui_scan/intake/`: `extract_zip` (ZIP), `accept_file` (Einzeldatei),
+`accept_selection` (Dateiauswahl und Ordner, relative Pfade wie ZIP-Einträge) und `accept_text`
+(Text als `eingabe.md`). Jede Ablehnung ist ein `IntakeRejectedError` mit Maschinencode
+(`Ablehnung`) und bricht die ganze Annahme ab. 65 neue Tests; die präparierten Archive entstehen
+im Test und liegen nicht im Korpus.
+
+**Entscheidungen, die im Code stecken:**
+- Bei ZIPs werden alle Einträge geprüft, bevor das erste Byte geschrieben wird. Maßgeblich ist
+  nur das Central Directory. Geprüft wird der Originalname (`orig_filename`), weil `zipfile` Namen
+  am NUL-Byte stillschweigend abschneidet.
+- Abgelehnt werden: `..`, absolute Pfade, Laufwerksbuchstaben, Backslash, NUL, Steuerzeichen,
+  leere und `.`-Segmente, Segmente > 255 Byte, Pfade > 1024 Byte, mehr als 20 Segmente,
+  Symlinks, Hardlinks, Geräte, FIFOs, Windows-Reparse-Points, verschlüsselte Einträge,
+  überlappende Einträge sowie Namen, die nach NFC und Groß/Klein gleich sind (auch Datei gegen
+  gleichnamigen Ordner). Bidi- und Formatzeichen im Namen sind **erlaubt**: Sie meldet der
+  Inhalts-Analyzer (S1-6) als Befund, statt die Prüfung abzubrechen (Bedrohungsmodell T5).
+- Größen werden beim Schreiben gezählt. Pro ZIP-Eintrag darf nie mehr geschrieben werden, als der
+  Header angibt, und `zipfile` prüft die CRC.
+- **Kompressionsrate > 100** wird pro Eintrag und für das ganze Archiv geprüft, aber erst ab
+  1 MiB entpackter Größe. Ohne diese Schwelle scheitert schon eine kleine `SKILL.md` mit vielen
+  Leerzeichen. Unterhalb von 1 MiB kann die Rate die Platte nicht füllen.
+- MB bedeutet MiB (1024 × 1024).
+- Dateien entstehen mit `O_CREAT | O_EXCL | O_NOFOLLOW`, Modus 0600, Ordner mit 0700. Liegt im
+  Scratch schon ein Symlink, wird abgebrochen und nicht durchgegangen.
+- Verschachtelte Archive bleiben gepackt.
+
+**Offen:**
+- Welche Prüfkatalog-ID (A1–A3?) ein Ablehnungsgrund im Bericht bekommt, bleibt offen, bis
+  `luibui_Pruefkatalog.md` da ist. Bis dahin liefert die Annahme nur den Code `Ablehnung`, noch
+  keinen `Finding`.
+- Die API-Routen (S1-1) und der Git-Clone (S1-3) rufen dieses Modul noch nicht auf. Wo geklont
+  wird, hängt an der offenen Frage 1 im Bedrohungsmodell.

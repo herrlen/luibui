@@ -1,0 +1,16 @@
+[project]
+name = "luibui-scan"
+version = "0.1.0"
+description = "luibui scan engine: pipeline, analyzers, scoring and report for AI skills, plugins and MCP servers"
+readme = "README.md"
+requires-python = ">=3.12"
+# TODO: switch to MIT once Len approves (Konzept §13)
+license = "AGPL-3.0-only"
+dependencies = ["pydantic>=2.9,<3"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["luibui_scan"]

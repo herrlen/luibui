@@ -1,0 +1,53 @@
+[project]
+name = "luibui-workspace"
+version = "0.0.0"
+description = "luibui monorepo workspace (not published)"
+requires-python = ">=3.12"
+license = "AGPL-3.0-only"
+dependencies = ["luibui-scan", "luibui"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/engine", "packages/cli"]
+
+[tool.uv.sources]
+luibui-scan = { workspace = true }
+luibui = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "jsonschema>=4.23",
+  "referencing>=0.35",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "types-jsonschema",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = ["db: needs a PostgreSQL database (DATABASE_URL)"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["docs/design", "apps/web"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "N"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # German text uses typographic quotes and dashes
+
+[tool.ruff.lint.isort]
+known-first-party = ["luibui_scan", "luibui_cli", "luibui_api", "luibui_worker"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S108"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]

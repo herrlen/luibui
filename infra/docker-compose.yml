@@ -1,0 +1,97 @@
+# luibui stack. Local: docker compose -f infra/docker-compose.yml up --build
+# Needs infra/.env with POSTGRES_PASSWORD (see infra/.env.example).
+#
+# Limits follow the sprint plan (≈ 3.2 GB in total on the shared server s-r0ud3w).
+# The worker sits only on the internal network: it reaches postgres, nothing else.
+
+name: luibui
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: luibui
+      POSTGRES_USER: luibui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+    volumes:
+      - luibui-pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    mem_limit: 768m
+    shm_size: 128m
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luibui -d luibui"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    image: ${IMAGE_PREFIX:-luibui}/api:${IMAGE_TAG:-local}
+    environment:
+      LUIBUI_ENV: ${LUIBUI_ENV:-dev}
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+    volumes:
+      - luibui-projects:/projects
+    tmpfs: [/tmp]
+    networks: [frontend, backend]
+    ports: ["127.0.0.1:8000:8000"]
+    mem_limit: 512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    image: ${IMAGE_PREFIX:-luibui}/worker:${IMAGE_TAG:-local}
+    environment:
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+    volumes:
+      - luibui-scratch:/scratch
+      - luibui-rules:/rules:ro
+    tmpfs: [/tmp]
+    networks: [backend]
+    mem_limit: 1536m
+    cpus: 1.5
+    pids_limit: 256
+    stop_grace_period: 30s
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    <<: *hardening
+    build:
+      context: ../apps/web
+    image: ${IMAGE_PREFIX:-luibui}/web:${IMAGE_TAG:-local}
+    tmpfs: [/tmp, /app/.next/cache]
+    networks: [frontend]
+    ports: ["127.0.0.1:3000:3000"]
+    mem_limit: 384m
+    depends_on:
+      api:
+        condition: service_healthy
+
+networks:
+  frontend: {}
+  backend:
+    internal: true
+
+volumes:
+  luibui-pgdata: {}
+  luibui-scratch: {}
+  luibui-rules: {}
+  luibui-projects: {}

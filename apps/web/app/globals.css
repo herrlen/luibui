@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Design tokens from Konzept/Prompts; fonts are served locally from Sprint 2 on (no Google Fonts). */
+@theme {
+  --color-grund: #f5f3ec;
+  --color-petrol: #0e5e5b;
+}
+
+body {
+  background: var(--color-grund);
+  color: #1c1c1a;
+  font-family: system-ui, sans-serif;
+}

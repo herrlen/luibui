@@ -210,3 +210,42 @@ def test_green_wording_never_says_safe(tmp_path: Path) -> None:
     out = render_text(tmp_path, scan_prepared(tmp_path, Eingabe.LOKAL, ScanArt.LOKAL, registry))
     assert "Gesamt:     Grün, keine bekannten Befunde, geprüft am " in out
     assert "sicher" not in out.replace("Sicherheit", "")
+
+
+@pytest.mark.parametrize(("fail_on", "code"), [(None, 0), ("gelb", 1), ("rot", 0), ("gesperrt", 0)])
+def test_fail_on(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], fail_on: str | None, code: int
+) -> None:
+    """Without analyzers every scan is yellow; the thresholds are checked against that."""
+    extra = [] if fail_on is None else ["--fail-on", fail_on]
+    got, out, _ = run(capsys, str(skill_dir(tmp_path)), *extra)
+    assert got == code
+    assert "Gesamt:     Gelb" in out
+
+
+@pytest.mark.parametrize(
+    ("gesamt", "fail_on", "code"),
+    [
+        ("rot", "rot", 1),
+        ("gesperrt", "rot", 1),
+        ("gesperrt", "gesperrt", 1),
+        ("rot", "gesperrt", 0),
+        ("gruen", "gelb", 0),
+    ],
+)
+def test_exit_code_thresholds(gesamt: str, fail_on: str, code: int, tmp_path: Path) -> None:
+    from dataclasses import replace
+
+    from luibui_cli.scan import exit_code
+    from luibui_scan.scoring import AmpelSicherheit
+
+    (tmp_path / "a.md").write_text("x")
+    result = scan_prepared(tmp_path, Eingabe.LOKAL, ScanArt.LOKAL, AnalyzerRegistry())
+    result = replace(result, bewertung=replace(result.bewertung, gesamt=AmpelSicherheit(gesamt)))
+    assert exit_code(result, fail_on) == code
+
+
+def test_fail_on_rejects_unknown_level(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["scan", ".", "--fail-on", "gruen"])
+    assert exc.value.code == 2

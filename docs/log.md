@@ -205,3 +205,11 @@ weil das Schema sie nicht kennt; die Textausgabe zeigt sie weiter. 55 neue Tests
 **Offen:**
 - Die IDs für die Sperrliste folgen aus dem Prüfkatalog.
 - Ein Rückgabewert der CLI je nach Ampel (für CI, etwa `--fail-on rot`) ist noch nicht eingebaut.
+
+## 2026-09-26 — S1-11 Nachtrag: `luibui scan --fail-on`
+
+Auf Lens Wunsch: `--fail-on gelb|rot|gesperrt` liefert den Rückgabewert 1, wenn die Gesamtampel
+diese Stufe oder eine schlechtere erreicht (für CI). Ohne die Option bleibt der Rückgabewert nach
+einer Prüfung 0, bestehende Aufrufe ändern sich also nicht. `gruen` ist als Schwelle nicht
+erlaubt, weil sonst jede Prüfung scheitern würde. Rückgabewerte jetzt: 0 gelaufen, 1 Schwelle
+erreicht, 2 Aufruf, 3 abgelehnt. 11 neue Tests.

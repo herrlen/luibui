@@ -25,6 +25,7 @@ from luibui_scan.scan import Eingabe, ScanResult, scan_prepared
 from luibui_scan.scoring import AmpelDsgvo, AmpelSicherheit, Freigabe
 
 EXIT_OK = 0
+EXIT_FAIL_ON = 1
 EXIT_USAGE = 2
 EXIT_REJECTED = 3
 
@@ -47,8 +48,11 @@ _FREIGABE = {
     Freigabe.BLOCKIERT: "blockiert",
 }
 
+_STUFEN = ["gruen", "gelb", "rot", "gesperrt"]
+
 EPILOG = """Rückgabewerte:
   0  Prüfung gelaufen (Befunde stehen in der Ausgabe)
+  1  Gesamtampel hat die Schwelle aus --fail-on erreicht
   2  Pfad nicht gefunden oder falscher Aufruf
   3  Eingabe abgelehnt, zum Beispiel wegen eines unsicheren Pfads im Archiv"""
 
@@ -64,6 +68,13 @@ def add_parser(subparsers: Any) -> None:
     )
     parser.add_argument("pfad", type=Path, help="Ordner, .zip-Datei oder einzelne Datei")
     parser.add_argument("--json", action="store_true", help="Ergebnis als JSON ausgeben")
+    parser.add_argument(
+        "--fail-on",
+        choices=_STUFEN[1:],
+        metavar="{gelb,rot,gesperrt}",
+        help="Rückgabewert 1, wenn die Gesamtampel diese Stufe oder eine schlechtere erreicht "
+        "(für CI). Ohne diese Option ist der Rückgabewert nach einer Prüfung immer 0.",
+    )
     parser.set_defaults(run=run)
 
 
@@ -88,7 +99,14 @@ def run(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
         out.write("\n")
     else:
         out.write(render_text(source, result))
-    return EXIT_OK
+    return exit_code(result, args.fail_on)
+
+
+def exit_code(result: ScanResult, fail_on: str | None) -> int:
+    if fail_on is None:
+        return EXIT_OK
+    reached = _STUFEN.index(result.bewertung.gesamt.value) >= _STUFEN.index(fail_on)
+    return EXIT_FAIL_ON if reached else EXIT_OK
 
 
 def _intake(source: Path, scratch: Path) -> Eingabe:

@@ -3,6 +3,7 @@ repr(), logs or error pages."""
 
 from enum import StrEnum
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +23,10 @@ class Settings(BaseSettings):
     """postgresql+psycopg://user:password@host:5432/db"""
     db_pool_size: int = 5
     health_db_timeout_seconds: float = 2.0
+    master_key: SecretStr | None = None
+    """32 random bytes, base64. Encrypts the per-project data keys (S2-7). Never rotate by
+    replacing it: every stored file would become unreadable."""
+    storage_root: Path = Path("/projects")
 
     @property
     def is_prod(self) -> bool:

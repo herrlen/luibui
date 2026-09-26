@@ -90,7 +90,8 @@ erreicht das Internet** (Verbindung zu 1.1.1.1:443 gelingt), lokal nicht.
 ```sh
 # vom Repository-Wurzelverzeichnis, MITTWALD_API_TOKEN gesetzt
 E=$(mktemp) && chmod 600 "$E"
-printf 'POSTGRES_PASSWORD=%s\nIMAGE_TAG=sha-%s\n' "<Passwort aus der Stack-Konfiguration>" "<commit>" > "$E"
+printf 'POSTGRES_PASSWORD=%s\nMASTER_KEY=%s\nIMAGE_TAG=sha-%s\n' \
+  "<Passwort aus der Stack-Konfiguration>" "<MASTER_KEY aus der Stack-Konfiguration>" "<commit>" > "$E"
 mw stack deploy -s b8d0a6a8-83ef-4aba-b785-0b450c0ac551 -c infra/mittwald-stack.yml --env-file "$E"
 rm -f "$E"
 ```
@@ -98,3 +99,9 @@ rm -f "$E"
 ⚠ `mw stack deploy` ersetzt die gesamte Stack-Definition. Das Postgres-Passwort muss dasselbe
 bleiben, sonst kommt die API nicht mehr an die bestehende Datenbank. Es steht in der
 Stack-Konfiguration (`mw container get c-s7jsux -o json`, Feld `environment`), nirgends sonst.
+
+⚠ Dasselbe gilt ab S2-7 für `MASTER_KEY` (API-Container): Er verschlüsselt die Schlüssel aller
+Projekt-Dateien. Wird er beim Ausrollen weggelassen oder ersetzt, sind alle gespeicherten Dateien
+unlesbar. Beim ersten Ausrollen mit `openssl rand -base64 32` erzeugen, danach immer aus der
+Stack-Konfiguration übernehmen. **Zusätzlich an einem zweiten Ort sichern (Len):** Ohne ihn hilft
+auch ein Datenbank-Backup nicht.

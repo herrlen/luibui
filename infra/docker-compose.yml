@@ -41,6 +41,7 @@ services:
     environment:
       LUIBUI_ENV: ${LUIBUI_ENV:-dev}
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+      MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in infra/.env (openssl rand -base64 32)}
     volumes:
       - luibui-projects:/projects
     tmpfs: [/tmp]

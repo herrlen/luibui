@@ -43,6 +43,7 @@ services:
     environment:
       LUIBUI_ENV: prod
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+      MASTER_KEY: ${MASTER_KEY}
     volumes:
       - luibui-projects:/projects
     ports:

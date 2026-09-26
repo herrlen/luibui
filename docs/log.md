@@ -213,3 +213,27 @@ diese Stufe oder eine schlechtere erreicht (für CI). Ohne die Option bleibt der
 einer Prüfung 0, bestehende Aufrufe ändern sich also nicht. `gruen` ist als Schwelle nicht
 erlaubt, weil sonst jede Prüfung scheitern würde. Rückgabewerte jetzt: 0 gelaufen, 1 Schwelle
 erreicht, 2 Aufruf, 3 abgelehnt. 11 neue Tests.
+
+## 2026-09-26 — S2-7 (Teil 1) Verschlüsselte Dateiablage, vorgezogen
+
+Len hat entschieden, S2-6 (Anmeldung) und S2-7 (Ablage) vor S1-1 zu ziehen. Der Grund: Die
+Upload-Route braucht nach CLAUDE.md Regel 9 und 10 Eigentümerprüfung und verschlüsselte Ablage.
+Dieser Teil bringt nur den Kern, ohne Routen: `apps/api/luibui_api/storage/`. 23 neue Tests.
+
+**Entscheidungen, die im Code stecken:**
+- **Schlüssel:** `MASTER_KEY` (ENV, 32 Byte, Base64) verschlüsselt pro Projekt einen
+  Datenschlüssel. Der verschlüsselte Datenschlüssel steht in `projects.data_key_enc`, gebunden an
+  die Projekt-ID, damit er nicht in ein anderes Projekt kopiert werden kann.
+- **Dateien** werden mit AES-256-GCM in Blöcken zu 1 MiB verschlüsselt. Die Nonce jedes Blocks
+  besteht aus einem zufälligen Präfix, einem Zähler und einer Endmarke. Dadurch fallen
+  vertauschte, fehlende und abgeschnittene Blöcke auf (Tests). Die Blockung verhindert, dass eine
+  200 MB große Datei auf einmal in den Speicher der API (512 MB) muss. Jeder Blob ist an seinen
+  `storage_key` gebunden: Unter einem anderen Datensatz entschlüsselt er nicht.
+- **Ablage:** `/projects/ab/cd/<storage_key>`, Modus 0600, nie überschrieben (`O_EXCL`).
+- **Achtung:** Beim Lesen kommen die ersten Blöcke heraus, bevor eine Manipulation am Ende
+  erkannt wird. Wer liest, darf die Daten erst verwenden, wenn der Iterator ohne Fehler durch ist.
+- `MASTER_KEY` ist in Compose Pflicht und steht im mittwald-Stack; das Ausrollen und das Sichern
+  des Schlüssels sind in `docs/infra-kapazitaet.md` beschrieben.
+
+**Offen (Teil 2, mit S1-1):** Kontingent 500 MB pro Konto und 10 Versionen pro Projekt, die
+Option „nach Prüfung löschen“, bekannte Schadsoftware nie ablegen, Dateiansicht und Download.

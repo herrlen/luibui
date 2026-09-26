@@ -44,6 +44,9 @@ services:
       MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in infra/.env (openssl rand -base64 32)}
     volumes:
       - luibui-projects:/projects
+      # Uploads are unpacked here for the worker (S1-1). The API keeps MASTER_KEY; the worker
+      # never sees it.
+      - luibui-scratch:/scratch
     tmpfs: [/tmp]
     networks: [frontend, backend]
     ports: ["127.0.0.1:8000:8000"]

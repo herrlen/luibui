@@ -276,3 +276,47 @@ alle gegen PostgreSQL.
   Die Begrenzung je Client greift deshalb erst, wenn `X-Forwarded-For` vertrauenswürdig
   ausgewertet wird (vor dem Livegang klären). Die Begrenzung je E-Mail greift schon.
 - Die Oberfläche (Anmelden, Registrieren) kommt mit S2-8 und S2-11.
+
+## 2026-09-26 — S1-1 Annahme über die API (mit S2-7 Teil 2)
+
+Neue Routen: `POST/GET /api/projects`, `GET/DELETE /api/projects/{id}`,
+`POST /api/projects/{id}/scans` (multipart: `art` = datei | auswahl | zip | text, `dateien`,
+bei `auswahl` dazu `pfade` in derselben Reihenfolge) und `GET /api/scans/{id}` mit Status,
+Ampeln, Note und, sobald fertig, dem ganzen Bericht. Der Worker kann Scan-Jobs jetzt
+ausführen. 32 neue Tests, darunter ein Durchlauf von Ende zu Ende: Upload über die API, dann
+der echte Worker mit Kindprozess, dann der Bericht über die API.
+
+**Ablauf und Entscheidungen:**
+- **Die API nimmt an, der Worker prüft.** Die API führt den Upload durch die Engine-Annahme
+  (`luibui_scan.intake`) direkt nach `/scratch/<job-id>`, speichert die Dateien verschlüsselt
+  als neue Projektversion und legt Scan und Job an. Der Worker übernimmt den vorbereiteten
+  Ordner. **`MASTER_KEY` bleibt allein in der API**; der Worker, der feindliche Inhalte anfasst
+  und auf mittwald Internet hat, bekommt ihn nie. Dafür bindet die API jetzt `luibui-scratch`
+  ein (Compose, mittwald-Stack, Dockerfile).
+- **Der Elternprozess des Workers prüft den Bericht des Kindes** mit den Pydantic-Modellen
+  (Befunde, Ampeln, Note, Freigabe, `scan_id`), bevor er Scan-Zeile und Befunde schreibt. Ein
+  unpassender Bericht wird ganz verworfen, und der Scan steht auf `fehlgeschlagen`.
+- **Aufräumen im Scratch:** Aufgehoben werden die Ordner laufender Jobs und wartender Jobs, die
+  noch nie gestartet sind. Ordner ohne Job-Zeile bleiben 10 Minuten stehen, weil die API den
+  Upload schreibt, bevor ihr Job committet ist. Ein zweiter Versuch beginnt immer leer.
+  Scan-Jobs laufen nur einmal (`max_attempts = 1`).
+- **Upload-Grenze:** `Content-Length` ist Pflicht und darf höchstens 60 MB betragen (411/413),
+  noch bevor das Formular gelesen wird. Bis zu 1.000 Dateien je Formular.
+- **ZIP:** Die Datei wird neben den Scratch kopiert (`zipfile` braucht Dateigröße und
+  Positionierung), entpackt und sofort wieder gelöscht.
+- **Ablehnung** durch die Annahme ergibt 422 mit `grund`, `text` und `pfad`. Es bleibt nichts
+  zurück: kein Scratch, keine Blobs, keine Zeilen (Test).
+- **S2-7, Teil 2:** Kontingent 500 MB je Konto (413), die letzten 10 Versionen je Projekt
+  (ältere samt Blobs weg; der alte Scan bleibt, nur ohne Dateien), „nach Prüfung löschen“
+  speichert gar nichts, und das Löschen eines Projekts löscht seine Blobs, erst nach dem Commit.
+- **Prüfumfang** berechnet die API beim Anlegen aus dem Inventar (Konzept §5).
+- Die Projekt-Routen sind bewusst schmal: Oberfläche, Typ-Logik und Versionsliste kommen mit
+  S2-8.
+
+**Offen:**
+- `POST /api/quickscans` (Schnellscan per Git-URL) und das Rate-Limit je IP fehlen noch. Sie
+  hängen an S1-3 (Git-Clone) und an Lens Entscheidung, wer klont.
+- `art = git` für Projekte kommt ebenfalls mit S1-3.
+- „Bekannte Schadsoftware nie ablegen“ braucht ClamAV oder Hash-Listen (Sprint 4). Bis dahin
+  wird jede Datei abgelegt, die die Annahme besteht.
+- Dateiansicht und Download gespeicherter Dateien (Regel 10) gehören zu S2-9.

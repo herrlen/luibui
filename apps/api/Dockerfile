@@ -13,7 +13,8 @@ RUN uv sync --frozen --no-dev --no-editable --package luibui-api
 
 FROM python:3.12-slim-trixie
 RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui \
- && mkdir -p /projects && chown 10001:10001 /projects
+ && mkdir -p /projects /scratch && chown 10001:10001 /projects /scratch \
+ && chmod 700 /projects /scratch
 COPY --from=build /app/.venv /app/.venv
 COPY apps/api/alembic.ini /app/api/alembic.ini
 COPY apps/api/alembic /app/api/alembic

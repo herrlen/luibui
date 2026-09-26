@@ -54,6 +54,10 @@ RETURNING id
 """)
 
 _RUNNING_IDS = text("SELECT id FROM jobs WHERE status = 'running'")
+_KEEP_IDS = text(
+    "SELECT id FROM jobs WHERE status = 'running' OR (status = 'queued' AND attempts = 0)"
+)
+_KNOWN_IDS = text("SELECT id FROM jobs WHERE id = ANY(:ids)")
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,3 +92,13 @@ def release_stale(conn: Connection, max_timeout: int, grace: int) -> list[uuid.U
 
 def running_job_ids(conn: Connection) -> set[uuid.UUID]:
     return {r[0] for r in conn.execute(_RUNNING_IDS)}
+
+
+def scratch_to_keep(conn: Connection) -> set[uuid.UUID]:
+    """Running jobs, and queued jobs that never started: the API may have prepared their input.
+    A job queued again after a failed attempt starts with an empty directory instead."""
+    return {r[0] for r in conn.execute(_KEEP_IDS)}
+
+
+def known_job_ids(conn: Connection, ids: list[uuid.UUID]) -> set[uuid.UUID]:
+    return {r[0] for r in conn.execute(_KNOWN_IDS, {"ids": ids})} if ids else set()

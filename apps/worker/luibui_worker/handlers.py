@@ -22,7 +22,22 @@ class Handler(Protocol):
 
 
 def scan(ctx: JobContext) -> dict[str, Any]:
-    raise NotImplementedError("Scan-Jobs kommen mit Sprint 1 (S1-1).")
+    """Scan the files the API unpacked into the scratch directory and return the report."""
+    import uuid
+
+    from luibui_scan.models import ScanArt
+    from luibui_scan.report import build_report
+    from luibui_scan.scan import Eingabe, scan_prepared
+
+    if not any(ctx.scratch.iterdir()):
+        raise RuntimeError("leeres Prüfverzeichnis")
+    result = scan_prepared(
+        ctx.scratch, Eingabe(ctx.payload["eingabe"]), ScanArt(ctx.payload["scan_art"])
+    )
+    report = build_report(
+        result, name=str(ctx.payload["name"]), scan_id=uuid.UUID(ctx.payload["scan_id"])
+    )
+    return {"report": report}
 
 
 DEFAULT_HANDLERS: dict[str, str] = {

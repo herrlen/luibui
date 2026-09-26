@@ -46,6 +46,7 @@ services:
       MASTER_KEY: ${MASTER_KEY}
     volumes:
       - luibui-projects:/projects
+      - luibui-scratch:/scratch
     ports:
       - "8000:8000/tcp"
     restartPolicy: unless-stopped

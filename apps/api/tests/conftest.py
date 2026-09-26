@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 def _clear_caches() -> None:
     from luibui_api import storage
 
+    if db.get_engine.cache_info().currsize:
+        db.get_engine().dispose()  # close pooled connections before the engine is forgotten
     get_settings.cache_clear()
     storage.blob_store.cache_clear()
     db.get_engine.cache_clear()
@@ -76,6 +78,8 @@ def api(_migrated: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iter
     monkeypatch.setenv("DATABASE_URL", _migrated)
     monkeypatch.setenv("MASTER_KEY", MASTER_KEY_B64)
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path / "projects"))
+    monkeypatch.setenv("SCRATCH_ROOT", str(tmp_path / "scratch"))
+    (tmp_path / "scratch").mkdir()
     _clear_caches()
     login_limiter.cache_clear()
     engine = create_engine(_migrated)

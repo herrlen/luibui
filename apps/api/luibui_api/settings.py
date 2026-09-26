@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     """32 random bytes, base64. Encrypts the per-project data keys (S2-7). Never rotate by
     replacing it: every stored file would become unreadable."""
     storage_root: Path = Path("/projects")
+    scratch_root: Path = Path("/scratch")
+    """Shared with the worker: uploads are unpacked to ``<scratch_root>/<job-id>`` for the scan."""
+    upload_max_bytes: int = 60 * 1024 * 1024
+    """Request body limit for uploads (ZIP 50 MB or selection 50 MB plus multipart overhead)."""
+    account_quota_bytes: int = 500 * 1024 * 1024
+    versions_per_project: int = 10
 
     app_origin: str = "https://app.luibui.com"
     """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""

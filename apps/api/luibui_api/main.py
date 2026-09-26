@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from luibui_api.routes import auth, health, tokens
+from luibui_api.routes import auth, health, projects, scans, tokens
 from luibui_api.settings import get_settings
 
 
@@ -18,4 +18,6 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(tokens.router)
+    app.include_router(projects.router)
+    app.include_router(scans.router)
     return app

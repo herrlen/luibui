@@ -7,18 +7,34 @@ scratch directories from a crashed worker are removed.
 import logging
 import signal
 import threading
+import uuid
 from collections.abc import Mapping
+from pathlib import Path
 from types import FrameType
 
 from sqlalchemy import Engine, create_engine
 
-from luibui_worker import queue
+from luibui_worker import queue, results
 from luibui_worker.handlers import DEFAULT_HANDLERS
 from luibui_worker.runner import Outcome, run_in_child
-from luibui_worker.scratch import create_scratch, remove_scratch, sweep_orphans
+from luibui_worker.scratch import create_scratch, remove_scratch, scratch_path, sweep_orphans
 from luibui_worker.settings import MAX_JOB_TIMEOUT_SECONDS, WorkerSettings, get_settings
 
 log = logging.getLogger("luibui_worker")
+
+SWEEP_MIN_AGE_SECONDS = 600
+
+
+def _uuid_entries(root: Path) -> list[uuid.UUID]:
+    if not root.is_dir():
+        return []
+    ids = []
+    for entry in root.iterdir():
+        try:
+            ids.append(uuid.UUID(entry.name))
+        except ValueError:
+            continue
+    return ids
 
 
 class Worker:
@@ -44,11 +60,17 @@ class Worker:
             released = queue.release_stale(
                 conn, MAX_JOB_TIMEOUT_SECONDS, self.settings.stale_grace_seconds
             )
-            running = queue.running_job_ids(conn)
+            keep = queue.scratch_to_keep(conn)
+            known = queue.known_job_ids(conn, _uuid_entries(self.settings.scratch_root))
         if released:
             log.warning("released %d stale job(s)", len(released))
         self.settings.scratch_root.mkdir(parents=True, exist_ok=True)
-        removed = sweep_orphans(self.settings.scratch_root, keep=running)
+        removed = sweep_orphans(
+            self.settings.scratch_root,
+            keep=keep,
+            known=known,
+            min_age_seconds=SWEEP_MIN_AGE_SECONDS,
+        )
         if removed:
             log.warning("removed %d orphaned scratch entr(y/ies)", len(removed))
 
@@ -60,6 +82,10 @@ class Worker:
             return False
 
         timeout = min(job.timeout_seconds, MAX_JOB_TIMEOUT_SECONDS)
+        scan_id = results.scan_id_of(job.kind, job.payload)
+        if scan_id is not None:
+            with self.engine.begin() as conn:
+                results.mark_running(conn, scan_id)
         handler = self.handlers.get(job.kind)
         scratch = None
         error: str | None
@@ -67,6 +93,9 @@ class Worker:
             if handler is None:
                 outcome, error = Outcome.FAILED, f"Unbekannte Job-Art: {job.kind[:50]}"
             else:
+                if job.attempts > 1:
+                    # A retry never sees what an earlier attempt left behind.
+                    remove_scratch(scratch_path(self.settings.scratch_root, job.id))
                 scratch = create_scratch(self.settings.scratch_root, job.id)
                 result = run_in_child(
                     handler=handler,
@@ -79,6 +108,12 @@ class Worker:
                     max_result_bytes=self.settings.max_result_bytes,
                 )
                 outcome, error = result.outcome, result.error
+                if scan_id is not None and outcome is Outcome.OK:
+                    with self.engine.begin() as conn:
+                        results.record_report(conn, scan_id, (result.result or {}).get("report"))
+        except results.InvalidReportError:
+            log.exception("job %s: invalid report", job.id)
+            outcome, error = Outcome.FAILED, "Ungültiger Bericht"
         except Exception as exc:
             log.exception("job %s: worker error", job.id)
             outcome, error = Outcome.FAILED, f"Worker-Fehler: {type(exc).__name__}"
@@ -94,6 +129,8 @@ class Worker:
                 queue.mark_done(conn, job.id, self.settings.worker_id)
             else:
                 queue.mark_failed(conn, job.id, self.settings.worker_id, error or outcome)
+                if scan_id is not None:
+                    results.mark_failed(conn, scan_id, error or outcome)
         log.info("job %s (%s): %s", job.id, job.kind, outcome)
         return True
 

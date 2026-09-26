@@ -87,7 +87,9 @@ Jeder Upload ist potenziell feindlich. Die Prüfstelle darf nie selbst zum Angri
 - Scratch nach jedem Scan löschen. Projekt-Dateien verschlüsselt bis der Entwickler sie löscht (500 MB pro Konto,
   letzte 10 Versionen pro Projekt), außer bei Option „nach Prüfung löschen“. Schnellscan: nichts speichern,
   Bericht 7 Tage. Audit-Log nur Metadaten. Admin-Zugriff auf Projekt-Dateien nur protokolliert.
-- Secrets nur aus ENV, Tokens und Passwörter gehasht (Argon2).
+- Secrets nur aus ENV. Passwörter gehasht mit Argon2. Session- und API-Tokens sind 256 Bit zufällig und
+  werden als SHA-256 gespeichert, nie im Klartext (entschieden mit Len am 2026-09-26: Argon2 bei jeder
+  Anfrage würde die API leicht überlastbar machen).
 
 ## Infrastruktur
 - Code: GitHub `herrlen/luibui` (privat), https://github.com/herrlen/luibui, Standardzweig `main`.

@@ -237,3 +237,42 @@ Dieser Teil bringt nur den Kern, ohne Routen: `apps/api/luibui_api/storage/`. 23
 
 **Offen (Teil 2, mit S1-1):** Kontingent 500 MB pro Konto und 10 Versionen pro Projekt, die
 Option „nach Prüfung löschen“, bekannte Schadsoftware nie ablegen, Dateiansicht und Download.
+
+## 2026-09-26 — S2-6 Anmeldung, vorgezogen
+
+Registrierung, Anmeldung, Abmeldung, `GET /api/auth/ich`, Zwei-Faktor-Anmeldung (TOTP) und
+API-Tokens (`/api/tokens`) sind da, dazu die zentrale Zugriffsprüfung `get_owned` in
+`luibui_api/auth.py`. Migration `0002` legt die Tabelle `sessions` an, ergänzt
+`users.totp_confirmed_at` und einen eindeutigen Index auf `tokens.token_hash`. 31 neue Tests,
+alle gegen PostgreSQL.
+
+**Entscheidungen, die im Code stecken:**
+- **Hashing (Len, 2026-09-26):** Passwörter mit Argon2id. Session- und API-Tokens sind 256 Bit
+  zufällig und werden als SHA-256 gespeichert, weil Argon2 bei jeder Anfrage 64 MB und rund
+  50 ms kostet. CLAUDE.md ist angepasst.
+- **Cookie** `__Host-luibui_session`: Das Präfix `__Host-` zwingt Browser, kein Domain-Attribut
+  zu akzeptieren; dazu `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`. Die Session liegt
+  serverseitig, beim Abmelden ist sie sofort ungültig (Test). Laufzeit 14 Tage.
+- **`api.luibui.com` ignoriert Cookies** und akzeptiert nur `Authorization: Bearer lb_…`
+  (Regel 11, über `BEARER_ONLY_HOSTS`).
+- **CSRF:** Schreibende Anfragen mit Cookie müssen `Origin: https://app.luibui.com` tragen oder,
+  ohne Origin, `Sec-Fetch-Site: same-origin`. Sonst gibt es 403.
+- **Ein API-Token kann keine Tokens anlegen und kein 2FA ändern**, das geht nur mit einer
+  Browser-Session.
+- **Fremde und unbekannte IDs geben beide 404** (`get_owned`). Test: Nutzer B sieht Tokens von A
+  nicht und kann sie nicht widerrufen.
+- **Anmeldung:** Unbekannte E-Mail und falsches Passwort sehen gleich aus und dauern gleich lang
+  (Dummy-Hash). Nach 10 Fehlversuchen in 15 Minuten, je E-Mail und je Client, gibt es 429. Der
+  Zähler liegt im Speicher des API-Prozesses; das reicht für einen Prozess.
+- **TOTP:** Das Geheimnis wird mit `MASTER_KEY` verschlüsselt und an die Nutzer-ID gebunden. Aktiv
+  wird es erst nach Bestätigung mit einem gültigen Code. Abschalten braucht Passwort und Code.
+- Die E-Mail wird klein geschrieben gespeichert und nur grob auf ihre Form geprüft.
+
+**Offen:**
+- Die E-Mail-Bestätigung fehlt, weil es noch keinen Mailversand gibt. `email_verified_at` bleibt
+  leer.
+- Passwort vergessen, Konto löschen und Datenexport gehören zu S2-10.
+- Hinter dem mittwald-Ingress und dem Next.js-Proxy ist `request.client.host` die IP des Proxys.
+  Die Begrenzung je Client greift deshalb erst, wenn `X-Forwarded-For` vertrauenswürdig
+  ausgewertet wird (vor dem Livegang klären). Die Begrenzung je E-Mail greift schon.
+- Die Oberfläche (Anmelden, Registrieren) kommt mit S2-8 und S2-11.

@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     replacing it: every stored file would become unreadable."""
     storage_root: Path = Path("/projects")
 
+    app_origin: str = "https://app.luibui.com"
+    """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""
+    bearer_only_hosts: frozenset[str] = frozenset({"api.luibui.com"})
+    """Hosts that accept only Bearer tokens; session cookies are ignored there (rule 11)."""
+    session_days: int = 14
+    session_cookie_secure: bool = True
+    login_max_attempts: int = 10
+    """Failed logins per e-mail address and per client within ``login_window_seconds``."""
+    login_window_seconds: int = 900
+
     @property
     def is_prod(self) -> bool:
         return self.luibui_env is Environment.PROD

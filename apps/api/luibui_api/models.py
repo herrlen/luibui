@@ -3,7 +3,9 @@
 Rules that every table follows:
 - Primary keys are UUIDs, never sequential.
 - Every table holding user data has ``owner_id``; access checks always filter by it (S2-6).
-- Tokens and passwords are stored only as Argon2 hashes; project files only encrypted (S2-7).
+- Passwords are stored only as Argon2 hashes. Session and API tokens are 256-bit random values
+  and stored as SHA-256 hashes (decided 2026-09-26: Argon2 on every request would make the API
+  easy to overload). Project files only encrypted (S2-7).
 - The audit log stores metadata only, never file contents or findings.
 """
 
@@ -95,6 +97,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(320))
     password_hash: Mapped[str] = mapped_column(Text)
     totp_secret_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    """Encrypted with MASTER_KEY, bound to the user ID. Pending until ``totp_confirmed_at``."""
+    totp_confirmed_at: Mapped[datetime | None]
     is_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     email_verified_at: Mapped[datetime | None]
     last_login_at: Mapped[datetime | None]
@@ -103,8 +107,21 @@ class User(Base):
     __table_args__ = (Index("uq_users_email_lower", func.lower(email), unique=True),)
 
 
+class UserSession(Base):
+    """Login session behind the host-only cookie on app.luibui.com. Only the hash is stored."""
+
+    __tablename__ = "sessions"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_id: Mapped[uuid.UUID] = _owner()
+    secret_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = _created()
+    last_seen_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime]
+
+
 class Token(Base):
-    """API token. Only the Argon2 hash is stored; ``prefix`` lets the owner recognise it."""
+    """API token. Only the SHA-256 hash is stored; ``prefix`` lets the owner recognise it."""
 
     __tablename__ = "tokens"
 
@@ -115,7 +132,7 @@ class Token(Base):
     )
     name: Mapped[str] = mapped_column(String(100))
     prefix: Mapped[str] = mapped_column(String(16), unique=True)
-    token_hash: Mapped[str] = mapped_column(Text)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     scopes: Mapped[list[str]] = mapped_column(ARRAY(String(50)), server_default="{}")
     expires_at: Mapped[datetime]
     last_used_at: Mapped[datetime | None]

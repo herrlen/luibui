@@ -43,21 +43,28 @@ TLS: Let's Encrypt über mittwald, automatisch.
 **Logs:** API: Migration gelaufen, Uvicorn läuft. Worker: startete einige Male neu, bis Postgres
 bereit war (mittwald kennt kein `depends_on`), danach `worker … ready`.
 
-**RAM-Verbrauch auf dem Server: nicht gemessen.** Die mittwald-API und `mw` liefern keine
-Container-Messwerte, und `mw container exec` braucht einen SSH-Schlüssel im mittwald-Konto, der
-nicht hinterlegt ist. Ablesbar in mStudio (Container → Auslastung).
+**RAM-Verbrauch auf dem Server** (cgroup `memory.current` / `memory.peak`, gemessen 2026-09-26,
+21:20, leerer Stack, keine Prüfung aktiv):
 
-**Lokal gemessen (Colima, leerer Stack, keine Prüfung aktiv), als Anhaltspunkt:**
+| Container | aktuell | Spitze seit Start | Limit (wirksam) |
+|---|---|---|---|
+| postgres | 52 MiB | 98 MiB | 732 MiB |
+| api | 75 MiB | 75 MiB | 488 MiB |
+| worker | 52 MiB | 62 MiB | 1464 MiB |
+| web | 87 MiB | 87 MiB | 366 MiB |
+| **Summe** | **266 MiB** | | **3050 MiB** |
 
-| Container | RAM |
-|---|---|
-| worker | 50 MiB |
-| api | 62 MiB |
-| web | 35 MiB |
-| postgres | 34 MiB |
+mittwald liest `768m` als 768 **Megabyte** (10⁶), nicht Mebibyte; die wirksamen Limits sind
+deshalb rund 5 % kleiner als lokal. Aussagekräftig wird die Messung erst mit echten Prüfungen und
+Scannern (S1-12).
 
-Die Limits sind also bisher kaum ausgeschöpft. Aussagekräftig wird die Messung erst mit echten
-Prüfungen und Scannern (S1-12).
+Gemessen per `mw container exec` mit dem SSH-Schlüssel `luibui-betrieb-20260926`
+(`~/.ssh/luibui_mittwald_ed25519`, läuft 2027-09-26 ab):
+
+```sh
+MITTWALD_SSH_IDENTITY_FILE=~/.ssh/luibui_mittwald_ed25519 \
+  mw container exec <container> -p p-yw5cv5 'cat /sys/fs/cgroup/memory.current'
+```
 
 ## Unterschiede zur lokalen Umgebung
 
@@ -74,10 +81,9 @@ zusätzlich erzwingt, fehlt auf dem Server:
 | `tmpfs`, `pids_limit`, `stop_grace_period` | nicht verfügbar | – |
 | `:ro` bei Volumes | Format nur `<volume>:<mountpoint>` | `luibui-rules` ist im Worker beschreibbar |
 
-**Nicht geprüft:** ob der Worker auf dem Volume `luibui-scratch` schreiben darf (lokal gehört
-`/scratch` dem Nutzer 10001; ob mittwald die Rechte aus dem Image übernimmt, ist offen). Der Worker
-startet ohne Fehler, liest `/scratch` also. Der erste echte Job in Sprint 1 zeigt es; bis dahin
-kommt eine Schreibprobe beim Start des Workers dazu.
+**Per SSH geprüft (21:20):** Der Worker läuft als Nutzer 10001 und darf auf `/scratch` schreiben
+(mittwald übernimmt den Eigentümer aus dem Image, setzt aber Modus 755 statt 700). **Der Worker
+erreicht das Internet** (Verbindung zu 1.1.1.1:443 gelingt), lokal nicht.
 
 ## Ausrollen
 

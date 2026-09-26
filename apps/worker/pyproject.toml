@@ -1,0 +1,23 @@
+[project]
+name = "luibui-worker"
+version = "0.1.0"
+description = "luibui worker: job loop that runs the scan engine in an isolated child process"
+requires-python = ">=3.12"
+license = "AGPL-3.0-only"
+dependencies = [
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.5",
+  "sqlalchemy>=2.0.35",
+  "psycopg[binary]>=3.2",
+  "luibui-scan",
+]
+
+[project.scripts]
+luibui-worker = "luibui_worker.main:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["luibui_worker"]

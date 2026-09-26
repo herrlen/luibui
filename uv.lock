@@ -11,6 +11,7 @@ members = [
     "luibui",
     "luibui-api",
     "luibui-scan",
+    "luibui-worker",
     "luibui-workspace",
 ]
 
@@ -454,6 +455,27 @@ dependencies = [
 requires-dist = [{ name = "pydantic", specifier = ">=2.9,<3" }]
 
 [[package]]
+name = "luibui-worker"
+version = "0.1.0"
+source = { editable = "apps/worker" }
+dependencies = [
+    { name = "luibui-scan" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "luibui-scan", editable = "packages/engine" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "pydantic-settings", specifier = ">=2.5" },
+    { name = "sqlalchemy", specifier = ">=2.0.35" },
+]
+
+[[package]]
 name = "luibui-workspace"
 version = "0.0.0"
 source = { virtual = "." }
@@ -461,6 +483,7 @@ dependencies = [
     { name = "luibui" },
     { name = "luibui-api" },
     { name = "luibui-scan" },
+    { name = "luibui-worker" },
 ]
 
 [package.dev-dependencies]
@@ -479,6 +502,7 @@ requires-dist = [
     { name = "luibui", editable = "packages/cli" },
     { name = "luibui-api", editable = "apps/api" },
     { name = "luibui-scan", editable = "packages/engine" },
+    { name = "luibui-worker", editable = "apps/worker" },
 ]
 
 [package.metadata.requires-dev]

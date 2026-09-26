@@ -4,18 +4,19 @@ version = "0.0.0"
 description = "luibui monorepo workspace (not published)"
 requires-python = ">=3.12"
 license = "AGPL-3.0-only"
-dependencies = ["luibui-scan", "luibui", "luibui-api"]
+dependencies = ["luibui-scan", "luibui", "luibui-api", "luibui-worker"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["packages/engine", "packages/cli", "apps/api"]
+members = ["packages/engine", "packages/cli", "apps/api", "apps/worker"]
 
 [tool.uv.sources]
 luibui-scan = { workspace = true }
 luibui = { workspace = true }
 luibui-api = { workspace = true }
+luibui-worker = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -29,7 +30,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests", "apps/api/tests"]
+testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests", "apps/api/tests", "apps/worker/tests"]
 addopts = "-ra --strict-markers --import-mode=importlib"
 markers = ["db: needs a PostgreSQL database (DATABASE_URL)"]
 

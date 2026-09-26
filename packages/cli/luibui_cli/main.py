@@ -1,8 +1,10 @@
-"""Entry point of the ``luibui`` command. Subcommands arrive from Sprint 1 on (S1-11: scan)."""
+"""Entry point of the ``luibui`` command."""
 
 import argparse
+import sys
 from collections.abc import Sequence
 
+from luibui_cli import scan
 from luibui_scan import __version__ as engine_version
 
 
@@ -12,7 +14,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Prüft KI-Skills, Plugins und MCP-Server lokal auf Sicherheit und Datenschutz.",
     )
     parser.add_argument("--version", action="version", version=f"luibui-scan {engine_version}")
-    parser.add_subparsers(dest="command", metavar="<befehl>")
+    subparsers = parser.add_subparsers(dest="command", metavar="<befehl>")
+    scan.add_parser(subparsers)
     return parser
 
 
@@ -21,4 +24,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
-    return 0
+        return 0
+    code: int = args.run(args, sys.stdout, sys.stderr)
+    return code

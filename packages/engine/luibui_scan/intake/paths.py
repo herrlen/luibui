@@ -23,13 +23,12 @@ def check_path(raw: str, limits: Limits) -> str:
 
     Raises ``IntakeRejectedError`` otherwise.
     """
-    if raw.startswith("/") or _DRIVE.match(raw):
+    # The most severe reason first: escaping the package outranks a malformed name.
+    segments = raw.split("/")
+    if raw.startswith("/") or _DRIVE.match(raw) or ".." in segments:
         raise IntakeRejectedError(Ablehnung.PFAD_AUSSERHALB, raw)
     if not raw or "\\" in raw or any(unicodedata.category(c) == "Cc" for c in raw):
         raise IntakeRejectedError(Ablehnung.UNGUELTIGER_NAME, raw)
-    segments = raw.split("/")
-    if ".." in segments:
-        raise IntakeRejectedError(Ablehnung.PFAD_AUSSERHALB, raw)
     if any(s in ("", ".") for s in segments):
         raise IntakeRejectedError(Ablehnung.UNGUELTIGER_NAME, raw)
     if len(raw.encode()) > limits.pfad_bytes or any(

@@ -145,3 +145,31 @@ auf denen dieser beruht. 54 neue Tests.
 
 **Offen:** Das Inventar ist noch nicht in die Pipeline eingehängt. Das geschieht zusammen mit der
 Annahme, wenn der Worker Prüfungen annimmt (S1-1).
+
+## 2026-09-26 — S1-11 CLI `luibui scan`
+
+`luibui scan <pfad> [--json]` prüft einen Ordner, ein ZIP-Archiv (erkannt an der Endung `.zip`)
+oder eine einzelne Datei. Die Eingabe läuft durch dieselbe Annahme wie ein Upload in ein privates
+Temp-Verzeichnis, das danach gelöscht wird (Test). Neu in der Engine: `scan.scan_prepared()`
+(Inventar → Kontext → Pipeline), das ab S1-1 auch der Worker nutzt, und
+`intake.accept_directory()` für lokale Ordner. 18 neue Tests.
+
+**Entscheidungen, die im Code stecken:**
+- **Noch keine Bewertung.** `scoring.py` kommt mit S1-10. Bis dahin schreibt die CLI
+  „Bewertung: noch nicht verfügbar“, `bewertung` ist im JSON `null`, und solange kein Analyzer
+  gelaufen ist, steht dabei, dass das Ergebnis nichts über die Sicherheit aussagt. Nichts in der
+  Ausgabe darf wie Grün aussehen (Test). Das JSON entspricht deshalb noch nicht
+  `report.schema.json`, dem fehlen die Ampeln.
+- **Rückgabewerte:** 0 Prüfung gelaufen, 2 Pfad fehlt oder falscher Aufruf, 3 Eingabe
+  abgelehnt. Ein Rückgabewert je nach Ampel (für CI) kommt mit S1-10.
+- **Lokale Ordner** werden wie eine Dateiauswahl behandelt (Limits 1.000 Dateien und 50 MB,
+  Symlinks führen zur Ablehnung). **`.git` wird übersprungen**, weil es nicht zum Paket gehört
+  und sonst jedes Repository an der Dateigrenze scheitert.
+- **Prüfumfang** nach Konzept §5: Einzeldatei, sonst mit `luibui.json` auf oberster Ebene Paket,
+  ohne Manifest Dateiauswahl. Liegt das Paket im ZIP in einem Unterordner, zählt es noch als
+  Auswahl; das klärt S1-10.
+- **Terminal-Ausgabe:** Alles, was aus dem Paket kommt (Pfade, Titel, Belege), wird escaped.
+  Steuerzeichen (ANSI) und unsichtbare Formatzeichen (Bidi, Zero-Width, Unicode-Tags) erscheinen
+  als `\x..`/`\u....`. JSON wird mit `ensure_ascii` ausgegeben.
+- **Reihenfolge in `check_path` geändert:** Enthält ein Name `..` und zugleich ein Steuerzeichen,
+  lautet der Grund jetzt „Pfad außerhalb“, der schwerere von beiden.

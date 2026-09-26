@@ -1,10 +1,12 @@
-"""Single file, file selection (also folder uploads) and pasted text.
+"""Single file, file selection (also folder uploads), local folders and pasted text.
 
 Relative paths from folder uploads are checked exactly like ZIP entries.
 """
 
 import io
-from collections.abc import Iterable
+import os
+import stat
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import IO
 
@@ -13,6 +15,8 @@ from luibui_scan.intake.limits import DEFAULT_LIMITS, Limits
 from luibui_scan.intake.paths import Budget, NameRegistry, check_path, write_file
 
 TEXT_NAME = "eingabe.md"
+SKIPPED_DIRS = frozenset({".git"})
+"""Version-control metadata is not part of a package and is left out of local folder scans."""
 
 
 def accept_file(name: str, src: IO[bytes], root: Path, limits: Limits = DEFAULT_LIMITS) -> str:
@@ -47,3 +51,31 @@ def accept_text(text: str, root: Path, limits: Limits = DEFAULT_LIMITS) -> str:
         raise IntakeRejectedError(Ablehnung.ZU_GROSS)
     write_file(root, TEXT_NAME, io.BytesIO(data), Budget(limits.text_bytes))
     return TEXT_NAME
+
+
+def accept_directory(source: Path, root: Path, limits: Limits = DEFAULT_LIMITS) -> list[str]:
+    """Copy a local folder (CLI ``luibui scan <ordner>``) like a file selection.
+
+    Symlinks and special files are refused instead of followed. ``.git`` folders are skipped.
+    """
+    return accept_selection(_walk_local(source), root, limits)
+
+
+def _walk_local(source: Path) -> Iterator[tuple[str, IO[bytes]]]:
+    pending = [""]
+    while pending:
+        rel = pending.pop()
+        with os.scandir(source / rel if rel else source) as it:
+            entries = sorted(it, key=lambda e: e.name)
+        for item in entries:
+            child = f"{rel}/{item.name}" if rel else item.name
+            mode = item.stat(follow_symlinks=False).st_mode
+            if stat.S_ISDIR(mode):
+                if item.name not in SKIPPED_DIRS:
+                    pending.append(child)
+            elif stat.S_ISREG(mode):
+                fd = os.open(item.path, os.O_RDONLY | os.O_NOFOLLOW)
+                with os.fdopen(fd, "rb") as f:
+                    yield child, f
+            else:
+                raise IntakeRejectedError(Ablehnung.VERKNUEPFUNG, child)

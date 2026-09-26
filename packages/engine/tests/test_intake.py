@@ -14,6 +14,7 @@ from luibui_scan.intake import (
     Ablehnung,
     IntakeRejectedError,
     Limits,
+    accept_directory,
     accept_file,
     accept_selection,
     accept_text,
@@ -142,6 +143,13 @@ def patch(archive: Path, old: bytes, new: bytes) -> None:
 def test_nul_in_zip_name(tmp_path: Path, root: Path) -> None:
     """zipfile would silently cut the name at NUL; the original name must be checked."""
     archive = make_zip(tmp_path, [("safe.md#../../x", b"x")])
+    patch(archive, b"safe.md#", b"safe.md\x00")
+    exc = rejected(Ablehnung.PFAD_AUSSERHALB, extract_zip, archive, root)
+    assert exc.pfad == "safe.md\x00../../x"
+
+
+def test_nul_in_zip_name_without_traversal(tmp_path: Path, root: Path) -> None:
+    archive = make_zip(tmp_path, [("safe.md#.sh", b"x")])
     patch(archive, b"safe.md#", b"safe.md\x00")
     rejected(Ablehnung.UNGUELTIGER_NAME, extract_zip, archive, root)
 
@@ -330,3 +338,34 @@ def test_rejection_text_has_no_package_content() -> None:
     exc = IntakeRejectedError(Ablehnung.PFAD_AUSSERHALB, "<img src=x onerror=alert(1)>")
     assert "<img" not in exc.text
     assert "'<img" in str(exc)
+
+
+# --- local folder (CLI) ----------------------------------------------------------------------
+
+
+def test_directory_is_copied_like_a_selection(tmp_path: Path, root: Path) -> None:
+    src = tmp_path / "src"
+    (src / "sub").mkdir(parents=True)
+    (src / "SKILL.md").write_bytes(b"# Skill")
+    (src / "sub/a.py").write_bytes(b"print(1)")
+    (src / ".git/hooks").mkdir(parents=True)
+    (src / ".git/hooks/pre-commit").write_bytes(b"echo harmlos")
+    assert accept_directory(src, root) == ["SKILL.md", "sub/a.py"]
+    assert tree(root) == ["SKILL.md", "sub/a.py"]
+
+
+def test_directory_symlink_is_refused(tmp_path: Path, root: Path) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "a.md").write_bytes(b"x")
+    (src / "passwd").symlink_to("/etc/passwd")
+    rejected(Ablehnung.VERKNUEPFUNG, accept_directory, src, root)
+    assert not (root / "passwd").exists()
+
+
+def test_directory_limits_apply(tmp_path: Path, root: Path) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    for i in range(4):
+        (src / f"{i}.md").write_bytes(b"x")
+    rejected(Ablehnung.ZU_VIELE_DATEIEN, accept_directory, src, root, SMALL)

@@ -1,0 +1,16 @@
+{
+  "rule_id": "LB-B01-unicode-tags",
+  "ebene": "B",
+  "schwere": "K",
+  "achse": "sicherheit",
+  "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+  "erklaerung": "Die Datei enthält Zeichen aus dem Unicode-Block „Tags“. Menschen sehen sie nicht, ein Sprachmodell liest sie aber als Text. So lassen sich Anweisungen verstecken, die der Nutzer nie zu Gesicht bekommt.",
+  "datei": "SKILL.md",
+  "zeile": 12,
+  "beleg": "Fasse den Text kurz zusammen.[U+E0049 U+E0067 …, 142 unsichtbare Zeichen]",
+  "nachweisgrad": "statisch_erkannt",
+  "normbezug": ["OWASP-ASI01", "OWASP-LLM01"],
+  "fix": "Entferne alle Zeichen im Bereich U+E0000 bis U+E007F aus der Datei.",
+  "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen (U+E0000–U+E007F), ohne den sichtbaren Text zu verändern. Zeige danach den Diff.",
+  "analyzer": "b_inhalte"
+}

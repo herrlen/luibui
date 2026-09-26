@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luibui.com/spec/finding.schema.json",
+  "title": "luibui-Befund",
+  "description": "Ein einzelner Befund einer Prüfung (Konzept §5). Texte in einfachem Deutsch, Belege immer als Text zu behandeln, nie als HTML oder Markdown.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rule_id",
+    "ebene",
+    "schwere",
+    "achse",
+    "titel",
+    "erklaerung",
+    "datei",
+    "zeile",
+    "beleg",
+    "nachweisgrad",
+    "normbezug",
+    "fix",
+    "fix_prompt"
+  ],
+  "properties": {
+    "rule_id": {
+      "description": "Eigene Regeln: LB-<Prüfkatalog-ID>-<kurzname>. Externe Regeln mit Präfix: ATR-…, gitleaks:…, osv:…, cisco-skill:… usw.",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^(LB-[A-I][0-9]{1,2}-[a-z0-9]+(-[a-z0-9]+)*|ATR-[A-Za-z0-9-]+|[a-z][a-z0-9-]*:[^\\s]+)$"
+    },
+    "ebene": {
+      "description": "Prüfebene laut Prüfkatalog.",
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"]
+    },
+    "schwere": {
+      "description": "K kritisch, H hoch, M mittel, N niedrig, I Info.",
+      "type": "string",
+      "enum": ["K", "H", "M", "N", "I"]
+    },
+    "achse": {
+      "type": "string",
+      "enum": ["sicherheit", "dsgvo"]
+    },
+    "titel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "erklaerung": {
+      "description": "Was das Risiko ist, in einfachem Deutsch.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "datei": {
+      "description": "Relativer Pfad im geprüften Paket, mit / getrennt. null bei Befunden zum ganzen Paket.",
+      "type": ["string", "null"],
+      "maxLength": 1024,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\\\u0000]+$"
+    },
+    "zeile": {
+      "description": "Zeilennummer ab 1. null, wenn es keine Zeile gibt (Binärdatei, Paketebene).",
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "beleg": {
+      "description": "Ausschnitt von höchstens 5 Zeilen. Secrets maskiert (erste 4 Zeichen + …). Wird überall als Text escaped ausgegeben.",
+      "type": ["string", "null"],
+      "maxLength": 2000,
+      "pattern": "^[^\\n]*(\\n[^\\n]*){0,4}$"
+    },
+    "nachweisgrad": {
+      "type": "string",
+      "enum": [
+        "statisch_erkannt",
+        "per_llm_bewertet",
+        "in_sandbox_beobachtet",
+        "im_test_beobachtet",
+        "selbstauskunft"
+      ]
+    },
+    "normbezug": {
+      "description": "z. B. OWASP-ASI01, OWASP-LLM01, DSGVO-Art-44.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "uniqueItems": true
+    },
+    "fix": {
+      "description": "Konkrete Behebung.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "fix_prompt": {
+      "description": "Fertiger Prompt für einen Coding-Agent. Leer, wenn kein sinnvoller Prompt möglich ist.",
+      "type": "string",
+      "maxLength": 8000
+    },
+    "analyzer": {
+      "description": "Name des Analyzers, der den Befund erzeugt hat.",
+      "type": "string",
+      "maxLength": 100
+    },
+    "fingerprint": {
+      "description": "Stabiler Wiedererkennungswert über Prüfungen hinweg (rule_id + Datei + normalisierter Beleg), SHA-256 hex.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "hochgestuft_von": {
+      "description": "Ursprüngliche Schwere, wenn die Korrelation den Befund hochgestuft hat.",
+      "type": "string",
+      "enum": ["K", "H", "M", "N", "I"]
+    },
+    "verweise": {
+      "description": "Fingerprints verbundener Befunde (Korrelation).",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "uniqueItems": true
+    }
+  }
+}

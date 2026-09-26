@@ -1,0 +1,31 @@
+{
+  "$schema": "https://luibui.com/spec/luibui.schema.json",
+  "schema_version": "1",
+  "name": "beispiel/wetter-skill",
+  "version": "1.2.0",
+  "typ": "skill",
+  "beschreibung": "Holt die Wettervorhersage für einen Ort.",
+  "lizenz": "MIT",
+  "autor": { "name": "Beispiel e. V.", "kontakt": "sicherheit@beispiel.example" },
+  "repository": "https://codeberg.org/beispiel/wetter-skill",
+  "ziele": ["claude", "mcp"],
+  "einstieg": "SKILL.md",
+  "rechte": {
+    "netzwerk": true,
+    "dateien": { "lesen": [], "schreiben": [] },
+    "shell": false,
+    "zugangsdaten": false,
+    "umgebungsvariablen": []
+  },
+  "endpunkte": [
+    {
+      "host": "api.wetter.example",
+      "zweck": "Vorhersage abrufen",
+      "land": "DE",
+      "datenkategorien": ["nutzereingaben", "standortdaten"],
+      "rechtsgrundlage": "keine_uebermittlung"
+    }
+  ],
+  "datenkategorien": ["nutzereingaben", "standortdaten"],
+  "speicherung": { "lokal": false, "dauer": "keine" }
+}

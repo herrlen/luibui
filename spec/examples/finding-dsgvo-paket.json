@@ -1,0 +1,15 @@
+{
+  "rule_id": "LB-G01-undeklarierter-endpunkt",
+  "ebene": "G",
+  "schwere": "H",
+  "achse": "dsgvo",
+  "titel": "Endpunkt fehlt im Manifest",
+  "erklaerung": "Der Code sendet Daten an einen Host, der in luibui.json nicht steht. Nutzer können nicht erkennen, wohin ihre Eingaben gehen.",
+  "datei": null,
+  "zeile": null,
+  "beleg": null,
+  "nachweisgrad": "statisch_erkannt",
+  "normbezug": ["DSGVO-Art-13", "DSGVO-Art-44"],
+  "fix": "Trage den Host mit Zweck, Land und Datenkategorien unter endpunkte ein oder entferne den Aufruf.",
+  "fix_prompt": ""
+}

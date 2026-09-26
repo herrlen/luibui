@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luibui.com/spec/report.schema.json",
+  "title": "luibui-Prüfbericht",
+  "description": "Ergebnis einer Prüfung (Konzept §2 und §5). Gesamt ist die schlechtere der beiden Achsen; berechnet wird das ausschließlich in scoring.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scan_id",
+    "scan_art",
+    "pruefumfang",
+    "geprueft_am",
+    "engine_version",
+    "paket",
+    "ampeln",
+    "note",
+    "freigabe",
+    "befunde",
+    "nicht_geprueft",
+    "hinweise"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "scan_id": {
+      "description": "UUID der Prüfung. Bei lokalen Scans ebenfalls eine zufällige UUID.",
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "scan_art": {
+      "description": "schnell = Schnellscan auf luibui.com, intensiv = Entwicklerbereich, lokal = CLI.",
+      "type": "string",
+      "enum": ["schnell", "intensiv", "lokal"]
+    },
+    "pruefumfang": {
+      "type": "string",
+      "enum": ["paket", "auswahl", "einzeldatei"]
+    },
+    "geprueft_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "regeln_version": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "paket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "quelle"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "version": {
+          "type": ["string", "null"],
+          "maxLength": 100
+        },
+        "quelle": {
+          "type": "string",
+          "enum": ["datei", "auswahl", "text", "zip", "git", "lokal"]
+        },
+        "git_url": {
+          "type": ["string", "null"],
+          "maxLength": 500
+        },
+        "commit": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+        },
+        "dateien": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "description": "Hash über das Inventar (sortierte Pfade und Datei-Hashes).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "ampeln": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sicherheit", "dsgvo", "gesamt"],
+      "properties": {
+        "sicherheit": {
+          "type": "string",
+          "enum": ["gruen", "gelb", "rot", "gesperrt"]
+        },
+        "dsgvo": {
+          "type": "string",
+          "enum": ["gruen", "gelb", "rot", "nicht_bewertet"]
+        },
+        "gesamt": {
+          "type": "string",
+          "enum": ["gruen", "gelb", "rot", "gesperrt"]
+        }
+      }
+    },
+    "note": {
+      "description": "100 minus Abzüge (K 40, H 15, M 5, N 1), mindestens 0.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "freigabe": {
+      "type": "string",
+      "enum": ["freigegeben", "pruefung_noetig", "blockiert"]
+    },
+    "befunde": {
+      "type": "array",
+      "items": {
+        "$ref": "finding.schema.json"
+      }
+    },
+    "nicht_geprueft": {
+      "description": "Prüfungen, die bei diesem Umfang oder dieser Scan-Art nicht liefen, mit Grund.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pruefung", "grund"],
+        "properties": {
+          "pruefung": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "grund": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "hinweise": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Ein Schnellscan trägt immer den Hinweis „ohne Gewähr“ (CLAUDE.md Regel 12).",
+      "if": {
+        "properties": { "scan_art": { "const": "schnell" } }
+      },
+      "then": {
+        "properties": {
+          "hinweise": {
+            "contains": { "type": "string", "pattern": "ohne Gewähr" }
+          }
+        }
+      }
+    },
+    {
+      "description": "Ein Paket hat ein Manifest, deshalb wird die DSGVO-Achse dort immer bewertet.",
+      "if": {
+        "properties": { "pruefumfang": { "const": "paket" } }
+      },
+      "then": {
+        "properties": {
+          "ampeln": {
+            "properties": {
+              "dsgvo": { "enum": ["gruen", "gelb", "rot"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Gesperrt heißt immer blockiert, und blockiert gibt es nur bei gesperrt.",
+      "if": {
+        "properties": {
+          "ampeln": { "properties": { "gesamt": { "const": "gesperrt" } } }
+        }
+      },
+      "then": {
+        "properties": { "freigabe": { "const": "blockiert" } }
+      },
+      "else": {
+        "properties": { "freigabe": { "enum": ["freigegeben", "pruefung_noetig"] } }
+      }
+    },
+    {
+      "description": "Freigegeben gibt es nur bei Gesamt Grün (Konzept §5, Freigabe-Stufen).",
+      "if": {
+        "properties": { "freigabe": { "const": "freigegeben" } }
+      },
+      "then": {
+        "properties": {
+          "ampeln": { "properties": { "gesamt": { "const": "gruen" } } }
+        }
+      }
+    }
+  ]
+}

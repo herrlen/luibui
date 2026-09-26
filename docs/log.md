@@ -173,3 +173,35 @@ Temp-Verzeichnis, das danach gelöscht wird (Test). Neu in der Engine: `scan.sca
   als `\x..`/`\u....`. JSON wird mit `ensure_ascii` ausgegeben.
 - **Reihenfolge in `check_path` geändert:** Enthält ein Name `..` und zugleich ein Steuerzeichen,
   lautet der Grund jetzt „Pfad außerhalb“, der schwerere von beiden.
+
+## 2026-09-26 — S1-10 Bewertung
+
+`scoring.py` setzt Konzept §5 um: Ampeln Sicherheit, DSGVO und Gesamt, Sperrliste, Note und
+Freigabe-Stufe, zusammengefasst in `bewerte()`. `report.py` baut den Bericht nach
+`report.schema.json`; Tests validieren jeden erzeugten Bericht gegen das Schema.
+`scan_prepared()` liefert die Bewertung mit, und `luibui scan` zeigt sie an. Mit `--json` gibt die
+CLI jetzt den schemakonformen Bericht aus. Pakettyp und Sprachen sind dort nicht mehr enthalten,
+weil das Schema sie nicht kennt; die Textausgabe zeigt sie weiter. 55 neue Tests.
+
+**Entscheidungen, die im Code stecken:**
+- **Unvollständig heißt nie Grün**, auf keiner Achse. Das gilt, wenn ein Analyzer abgestürzt ist
+  **oder gar keiner lief**. Solange es keine Analyzer gibt, ist deshalb jedes Ergebnis höchstens
+  Gelb, mit dem Hinweis, dass es nichts über die Sicherheit aussagt.
+- **K außerhalb der Sperrliste ergibt Rot**, nicht Gesperrt. So steht es in der Tabelle in §5.
+- **Sperrliste:** Enthalten sind die Prüfkatalog-IDs in `SPERRLISTE_KATALOG` (erfasst wird jede
+  Regel `LB-<ID>-…` einer gelisteten Prüfung) sowie externe Präfixe in `SPERRLISTE_EXTERN`.
+  Der Katalog-Teil ist **leer**, bis `luibui_Pruefkatalog.md` da ist. Extern sind schon jetzt
+  eingetragen: `gitleaks:` für echte Secrets und `osv:MAL-` für bekannte Schadpakete, beide
+  wörtlich aus der Sperrliste in §5. Gesperrt wird immer nur bei Schwere K.
+- **DSGVO:** Bewertet wird nur beim Paket mit Manifest, dann gilt H/K → Rot, M → Gelb, sonst Grün.
+  Ohne Manifest bleibt die Achse „nicht bewertet“, außer ein DSGVO-Befund macht sie Gelb (M) oder
+  Rot (H/K). Laut Konzept können das dann nur Drittland-Endpunkte sein, weil die
+  Manifest-Prüfungen ohne Manifest gar nicht laufen. Ob `luibui.json` gültig ist, prüft noch
+  niemand; vorerst entscheidet allein, dass die Datei da ist (Ebene G).
+- **Die Note** zählt Befunde beider Achsen.
+- **Grün** heißt in der CLI „Grün, keine bekannten Befunde, geprüft am …“ und nie „sicher“
+  (Test).
+
+**Offen:**
+- Die IDs für die Sperrliste folgen aus dem Prüfkatalog.
+- Ein Rückgabewert der CLI je nach Ampel (für CI, etwa `--fail-on rot`) ist noch nicht eingebaut.

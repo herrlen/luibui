@@ -43,7 +43,10 @@ def test_folder_text(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFi
     assert "Umfang:    Dateiauswahl ohne Manifest" in out
     assert "Pakettyp:  skill" in out
     assert "Dateien:   2" in out
-    assert "Bewertung: noch nicht verfügbar" in out
+    assert "Sicherheit: Gelb" in out
+    assert "DSGVO:      nicht bewertet" in out
+    assert "Gesamt:     Gelb, Prüfung nötig" in out
+    assert "Note:       100 von 100" in out
     assert "sagt nichts über die Sicherheit" in out
     assert "grün" not in out.lower()
     assert list(private_tmp.iterdir()) == []
@@ -58,8 +61,11 @@ def test_folder_with_manifest_is_a_package(
     data = json.loads(out)
     assert code == 0
     assert data["pruefumfang"] == "paket"
-    assert data["paket"]["eingabe"] == "lokal"
-    assert data["bewertung"] is None
+    assert data["paket"]["quelle"] == "lokal"
+    assert data["paket"]["name"] == "skill"
+    # No analyzers yet: an incomplete scan never turns green, not even with a manifest.
+    assert data["ampeln"] == {"sicherheit": "gelb", "dsgvo": "gelb", "gesamt": "gelb"}
+    assert data["freigabe"] == "pruefung_noetig"
 
 
 def test_zip_json(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -72,9 +78,9 @@ def test_zip_json(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFixtu
     assert code == 0
     assert data["scan_art"] == "lokal"
     assert data["pruefumfang"] == "auswahl"
-    assert data["paket"]["eingabe"] == "zip"
-    assert data["paket"]["pakettyp"] == "gemischt"
+    assert data["paket"]["quelle"] == "zip"
     assert data["paket"]["dateien"] == 2
+    assert "Dateiauswahl ohne Manifest" in data["hinweise"]
     assert list(private_tmp.iterdir()) == []
 
 
@@ -85,7 +91,8 @@ def test_single_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None
     data = json.loads(out)
     assert code == 0
     assert data["pruefumfang"] == "einzeldatei"
-    assert data["paket"]["eingabe"] == "datei"
+    assert data["paket"]["quelle"] == "datei"
+    assert data["ampeln"]["dsgvo"] == "nicht_bewertet"
 
 
 def test_zip_slip_is_rejected(
@@ -180,4 +187,26 @@ def test_findings_are_printed_escaped(tmp_path: Path) -> None:
     assert "| Zeile\\u202e eins" in out
     assert "| Zeile zwei" in out
     assert "\x1b" not in out and "‮" not in out
-    assert "Hinweis: Es sind noch keine Prüfungen" not in out
+    assert "keine Prüfung eingebaut" not in out
+    assert "Sicherheit: Rot" in out
+    assert "Note:       85 von 100" in out
+
+
+class Clean:
+    def __init__(self) -> None:
+        from luibui_scan.analyzers import AnalyzerInfo
+
+        self.info = AnalyzerInfo(name="leer", titel="Leer", ebenen=frozenset({Ebene.B}))
+
+    def analyze(self, ctx: object) -> list[Finding]:
+        return []
+
+
+def test_green_wording_never_says_safe(tmp_path: Path) -> None:
+    (tmp_path / "SKILL.md").write_text("x")
+    (tmp_path / "luibui.json").write_text("{}")
+    registry = AnalyzerRegistry()
+    registry.add(Clean())
+    out = render_text(tmp_path, scan_prepared(tmp_path, Eingabe.LOKAL, ScanArt.LOKAL, registry))
+    assert "Gesamt:     Grün, keine bekannten Befunde, geprüft am " in out
+    assert "sicher" not in out.replace("Sicherheit", "")

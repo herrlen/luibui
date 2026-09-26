@@ -9,6 +9,7 @@ import json
 import shutil
 import tempfile
 import unicodedata
+from datetime import datetime
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -19,7 +20,9 @@ from luibui_scan.intake import (
     extract_zip,
 )
 from luibui_scan.models import Finding, Pruefumfang, ScanArt
+from luibui_scan.report import build_report, hinweise, sort_findings
 from luibui_scan.scan import Eingabe, ScanResult, scan_prepared
+from luibui_scan.scoring import AmpelDsgvo, AmpelSicherheit, Freigabe
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -29,6 +32,19 @@ _UMFANG = {
     Pruefumfang.PAKET: "Paket",
     Pruefumfang.AUSWAHL: "Dateiauswahl ohne Manifest (luibui.json fehlt)",
     Pruefumfang.EINZELDATEI: "Einzeldatei",
+}
+
+_AMPEL = {
+    "gruen": "Grün",
+    "gelb": "Gelb",
+    "rot": "Rot",
+    "gesperrt": "Gesperrt",
+    "nicht_bewertet": "nicht bewertet",
+}
+_FREIGABE = {
+    Freigabe.FREIGEGEBEN: "freigegeben",
+    Freigabe.PRUEFUNG_NOETIG: "Prüfung nötig",
+    Freigabe.BLOCKIERT: "blockiert",
 }
 
 EPILOG = """Rückgabewerte:
@@ -67,7 +83,8 @@ def run(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     if args.json:
-        json.dump(result_to_json(result), out, indent=2, ensure_ascii=True)
+        report = build_report(result, name=source.resolve().name or str(source))
+        json.dump(report, out, indent=2, ensure_ascii=True)
         out.write("\n")
     else:
         out.write(render_text(source, result))
@@ -145,19 +162,12 @@ def render_text(source: Path, result: ScanResult) -> str:
     lines.append("")
     if pipe.findings:
         lines.append(f"Befunde: {len(pipe.findings)}")
-        for finding in _sorted(pipe.findings):
+        for finding in sort_findings(pipe.findings):
             lines += _finding_lines(finding)
     else:
         lines.append("Befunde: keine")
     lines += ["", *_verdict_lines(result)]
     return "\n".join(lines) + "\n"
-
-
-_ORDER = {"K": 0, "H": 1, "M": 2, "N": 3, "I": 4}
-
-
-def _sorted(findings: list[Finding]) -> list[Finding]:
-    return sorted(findings, key=lambda f: (_ORDER[f.schwere.value], f.datei or "", f.zeile or 0))
 
 
 def _finding_lines(f: Finding) -> list[str]:
@@ -176,37 +186,20 @@ def _finding_lines(f: Finding) -> list[str]:
 
 
 def _verdict_lines(result: ScanResult) -> list[str]:
-    # Scoring arrives with S1-10. Until then nothing here may read like a pass.
-    lines = ["Bewertung: noch nicht verfügbar. Ampeln und Note folgen in einer späteren Version."]
-    if not result.pipeline.ran:
-        lines.append(
-            "Hinweis: Es sind noch keine Prüfungen eingebaut. Dieses Ergebnis sagt nichts "
-            "über die Sicherheit des Pakets aus."
-        )
+    b = result.bewertung
+    gesamt = _AMPEL[b.gesamt.value]
+    if b.gesamt is AmpelSicherheit.GRUEN:
+        heute = datetime.now().strftime("%d.%m.%Y")
+        gesamt += f", keine bekannten Befunde, geprüft am {heute}"
+    else:
+        gesamt += f", {_FREIGABE[b.freigabe]}"
+    lines = [
+        f"Sicherheit: {_AMPEL[b.sicherheit.value]}",
+        f"DSGVO:      {_AMPEL[b.dsgvo.value]}",
+        f"Gesamt:     {gesamt}",
+        f"Note:       {b.note} von 100",
+    ]
+    if b.dsgvo is AmpelDsgvo.NICHT_BEWERTET:
+        lines.append("            DSGVO wird nur bei einem Paket mit luibui.json bewertet.")
+    lines += [f"Hinweis: {h}" for h in hinweise(result)]
     return lines
-
-
-def result_to_json(result: ScanResult) -> dict[str, Any]:
-    inv = result.inventory
-    pipe = result.pipeline
-    return {
-        "scan_art": result.scan_art.value,
-        "pruefumfang": result.pruefumfang.value,
-        "paket": {
-            "eingabe": result.eingabe.value,
-            "dateien": len(inv.entries),
-            "bytes": inv.bytes,
-            "sha256": inv.sha256,
-            "pakettyp": inv.pakettyp.value,
-            "merkmale": list(inv.merkmale),
-            "sprachen": inv.sprachen,
-        },
-        "pruefungen": {
-            "gelaufen": pipe.ran,
-            "uebersprungen": [{"analyzer": s.analyzer, "grund": s.grund} for s in pipe.skipped],
-            "fehlgeschlagen": [{"analyzer": f.analyzer, "fehler": f.fehler} for f in pipe.failed],
-            "vollstaendig": pipe.complete,
-        },
-        "befunde": [f.to_json_dict() for f in _sorted(pipe.findings)],
-        "bewertung": None,
-    }

@@ -1,7 +1,7 @@
-"""One scan of a prepared scratch directory: inventory, context, pipeline.
+"""One scan of a prepared scratch directory: inventory, context, pipeline, scoring.
 
-Intake happens before (``luibui_scan.intake``), scoring after (S1-10). Shared by the CLI and,
-from S1-1 on, by the worker.
+Intake happens before (``luibui_scan.intake``). Shared by the CLI and, from S1-1 on, by the
+worker.
 """
 
 from dataclasses import dataclass
@@ -13,12 +13,13 @@ from luibui_scan.context import ScanContext
 from luibui_scan.inventory import Inventory, build_inventory
 from luibui_scan.models import Pruefumfang, ScanArt
 from luibui_scan.pipeline import PipelineResult, run_pipeline
+from luibui_scan.scoring import Bewertung, bewerte
 
 MANIFEST_NAME = "luibui.json"
 
 
 class Eingabe(StrEnum):
-    """How the package arrived (``report.schema.json``, ``paket.eingabe``)."""
+    """How the package arrived (``report.schema.json``, ``paket.quelle``)."""
 
     DATEI = "datei"
     AUSWAHL = "auswahl"
@@ -35,6 +36,7 @@ class ScanResult:
     pruefumfang: Pruefumfang
     inventory: Inventory
     pipeline: PipelineResult
+    bewertung: Bewertung
 
 
 def pruefumfang_for(eingabe: Eingabe, inventory: Inventory) -> Pruefumfang:
@@ -62,4 +64,13 @@ def scan_prepared(
         inventory=inventory.entries,
         pakettyp=inventory.pakettyp,
     )
-    return ScanResult(eingabe, scan_art, umfang, inventory, run_pipeline(ctx, registry))
+    pipeline = run_pipeline(ctx, registry)
+    bewertung = bewerte(
+        pipeline.findings,
+        pruefumfang=umfang,
+        # Presence decides the scope for now; validating luibui.json belongs to Ebene G.
+        has_manifest=umfang is Pruefumfang.PAKET,
+        # An analyzer failed or none ran: nothing may turn green.
+        complete=pipeline.complete and bool(pipeline.ran),
+    )
+    return ScanResult(eingabe, scan_art, umfang, inventory, pipeline, bewertung)

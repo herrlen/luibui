@@ -789,3 +789,24 @@ Weiterleitungen. Die Client-IP kommt auch über den Proxy richtig an: Next.js re
 - Aus Sprint 2 fehlen noch: Einzelprüfungen per Drag & Drop auf der Übersicht, 2FA-Einrichtung in der
   Oberfläche, Speicherverbrauch, Datenexport und Konto löschen (S2-10), Downloads CSV/JSON/SARIF
   (S2-12), Schnellscan per Datei (S2-13), die Analyzer C, E, G (S2-1 bis S2-5).
+
+## 2026-09-27 – S2-11: Startseite ohne Quellcode- und Katalog-Links, mit Zahlen und Prüfumfang
+
+**Was:** Auf Lens Anweisung sind „Quellcode“ und „Prüfkatalog“ aus dem Menü von luibui.com entfernt, dazu
+der GitHub-Link auf „So prüfen wir“. Das Repository soll wieder privat werden; die Seite verlinkt GitHub
+nirgends mehr (nur der Platzhalter im Git-Feld nennt `github.com/besitzer/skill`). Die Startseite zeigt
+nach dem Hero den Block „Mehr als jeder dritte KI-Skill hat eine Sicherheitslücke.“ mit drei Zahlen und
+Quellen (Snyk „ToxicSkills“ 2026; Endor Labs 2026) und eine knappe Übersicht „Was luibui prüft“: vier
+Paketarten mit je drei Beispielen, nur Prüfungen, die heute laufen. Der vollständige Katalog wird bewusst
+nicht öffentlich gezeigt.
+
+**Warum Wortlaut leicht angepasst:** 13,4 % sind „mehr als jeder achte“ (jeder achte wären 12,5 %). Endor
+Labs misst, dass 82 % der MCP-Implementierungen Dateizugriffe nutzen, die für Path Traversal anfällig sind,
+nicht dass 82 % nachweislich angreifbar sind; der Text sagt das so.
+
+**Offen:**
+- Im Footer steht weiter „Quellcode unter AGPL-3.0“. Wird das Repository privat, verlangt AGPL-3.0 §13
+  trotzdem, Nutzern des Netzdienstes den Quellcode anzubieten. Len entscheidet: Lizenz wechseln (solange
+  Len alleiniger Urheber ist, möglich) oder Quellcode auf Anfrage bereitstellen.
+- Teil C des Scanner-Abdeckungs-Prompts (öffentliche Seite `/pruefkatalog` mit voller Matrix) widerspricht
+  der neuen Vorgabe und wird nicht umgesetzt, solange Len es nicht anders sagt.

@@ -26,7 +26,7 @@ const ARTEN: [string, string[]][] = [
   ["Skills", ["Versteckte Anweisungen an das Sprachmodell", "Unsichtbare Unicode-Zeichen", "Links, über die Daten abfließen"]],
   ["Plugins", ["Hooks, die Befehle automatisch starten", "Installationsskripte", "Programmdateien ohne Quellcode"]],
   ["Tools", ["Zugangsdaten im Code", "Abhängigkeiten mit bekannten Lücken", "Pakete aus fremden Quellen"]],
-  ["MCP-Server", ["Startbefehle in der MCP-Konfiguration", "Namensverwechslungen bei Paketen", "Fehlende Lockfiles"]],
+  ["MCP-Server", ["Unsichtbare Zeichen in Tool-Beschreibungen", "Namensverwechslungen bei Paketen", "Fehlende Lockfiles"]],
 ];
 
 const AMPELN: [string, string][] = [

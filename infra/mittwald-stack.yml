@@ -50,6 +50,8 @@ services:
       LUIBUI_ACCESS_LOG: ${LUIBUI_ACCESS_LOG}
       # Registration, uploads and quick scans; scripts/release.sh keeps the deployed value.
       ANNAHME_OFFEN: ${ANNAHME_OFFEN}
+      # Contact form: sender mailbox noreply@luibui.com at mittwald, messages go to hallo@luibui.com.
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
     volumes:
       - luibui-projects:/projects
       - luibui-scratch:/scratch

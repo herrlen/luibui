@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 
 from luibui_api import errors
-from luibui_api.routes import auth, health, projects, quickscans, scans, tokens
+from luibui_api.routes import auth, health, kontakt, projects, quickscans, scans, tokens
 from luibui_api.settings import get_settings
 
 
@@ -23,4 +23,5 @@ def create_app() -> FastAPI:
     app.include_router(projects.router)
     app.include_router(scans.router)
     app.include_router(quickscans.router)
+    app.include_router(kontakt.router)
     return app

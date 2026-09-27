@@ -6,8 +6,8 @@
 #
 # Builds exactly the committed state (git archive HEAD), never the working tree. Secrets are read
 # from the running mittwald stack and handed to `mw` in a mode-600 temp file that is deleted
-# afterwards; nothing is printed. ANNAHME_OFFEN keeps its deployed value unless set in the
-# environment (ANNAHME_OFFEN=true scripts/release.sh).
+# afterwards; nothing is printed. ANNAHME_OFFEN and SMTP_PASSWORD keep their deployed values
+# unless set in the environment (ANNAHME_OFFEN=true scripts/release.sh).
 #
 # Needs: Docker Desktop (context desktop-linux), gh (token with write:packages), mw, jq, uv,
 # pnpm. Optional for the full test set: LUIBUI_GITLEAKS, LUIBUI_OSV_SCANNER, LUIBUI_OSV_DB.
@@ -91,14 +91,17 @@ PG="$(env_of postgres POSTGRES_PASSWORD)"
 MK="$(env_of api MASTER_KEY)"
 [[ -n "$PG" && -n "$MK" ]] || fehler "Secrets aus dem laufenden Stack nicht lesbar"
 ANNAHME="${ANNAHME_OFFEN:-$(env_of api ANNAHME_OFFEN)}"
+SMTP="${SMTP_PASSWORD:-$(env_of api SMTP_PASSWORD)}"
+[[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt, das Kontaktformular antwortet mit 503"
 {
   printf 'POSTGRES_PASSWORD=%s\n' "$PG"
   printf 'MASTER_KEY=%s\n' "$MK"
   printf 'IMAGE_TAG=%s\n' "$TAG"
   printf 'LUIBUI_ACCESS_LOG=0\n'
   printf 'ANNAHME_OFFEN=%s\n' "${ANNAHME:-false}"
+  printf 'SMTP_PASSWORD=%s\n' "$SMTP"
 } >"$ENVFILE"
-unset STATE PG MK
+unset STATE PG MK SMTP
 echo "Annahme offen: ${ANNAHME:-false}"
 mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" 2>&1 | grep -E "SUCCESS|rror" || true
 

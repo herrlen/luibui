@@ -20,6 +20,8 @@ export function Impressum() {
         <p>
           E-Mail: <a href={`mailto:${KONTAKT}`}>{KONTAKT}</a>
           <br />
+          Zweiter Kontaktweg: <a href="/kontakt">Kontaktformular</a>
+          <br />
           Postanschrift: siehe oben
         </p>
         <p>Eine Telefonnummer wird nicht vorgehalten. Anfragen beantworten wir schriftlich, in der Regel innerhalb von zwei Werktagen.</p>

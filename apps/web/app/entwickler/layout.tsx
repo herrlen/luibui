@@ -31,6 +31,9 @@ export default function EntwicklerLayout({ children }: { children: ReactNode }) 
           <Link href="/datenschutz" className="hover:text-petrol">
             Datenschutz
           </Link>
+          <Link href="/kontakt" className="hover:text-petrol">
+            Kontakt
+          </Link>
         </nav>
       </footer>
     </>

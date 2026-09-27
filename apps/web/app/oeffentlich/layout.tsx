@@ -68,6 +68,9 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
               <Link href="/datenschutz" className="text-ink-2 hover:text-petrol">
                 Datenschutz
               </Link>
+              <Link href="/kontakt" className="text-ink-2 hover:text-petrol">
+                Kontakt
+              </Link>
             </div>
           </div>
           <p className="text-[13px] text-muted">Gehostet in Deutschland</p>

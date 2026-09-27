@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""
     bearer_only_hosts: frozenset[str] = frozenset({"api.luibui.com"})
     """Hosts that accept only Bearer tokens; session cookies are ignored there (rule 11)."""
+    smtp_host: str = "mail.agenturserver.de"
+    smtp_port: int = 587
+    smtp_user: str = "noreply@luibui.com"
+    smtp_password: SecretStr | None = None
+    """Without it the contact form answers 503 and names the e-mail address instead."""
+    kontakt_an: str = "hallo@luibui.com"
+    kontakt_pro_ip_und_stunde: int = 5
     session_days: int = 14
     session_cookie_secure: bool = True
     login_max_attempts: int = 10

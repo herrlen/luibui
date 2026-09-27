@@ -73,6 +73,17 @@ export function Datenschutz() {
       </section>
 
       <section>
+        <h2>4a. Kontaktformular</h2>
+        <p>
+          Was du ins Kontaktformular schreibst (Name, freiwillig; E-Mail-Adresse für die Antwort; Nachricht), schicken
+          wir per E-Mail an unser Postfach {mail}. luibui selbst speichert die Nachricht nicht. Im Postfach bleibt sie,
+          bis die Anfrage erledigt ist. Grundlage: die Bearbeitung deiner Anfrage (Art. 6 Abs. 1 lit. b DSGVO) und
+          unser berechtigtes Interesse, Anfragen zu beantworten (Art. 6 Abs. 1 lit. f DSGVO). Gegen massenhafte
+          Nachrichten zählen wir pro IP-Adresse höchstens fünf Nachrichten pro Stunde, nur im Arbeitsspeicher.
+        </p>
+      </section>
+
+      <section>
         <h2>5. Konto im Entwicklerbereich</h2>
         <p>
           Mit der Registrierung entsteht ein Konto. Grundlage ist die Erfüllung des Nutzungsverhältnisses (Art. 6 Abs.
@@ -142,6 +153,7 @@ export function Datenschutz() {
             ["Sitzung", "14 Tage oder bis du dich abmeldest."],
             ["API-Token", "Bis du es widerrufst."],
             ["IP-Adresse für die Missbrauchsgrenze", "Höchstens 24 Stunden, nur im Arbeitsspeicher."],
+            ["Nachricht über das Kontaktformular", "Bei luibui gar nicht; im Postfach, bis die Anfrage erledigt ist."],
             [
               "Aktionsprotokoll",
               "Metadaten zu Aktionen wie Registrierung, Anmeldung, Anlegen oder Löschen eines Projekts, Start einer Prüfung und Erstellen eines Tokens, ohne Inhalte. Es dient der Sicherheit (Art. 6 Abs. 1 lit. f DSGVO). Wird das Konto gelöscht, verlieren die Einträge den Bezug zu dir.",
@@ -167,9 +179,9 @@ export function Datenschutz() {
       <section>
         <h2>9. Empfänger</h2>
         <p>
-          Website, Entwicklerbereich, Datenbank und Dateiablage werden bei der Mittwald CM Service GmbH &amp; Co. KG,
+          Website, Entwicklerbereich, Datenbank, Dateiablage und Postfach werden bei der Mittwald CM Service GmbH &amp; Co. KG,
           Königsberger Straße 4–6, 32339 Espelkamp, betrieben. Das Unternehmen ist als Auftragsverarbeiter nach Art. 28
-          DSGVO tätig. Die Server stehen in Deutschland.
+          DSGVO tätig; ein entsprechender Vertrag besteht. Die Server stehen in Deutschland.
         </p>
         <p>Eine Weitergabe deiner Daten an weitere Dritte findet nicht statt. Wir verkaufen keine Daten.</p>
       </section>

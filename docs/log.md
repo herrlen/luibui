@@ -851,3 +851,14 @@ Zwischenstand (Skript-Muster zu weit, `conftest.py` mit `subprocess`) vor dem Co
 - MAL-01: Hash-Liste ist leer, YARA/ClamAV erst S4-10.
 - `docs/scanner-abdeckung.md` und `docs/luibui_Scanner-Matrix.md` liegen nur lokal, weil das
   Repository öffentlich ist und beide die Lücken der Prüfung genau benennen (Len).
+
+## 2026-09-27 – Ausgerollt: Scanner-Matrix Teil B und neues Design der Startseite
+
+**Was:** `f9d4f64` in Produktion. luibui.com im Stil des Entwurfs aus `docs/design/Startseite`
+(Kopf mit Logo, Hero mit Chips, Zahlenblock hell ohne Quellen, KI-Kacheln, Schritte, Ampel- und
+Entwicklerbereichs-Karte, vierspaltiger Fuß). Inhalte des Entwurfs, die es noch nicht gibt
+(Register, Suche, Spenden, Terminal, weitere Menüpunkte), sind bewusst nicht übernommen.
+„So prüfen wir“ und die Beispiele auf der Startseite nennen die neuen Prüfungen.
+
+**Geprüft:** CI grün, Health ok, Logs ohne Fehler, Screenshots bei 1440 px und 375 px (keine
+horizontale Scrollbreite, per DevTools-Emulation gemessen).

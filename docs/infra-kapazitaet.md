@@ -168,3 +168,9 @@ mittwald-Container, kein vServer.** Ein eigener Server wird nötig:
 
 Vorher lohnt die Optimierung von `b_muster` (Parallelisierung auf die verfügbaren Kerne, bringt höchstens
 Faktor 1,5; Vorfilter je Regel) im Benchmark S3-6. Die endgültige Entscheidung trifft Len.
+
+## Nach Deploy `f9d4f64` (27.09.2026, Scanner-Matrix Teil B und neues Design)
+
+Leerlauf direkt nach dem Start (cgroup `memory.current`): api 75 MiB, worker 57 MiB, web 147 MiB.
+Keine neuen Werkzeuge im Worker; die neuen Prüfungen sind Python-Code im selben Prozess. Eine
+Messung unter Last folgt mit dem nächsten echten Intensivscan (Annahme ist noch zu).

@@ -56,5 +56,5 @@ melden, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.
 
 ## Lizenz
 
-AGPL-3.0, siehe [LICENSE](LICENSE). Für `rules/` und `packages/engine` ist MIT vorgeschlagen,
-aber noch nicht freigegeben. Bis dahin gilt auch dort AGPL-3.0.
+Proprietär, alle Rechte vorbehalten, siehe [LICENSE](LICENSE). Werke Dritter behalten ihre Lizenz,
+siehe [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

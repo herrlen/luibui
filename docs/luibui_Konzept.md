@@ -1,6 +1,6 @@
 # luibui – Konzept v2: Prüfstelle und Register für KI-Skills, Plugins und MCP-Server
 
-> Stand: 26.09.2026 · Owner: Len · Domain: **luibui.com** · Lizenz: **AGPL-3.0**
+> Stand: 26.09.2026 · Owner: Len · Domain: **luibui.com** · Lizenz: **proprietär** (seit 27.09.2026, vorher AGPL-3.0)
 > Hosting: mittwald, Projekt `p-yw5cv5` · Ausrichtung wie lensuh.de: offen, kostenlos, nicht-kommerziell, spendenfinanziert
 > Gehört zusammen mit: `luibui_Sprintplanung.md`, `luibui_Pruefkatalog.md`, `CLAUDE.md`
 
@@ -18,7 +18,7 @@ Jeder lädt ein Projekt hoch oder gibt eine Git-URL an. luibui prüft es auf Sic
 1. **Prüfen, bevor man installiert.** Jedes Projekt, egal ob eigenes oder fremdes, bekommt einen nachvollziehbaren Bericht.
 2. **Zwei Ampeln:** Sicherheit und DSGVO. Dazu eine Gesamtbewertung.
 3. **Ehrlich:** „Keine bekannten Befunde, geprüft am …“, nie „sicher“.
-4. **Offen:** Regeln, Engine und Bericht-Format sind Open Source. Die Community kann Regeln ergänzen.
+4. **Nachvollziehbar:** Jeder Befund nennt Regel, Beleg und Fix; „So prüfen wir“ erklärt das Vorgehen. Quellcode, Regeln und vollständiger Prüfkatalog sind nicht öffentlich (Entscheidung Len, 27.09.2026).
 5. **Eigener Bereich:** Jeder Entwickler hat auf app.luibui.com seinen privaten Bereich mit Projekten, Dateien und dem Verlauf seiner Prüfungen.
 6. **In Deutschland:** Hosting bei mittwald, keine US-Dienste, Dateien verschlüsselt und nur für den Eigentümer sichtbar.
 
@@ -339,8 +339,8 @@ Kostenlos, Spenden für Server und Domains, Transparenzbericht.
 ## 13. Entscheidungen
 
 - [x] luibui = Prüfstelle zuerst, Register danach
-- [x] AGPL-3.0 für die Plattform
-- [ ] Vorschlag: MIT für `rules/` und die `luibui-scan`-Engine, damit Regeln und Engine auch in andere Tools und CI-Pipelines einfließen können
+- [x] ~~AGPL-3.0 für die Plattform~~ → seit 27.09.2026 proprietär, Quellcode nicht öffentlich, Repository privat (Len)
+- [x] ~~Vorschlag: MIT für `rules/` und die `luibui-scan`-Engine~~ → entfällt mit dem Lizenzwechsel
 - [x] Zwei Achsen: Sicherheit und DSGVO, Gesamt = schlechtere
 - [x] Eigener Entwicklerbereich auf app.luibui.com mit Projekten, Dateien und Auswertungen
 - [x] Dateien verschlüsselt gespeichert, nur für den Eigentümer; Option „nach Prüfung löschen“; Schnellscan ohne Speicherung

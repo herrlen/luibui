@@ -862,3 +862,28 @@ Entwicklerbereichs-Karte, vierspaltiger Fuß). Inhalte des Entwurfs, die es noch
 
 **Geprüft:** CI grün, Health ok, Logs ohne Fehler, Screenshots bei 1440 px und 375 px (keine
 horizontale Scrollbreite, per DevTools-Emulation gemessen).
+
+## 2026-09-27 – Lizenzwechsel: proprietär statt AGPL-3.0
+
+**Was:** Auf Lens Entscheidung steht luibui ab sofort unter einer proprietären Lizenz („Alle Rechte
+vorbehalten“, `LICENSE`). Angepasst: Paketangaben (`LicenseRef-Proprietary`, Web `UNLICENSED`),
+README, `rules/README.md`, Engine-README, CONTRIBUTING (Beiträge nur nach Absprache, Rechte gehen an
+den Rechteinhaber), Konzept §1 und §13, Sprintplanung, `docs/scanner-tools.md`, CLAUDE.md. Im Footer
+von luibui.com fällt „Quellcode unter AGPL-3.0“ weg, aus „Offene … Prüfstelle“ wird „Nicht-kommerzielle
+Prüfstelle“. Der Entwurf in `docs/design/` bleibt als Entwurf unverändert.
+
+**Warum möglich:** Len ist laut Git-Historie einziger Urheber (alle Commits). Fremde Werke (ATR-Regeln,
+MIT) behalten ihre Lizenz und stehen in `THIRD_PARTY_NOTICES.md`.
+
+**Grenzen:** Wer den öffentlichen Stand bis heute geklont hat, darf ihn weiter unter AGPL-3.0 nutzen;
+das lässt sich nicht zurücknehmen. Neue Stände sind proprietär.
+
+**Offen (Len):**
+- Repository auf GitHub privat stellen (Settings → General → Danger Zone → Change visibility).
+- Container-Images auf ghcr.io privat stellen. Sie enthalten den Python-Quellcode; öffentlich wären
+  sie Weitergabe. Danach braucht mittwald Zugangsdaten für ghcr.io (Registry im Projekt anlegen, Token
+  mit `read:packages`), sonst schlägt der nächste Deploy beim Image-Pull fehl.
+- Private Repositories haben begrenzte kostenlose Actions-Minuten (Free: 2.000 min/Monat). Die CI
+  braucht je Lauf einige Minuten über mehrere Jobs; bei vielen Pushes pro Tag kann das Kontingent
+  knapp werden. Nichts wird gebucht.
+- Nutzungsbedingungen für die CLI `luibui` (wird an Nutzer ausgeliefert) mit dem Anwalt klären.

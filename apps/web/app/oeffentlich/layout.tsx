@@ -45,9 +45,8 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
             <div className="flex flex-col gap-2.5">
               <span className="font-display text-[22px] font-bold tracking-[-0.02em]">luibui</span>
               <span className="leading-[1.55] text-muted">
-                Offene, nicht-kommerzielle Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server.
+                Nicht-kommerzielle Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server.
               </span>
-              <span className="text-muted">Quellcode unter AGPL-3.0</span>
             </div>
             <div className="flex flex-col gap-2.5">
               <span className="font-semibold">Prüfen</span>

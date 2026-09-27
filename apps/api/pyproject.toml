@@ -3,7 +3,7 @@ name = "luibui-api"
 version = "0.1.0"
 description = "luibui API: auth, projects, encrypted file storage, intake, reports, registry"
 requires-python = ">=3.12"
-license = "AGPL-3.0-only"
+license = "LicenseRef-Proprietary"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",

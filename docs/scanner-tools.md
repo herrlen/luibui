@@ -4,11 +4,18 @@ Stand: **2026-09-26**. Die Angaben beschreiben den Stand an diesem Tag und müss
 
 **Methode:** Wir haben ausschließlich Primärquellen gelesen: GitHub-Repositories, LICENSE-Dateien (direkt aus dem Repository, nicht nur den GitHub-Lizenz-Badge), Release-Seiten über die GitHub-API, PyPI-Metadaten, offizielle Dokumentation und die Debian-Paketquellen (sources.debian.org). Kein Werkzeug wurde installiert oder ausgeführt. Versionsnummern und Daten stammen aus der GitHub-Releases-API bzw. der PyPI-JSON-API. Alles, was sich nur aus Sekundärquellen oder gar nicht belegen ließ, ist als **„nicht verifiziert“** gekennzeichnet. RAM-Angaben ohne Herstellerquelle sind Schätzungen und ebenfalls so markiert.
 
-Zielumgebung: Docker-Worker auf Basis von `python:3.12-slim`. Laut `docker-library/python` (versions.json) ist das derzeit Python 3.12.14 auf **Debian 13 „trixie“**. Die Scanner laufen dort ohne Netzwerkzugriff (Sicherheitsregel 5 in `CLAUDE.md`). Die Plattform steht unter AGPL-3.0.
+Zielumgebung: Docker-Worker auf Basis von `python:3.12-slim`. Laut `docker-library/python` (versions.json) ist das derzeit Python 3.12.14 auf **Debian 13 „trixie“**. Die Scanner laufen dort ohne Netzwerkzugriff (Sicherheitsregel 5 in `CLAUDE.md`). Die Plattform stand bis 27.09.2026 unter AGPL-3.0 und ist seitdem proprietär.
 
 ---
 
-## Lizenz-Warnungen für einen AGPL-Onlinedienst (zuerst lesen)
+## Lizenz-Warnungen für den Onlinedienst (zuerst lesen)
+
+> **Seit dem Lizenzwechsel (27.09.2026, proprietär):** Fremde Werkzeuge laufen weiter nur als eigene
+> Prozesse, nie als eingebundene Bibliothek. Copyleft-Werkzeuge (GPL, z. B. ClamAV) sind damit
+> unproblematisch, solange wir die Images nicht an Dritte weitergeben. Die Images auf ghcr.io müssen
+> deshalb privat sein; öffentliche Images wären Weitergabe (und enthielten den Quellcode). Die
+> Warnungen unten zu AGPL-Kompatibilität sind damit gegenstandslos, die zu Semgrep, Opengrep und
+> ATR gelten unverändert.
 
 > **BLOCKER – Semgrep-Registry-Regeln (`semgrep/semgrep-rules`, `p/…`-Regelsätze):** Die Regeln stehen unter der *Semgrep Rules License v1.0*. Dort heißt es wörtlich: *„You may use the rules only for your own internal business purposes. This license does not allow you to distribute the rules, or to make them available to others as a service.“* Eine öffentliche Prüfstelle, die Uploads Dritter mit diesen Regeln prüft, stellt sie „als Dienst“ bereit. **Nicht verwenden**, auch nicht über Opengrep. Das gilt unabhängig davon, dass luibui nicht kommerziell ist.
 >

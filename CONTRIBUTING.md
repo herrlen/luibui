@@ -1,7 +1,8 @@
 # Mitwirken an luibui
 
-Danke, dass du helfen willst. luibui ist ein nicht-kommerzielles Projekt. Die wertvollsten Beiträge
-sind neue Prüfregeln, Testfälle und gemeldete Fehlalarme.
+luibui ist ein nicht-kommerzielles Projekt unter proprietärer Lizenz (siehe `LICENSE`). Beiträge
+von außen nur nach Absprache mit Len; die Rechte an Beiträgen gehen dabei an den Rechteinhaber über.
+Die wertvollsten Beiträge sind neue Prüfregeln, Testfälle und gemeldete Fehlalarme.
 
 ## Grundregeln
 

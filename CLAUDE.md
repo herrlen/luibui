@@ -1,7 +1,7 @@
 # CLAUDE.md – luibui
 
 ## Was wir bauen
-luibui ist eine offene, nicht-kommerzielle **Prüfstelle und Register für KI-Skills, Plugins, Tools und MCP-Server**.
+luibui ist eine nicht-kommerzielle **Prüfstelle und Register für KI-Skills, Plugins, Tools und MCP-Server**.
 Nutzer laden eine einzelne Datei, mehrere Dateien, einen Ordner, ein ZIP oder eingefügten Text hoch, verbinden ein
 Git-Repository oder prüfen lokal mit `luibui scan`. Sie bekommen
 einen Bericht mit zwei Ampeln (Sicherheit, DSGVO), einer Gesamtbewertung und einer Note von 0 bis 100.
@@ -95,8 +95,10 @@ Jeder Upload ist potenziell feindlich. Die Prüfstelle darf nie selbst zum Angri
   Anfrage würde die API leicht überlastbar machen).
 
 ## Infrastruktur
-- Code: GitHub `herrlen/luibui` (**öffentlich** seit 2026-09-27), https://github.com/herrlen/luibui, Standardzweig `main`.
-  Alles im Repo ist für alle lesbar: keine Secrets, keine Kundendaten, keine internen Dokumente anderer Projekte.
+- Code: GitHub `herrlen/luibui`, https://github.com/herrlen/luibui, Standardzweig `main`. Lizenz **proprietär**
+  (seit 2026-09-27, vorher AGPL-3.0); das Repository wird privat gestellt (Len). Die öffentliche Historie bis dahin
+  bleibt bei allen, die sie geklont haben: weiter keine Secrets, keine Kundendaten, keine internen Dokumente
+  anderer Projekte ins Repo. Die Oberfläche verlinkt weder Quellcode noch Prüfkatalog.
 - Deployment über den mittwald-MCP-Server, falls in dieser Claude-Code-Umgebung eingerichtet, sonst `mw` CLI oder GitHub Action.
 - Nie etwas Kostenpflichtiges buchen. Buchungen macht Len.
 - Nach jedem Deploy: Health prüfen, Container-Logs ansehen, RAM-Verbrauch in `docs/infra-kapazitaet.md` notieren.

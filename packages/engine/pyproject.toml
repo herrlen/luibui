@@ -4,8 +4,7 @@ version = "0.1.0"
 description = "luibui scan engine: pipeline, analyzers, scoring and report for AI skills, plugins and MCP servers"
 readme = "README.md"
 requires-python = ">=3.12"
-# TODO: switch to MIT once Len approves (Konzept §13)
-license = "AGPL-3.0-only"
+license = "LicenseRef-Proprietary"
 dependencies = [
     "pydantic>=2.9,<3",
     "pyyaml>=6.0.3",

@@ -1,6 +1,6 @@
 # luibui – Sprintplanung v2: Prüfstelle zuerst, Register danach
 
-> Stand: 26.09.2026 · Owner: Len · Domain: **luibui.com** · Lizenz: **AGPL-3.0**
+> Stand: 26.09.2026 · Owner: Len · Domain: **luibui.com** · Lizenz: **proprietär** (seit 27.09.2026)
 > Grundlage: `luibui_Konzept.md` (v2), `luibui_Pruefkatalog.md` · Prompts: `luibui_ClaudeCode_Prompts.md`
 > **Öffentliche Beta der Prüfstelle: 20.11.2026** · Register: Dezember · Sandbox: Januar 2027
 
@@ -46,7 +46,7 @@
 | Sprintlänge | 2 Wochen (Sprint 0: 1 Woche) · Pause 21.12.2026 – 01.01.2027 |
 | Stack | Next.js 15 · FastAPI · PostgreSQL 17 · Python 3.12 Engine `luibui-scan` · CLI `luibui` |
 | Deployment | Docker Compose über mittwald (MCP oder `mw` CLI), GitHub Actions |
-| Repo | öffentlich, AGPL-3.0; `rules/` und `packages/engine` Vorschlag MIT |
+| Repo | privat, proprietär (seit 27.09.2026, vorher öffentlich unter AGPL-3.0) |
 
 ### Rituale
 - **Montag (30 min):** Sprint-Prompt in Claude Code einfügen, Tasks in GitHub Projects
@@ -319,8 +319,7 @@ Läuft auf einem **eigenen vServer** (gVisor oder nsjail nötig).
 - [x] Zwei Achsen, Gesamt = schlechtere
 - [x] Eigener Entwicklerbereich auf app.luibui.com, Dateien verschlüsselt, nur für den Eigentümer
 - [ ] Kontingent 500 MB / 10 Versionen (Vorschlag)
-- [x] AGPL-3.0 für die Plattform
-- [ ] MIT für `rules/` und Engine (Vorschlag)
+- [x] Proprietäre Lizenz, Repository privat (27.09.2026; vorher AGPL-3.0, MIT-Vorschlag entfällt)
 - [ ] Eigener vServer für den Worker (bis 16.10.)
 - [ ] Anwalt (bis 09.10.)
 - [ ] AI-Hosting-Tarif (bis 30.10.)

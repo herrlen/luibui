@@ -5,5 +5,6 @@ einen negativen Testfall. Regel-IDs: `LB-<Prüfkatalog-ID>-<kurzname>`.
 
 Die ersten Regeln entstehen in Sprint 1.
 
-**Lizenz:** vorerst AGPL-3.0 wie das übrige Repository (siehe `../LICENSE`).
+**Lizenz:** proprietär wie das übrige Repository (siehe `../LICENSE`). Übernommene Regeln in
+`external/` behalten ihre eigene Lizenz.
 TODO: auf MIT umstellen, sobald Len die Entscheidung freigegeben hat (Konzept §13).

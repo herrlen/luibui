@@ -5,207 +5,23 @@ disguised file types, archives, known malware, hidden files, symlinks and submod
 settings that redirect package sources. Content is only read and matched, never interpreted.
 """
 
-import json
-import os
 import re
 from collections.abc import Iterator
-from pathlib import Path, PurePosixPath
-from typing import Any
+from pathlib import PurePosixPath
 
-from luibui_scan.analyzers._common import finding, read_bytes, visible
+from luibui_scan.analyzers._a_ausfuehrung import _a02, _a03
+from luibui_scan.analyzers._a_herkunft import _a10, _a11, _a12
+from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.inventory import EXECUTABLE_KINDS
 from luibui_scan.models import Ebene, Finding, Schwere
 
+__all__ = ["MAX_PER_RULE", "DateienAnalyzer", "known_malware", "rules_dir"]
+
 MAX_PER_RULE = 20
 """At most this many findings per rule; the rest is summed up in the last one."""
-
-_DANGEROUS_COMMAND = re.compile(
-    r"(curl|wget|invoke-webrequest|iwr|irm)\b[^\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b"
-    r"|\b(curl|wget)\b[^\n]*(-o|--output|>)\s*\S+[^\n]*(&&|;)\s*(sh|bash|chmod|\./)"
-    r"|base64\s+(-d|--decode)|\beval\b|\bnc\s+-e\b|/dev/tcp/|python[0-9.]*\s+-c\b"
-    r"|node\s+-e\b|powershell[^\n]*-enc",
-    re.IGNORECASE,
-)
-_INSTALL_HOOKS = ("preinstall", "install", "postinstall")
-
-
-def _text(ctx: ScanContext, entry: InventoryEntry, limit: int = 1024 * 1024) -> str:
-    return read_bytes(ctx, entry, limit).decode("utf-8", errors="replace")
-
-
-def _json(ctx: ScanContext, entry: InventoryEntry) -> Any:
-    try:
-        return json.loads(_text(ctx, entry))
-    except (ValueError, RecursionError):
-        return None
-
-
-def _name(entry: InventoryEntry) -> str:
-    return PurePosixPath(entry.path).name
-
-
-# --- A02 autostart ---------------------------------------------------------------------------
-
-
-def _commands(obj: Any) -> Iterator[str]:
-    """Every string value stored under a key named 'command' (hooks, tasks)."""
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if key in ("command", "args") and isinstance(value, str):
-                yield value
-            elif key == "args" and isinstance(value, list):
-                yield " ".join(str(v) for v in value)
-            else:
-                yield from _commands(value)
-    elif isinstance(obj, list):
-        for item in obj:
-            yield from _commands(item)
-
-
-def _autostart(
-    entry: InventoryEntry, art: str, commands: list[str], erklaerung: str
-) -> Finding | None:
-    if not commands:
-        return None
-    dangerous = [c for c in commands if _DANGEROUS_COMMAND.search(c)]
-    shown = dangerous[0] if dangerous else commands[0]
-    return finding(
-        rule_id=f"LB-A02-{art}",
-        ebene=Ebene.A,
-        schwere=Schwere.K if dangerous else Schwere.H,
-        titel=(
-            "Automatisch startender Befehl lädt Code nach oder verschleiert ihn"
-            if dangerous
-            else "Befehle, die ohne Zutun des Nutzers laufen"
-        ),
-        erklaerung=erklaerung
-        + (
-            " Mindestens ein Befehl lädt etwas herunter und führt es aus oder dekodiert Code."
-            if dangerous
-            else " Prüfe, ob jeder dieser Befehle nötig und harmlos ist."
-        ),
-        datei=entry.path,
-        zeile=None,
-        beleg=visible(shown, 300),
-        fix="Automatisch laufende Befehle entfernen oder auf ein lokales Skript beschränken.",
-        fix_prompt=(
-            f"Prüfe in {entry.path} jeden automatisch ausgeführten Befehl. Entferne Befehle, die "
-            "etwas herunterladen, dekodieren oder außerhalb des Projekts schreiben."
-        ),
-        normbezug=("OWASP-ASI05", "OWASP-LLM03"),
-    )
-
-
-def _a02(ctx: ScanContext) -> Iterator[Finding]:
-    for entry in ctx.inventory:
-        path = entry.path.lower()
-        name = _name(entry).lower()
-        f: Finding | None = None
-        if path.endswith((".claude/settings.json", ".claude/settings.local.json")) or (
-            name == "hooks.json"
-        ):
-            data = _json(ctx, entry)
-            hooks = data.get("hooks") if isinstance(data, dict) else None
-            f = _autostart(
-                entry,
-                "claude-hooks",
-                list(_commands(hooks)),
-                "Hooks von Claude Code führen Befehle bei Ereignissen automatisch aus, etwa bei "
-                "jedem Tool-Aufruf oder Sitzungsstart.",
-            )
-        elif path.endswith(".vscode/tasks.json"):
-            data = _json(ctx, entry)
-            tasks = data.get("tasks", []) if isinstance(data, dict) else []
-            auto = [
-                t
-                for t in tasks
-                if isinstance(t, dict)
-                and isinstance(t.get("runOptions"), dict)
-                and t["runOptions"].get("runOn") == "folderOpen"
-            ]
-            f = _autostart(
-                entry,
-                "vscode-folderopen",
-                list(_commands(auto)),
-                "Diese VS-Code-Aufgaben starten beim Öffnen des Ordners von selbst.",
-            )
-        elif name == "package.json":
-            data = _json(ctx, entry)
-            scripts = data.get("scripts", {}) if isinstance(data, dict) else {}
-            if isinstance(scripts, dict):
-                cmds = [str(scripts[h]) for h in _INSTALL_HOOKS if isinstance(scripts.get(h), str)]
-                f = _autostart(
-                    entry,
-                    "npm-install-skript",
-                    cmds,
-                    "npm führt `preinstall`, `install` und `postinstall` bei der Installation "
-                    "automatisch aus.",
-                )
-        elif path.startswith(".git/hooks/") or "/.git/hooks/" in path:
-            if not name.endswith(".sample"):
-                f = _autostart(
-                    entry,
-                    "git-hook",
-                    [_text(ctx, entry, 4096)],
-                    "Git-Hooks laufen bei Git-Befehlen automatisch.",
-                )
-        elif name == ".envrc":
-            f = _autostart(
-                entry,
-                "envrc",
-                [_text(ctx, entry, 4096)],
-                "direnv führt `.envrc` beim Betreten des Ordners aus, sobald es erlaubt wurde.",
-            )
-            if f is not None and f.schwere is Schwere.H:
-                f = f.model_copy(update={"schwere": Schwere.M})
-        if f is not None:
-            yield f
-
-
-# --- A03 install scripts ---------------------------------------------------------------------
-
-_INSTALL_NAMES = re.compile(r"^(install|setup|bootstrap|get)[-_.]?\w*\.(sh|ps1|bash|bat|cmd)$")
-_SETUP_PY_RISK = re.compile(
-    r"\b(subprocess|os\.system|os\.popen|urllib\.request|urlopen|requests\.(get|post)|"
-    r"socket\.|exec\(|eval\()"
-)
-
-
-def _a03(ctx: ScanContext) -> Iterator[Finding]:
-    for entry in ctx.inventory:
-        name = _name(entry).lower()
-        if entry.kind not in ("text", "script"):
-            continue
-        hit: str | None = None
-        if name == "setup.py":
-            m = _SETUP_PY_RISK.search(_text(ctx, entry))
-            hit = m.group(0) if m else None
-        elif _INSTALL_NAMES.match(name) or name == "makefile":
-            m = _DANGEROUS_COMMAND.search(_text(ctx, entry))
-            hit = m.group(0) if m else None
-        if hit:
-            yield finding(
-                rule_id="LB-A03-installationsskript",
-                ebene=Ebene.A,
-                schwere=Schwere.H,
-                titel="Installationsskript lädt nach oder startet Prozesse",
-                erklaerung=(
-                    "Das Skript läuft bei der Installation und lädt Code aus dem Netz oder startet "
-                    "Prozesse. Was es nachlädt, ist nicht Teil der Prüfung."
-                ),
-                datei=entry.path,
-                zeile=None,
-                beleg=visible(hit),
-                fix="Abhängigkeiten über den Paketmanager mit Lockfile beziehen, nichts nachladen.",
-                fix_prompt=(
-                    f"Ersetze in {entry.path} das Herunterladen und Ausführen durch "
-                    "festgelegte Abhängigkeiten im Paketmanager."
-                ),
-                normbezug=("OWASP-ASI05", "OWASP-LLM03"),
-            )
 
 
 # --- A04 binaries, A05 disguised types, A06 compiled code, A07 archives ----------------------
@@ -387,15 +203,6 @@ def _a06(entry: InventoryEntry, titel: str) -> Finding:
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
-def rules_dir() -> Path:
-    """``LUIBUI_RULES_DIR``, else the repository's ``rules/`` (development), else ``/rules``."""
-    env = os.environ.get("LUIBUI_RULES_DIR")
-    if env:
-        return Path(env)
-    repo = Path(__file__).resolve().parents[4] / "rules"
-    return repo if repo.is_dir() else Path("/rules")
-
-
 def known_malware() -> frozenset[str]:
     path = rules_dir() / "data" / "schadsoftware-sha256.txt"
     try:
@@ -533,116 +340,6 @@ def _a09(ctx: ScanContext) -> Iterator[Finding]:
             fix_prompt="Prüfe die versteckten Dateien und entferne, was nicht gebraucht wird.",
             normbezug=(),
         )
-
-
-# --- A10 Git symlinks, A11 submodules ------------------------------------------------------
-
-
-def _a10(ctx: ScanContext) -> Iterator[Finding]:
-    by_path = {e.path: e for e in ctx.inventory}
-    for path in ctx.options.get("git_symlinks", []):
-        entry = by_path.get(path)
-        if entry is None:
-            continue
-        target = _text(ctx, entry, 1024).strip()
-        resolved = os.path.normpath(os.path.join(os.path.dirname(path), target))
-        if target.startswith("/") or resolved == ".." or resolved.startswith("../"):
-            yield finding(
-                rule_id="LB-A10-symlink-nach-aussen",
-                ebene=Ebene.A,
-                schwere=Schwere.M,
-                titel="Verknüpfung zeigt aus dem Paket heraus",
-                erklaerung=(
-                    "Im Repository ist diese Datei eine Verknüpfung auf ein Ziel außerhalb des "
-                    "Pakets. Beim Installieren kann sie auf Dateien des Nutzers zeigen. luibui hat "
-                    "sie nur als Text mit dem Ziel übernommen."
-                ),
-                datei=path,
-                zeile=None,
-                beleg="Ziel: " + visible(target, 200),
-                fix="Die Verknüpfung durch eine echte Datei im Paket ersetzen.",
-                fix_prompt=f"Ersetze die Verknüpfung {path} durch eine echte Datei im Paket.",
-                normbezug=("OWASP-ASI04",),
-            )
-
-
-_SUBMODULE_URL = re.compile(r"^\s*url\s*=\s*(\S+)", re.MULTILINE)
-
-
-def _a11(ctx: ScanContext) -> Iterator[Finding]:
-    for entry in ctx.inventory:
-        if _name(entry) == ".gitmodules":
-            urls = _SUBMODULE_URL.findall(_text(ctx, entry, 64 * 1024))
-            yield finding(
-                rule_id="LB-A11-submodule",
-                ebene=Ebene.A,
-                schwere=Schwere.M,
-                titel="Submodule werden nicht mitgeprüft",
-                erklaerung=(
-                    "Das Paket bindet weitere Repositories als Submodule ein. Sie werden bei der "
-                    "Installation nachgeladen, sind aber nicht Teil dieser Prüfung."
-                ),
-                datei=entry.path,
-                zeile=None,
-                beleg=visible(", ".join(urls[:5]) or "(keine URL)"),
-                fix="Den benötigten Code direkt ins Paket übernehmen.",
-                fix_prompt="Übernimm den Code der Submodule ins Paket und entferne .gitmodules.",
-                normbezug=("OWASP-ASI04", "OWASP-LLM03"),
-            )
-
-
-# --- A12 foreign package sources -----------------------------------------------------------
-
-_PIP_INDEX = re.compile(r"^\s*(--index-url|--extra-index-url|-i|--find-links|-f)[\s=]+(\S+)", re.M)
-_PIP_CONF = re.compile(r"^\s*(index-url|extra-index-url|find-links)\s*=\s*(\S+)", re.M)
-_NPM_REGISTRY = re.compile(r"^\s*(@[\w.-]+:)?registry\s*=\s*(\S+)", re.M)
-_TOML_INDEX = re.compile(
-    r"\[\[?tool\.(uv\.index|poetry\.source|pdm\.source)\]?\][^\[]*?url\s*=\s*\"([^\"]+)\"", re.S
-)
-_OFFICIAL = re.compile(
-    r"^https://(pypi\.org|files\.pythonhosted\.org|registry\.npmjs\.org|registry\.yarnpkg\.com)(/|$)"
-)
-
-
-def _a12(ctx: ScanContext) -> Iterator[Finding]:
-    for entry in ctx.inventory:
-        name = _name(entry).lower()
-        if entry.kind not in ("text", "script"):
-            continue
-        patterns: list[re.Pattern[str]] = []
-        if name.startswith("requirements") and name.endswith((".txt", ".in")):
-            patterns = [_PIP_INDEX]
-        elif name in ("pip.conf", "pip.ini"):
-            patterns = [_PIP_CONF]
-        elif name in (".npmrc", ".yarnrc", ".yarnrc.yml"):
-            patterns = [_NPM_REGISTRY]
-        elif name == "pyproject.toml":
-            patterns = [_TOML_INDEX]
-        if not patterns:
-            continue
-        text = _text(ctx, entry)
-        for pattern in patterns:
-            for m in pattern.finditer(text):
-                url = m.group(2).strip("\"'")
-                if _OFFICIAL.match(url):
-                    continue
-                yield finding(
-                    rule_id="LB-A12-fremde-paketquelle",
-                    ebene=Ebene.A,
-                    schwere=Schwere.H,
-                    titel="Pakete kommen aus einer fremden Quelle",
-                    erklaerung=(
-                        "Die Installation lädt Pakete nicht nur vom offiziellen Verzeichnis. Unter "
-                        "gleichem Namen kann dort etwas anderes liegen (Dependency Confusion)."
-                    ),
-                    datei=entry.path,
-                    zeile=text.count("\n", 0, m.start()) + 1,
-                    beleg=visible(m.group(0).strip()),
-                    fix="Nur das offizielle Paketverzeichnis verwenden oder die Quelle begründen.",
-                    fix_prompt=f"Entferne in {entry.path} die Paketquelle {visible(url, 100)}.",
-                    normbezug=("OWASP-ASI04", "OWASP-LLM03"),
-                )
-                break
 
 
 @register

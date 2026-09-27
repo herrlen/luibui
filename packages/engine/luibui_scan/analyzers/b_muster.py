@@ -9,8 +9,7 @@ treated as a quoted example and lowered to M, so documentation about attacks is 
 import re
 from pathlib import PurePosixPath
 
-from luibui_scan.analyzers._common import TextFile, finding, text_files, visible
-from luibui_scan.analyzers.a_dateien import rules_dir
+from luibui_scan.analyzers._common import TextFile, finding, rules_dir, text_files, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import ScanContext

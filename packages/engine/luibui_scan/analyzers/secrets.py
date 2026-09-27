@@ -5,8 +5,7 @@ An unavailable gitleaks makes the analyzer fail, so the scan is incomplete and n
 
 import re
 
-from luibui_scan.analyzers._common import finding, visible
-from luibui_scan.analyzers.a_dateien import rules_dir
+from luibui_scan.analyzers._common import finding, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import ScanContext

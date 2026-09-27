@@ -711,3 +711,19 @@ Schnellscans samt Befunden (Test). Einen eigenen Cronjob braucht es damit nicht.
 - Bei beiden Voraussetzungen fürs Freischalten ist der Nachweis erbracht: Der Worker hat kein Netz,
   und die API sieht die echte Client-IP (geprüft mit kurz eingeschaltetem Zugriffslog, danach wieder
   aus). `ANNAHME_OFFEN` bleibt aus, bis Len entscheidet.
+
+## 2026-09-27 — Lücken aus dem Regel-Abgleich (Teil 2)
+
+- **Fehlerformat vereinheitlicht** (`luibui_api/errors.py`): Jede Antwort mit Fehler lautet
+  `{"detail": {"code", "text", …}}`. Eigene Codes dort, wo Clients verzweigen: `totp_erforderlich`,
+  `anmeldung_falsch`, `nicht_freigeschaltet`, `speicher_voll`, `zu_viele_versuche`,
+  `zu_viele_schnellscans`, `warteschlange_voll`, `email_vergeben`, `name_vergeben`,
+  `herkunft_ungueltig`, `browser_anmeldung_noetig` und die Ablehnungsgründe der Annahme. Alle übrigen
+  bekommen einen Code nach Statuscode. **Validierungsfehler nennen nur die Felder**; FastAPI schickte
+  vorher den eingegebenen Wert zurück, bei `passwort` also das Passwort (Test).
+- **Alle Routen unter `/api/v1/`**, außer `/health`. Oberfläche und CLI bauen darauf.
+- **`a_dateien.py` aufgeteilt:** `_a_ausfuehrung.py` (A02, A03), `_a_herkunft.py` (A10–A12), der Rest
+  bleibt. Hilfsfunktionen (`read_text`, `read_json`, `file_name`, `rules_dir`) liegen in `_common.py`.
+  Verhalten unverändert, alle Tests grün.
+- Der Umsetzungsstand in `ENTWICKLERREGELN.md` ist nachgeführt. Offen bleiben ADRs, `docs/vvt.md`, die
+  Oberfläche nach A5/A6/F6 (Sprint 2) und der AV-Vertrag mit mittwald.

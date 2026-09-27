@@ -1,8 +1,11 @@
 """Helpers shared by analyzers: reading package files safely and building findings."""
 
+import json
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
+from typing import Any
 
 from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.models import Achse, Ebene, Finding, Nachweisgrad, Schwere
@@ -28,6 +31,30 @@ class TextFile:
     def line_text(self, line: int) -> str:
         lines = self.text.split("\n", line)
         return lines[line - 1] if len(lines) >= line else ""
+
+
+def read_text(ctx: ScanContext, entry: InventoryEntry, limit: int = 1024 * 1024) -> str:
+    return read_bytes(ctx, entry, limit).decode("utf-8", errors="replace")
+
+
+def read_json(ctx: ScanContext, entry: InventoryEntry) -> Any:
+    try:
+        return json.loads(read_text(ctx, entry))
+    except (ValueError, RecursionError):
+        return None
+
+
+def file_name(entry: InventoryEntry) -> str:
+    return PurePosixPath(entry.path).name
+
+
+def rules_dir() -> Path:
+    """``LUIBUI_RULES_DIR``, else the repository's ``rules/`` (development), else ``/rules``."""
+    env = os.environ.get("LUIBUI_RULES_DIR")
+    if env:
+        return Path(env)
+    repo = Path(__file__).resolve().parents[4] / "rules"
+    return repo if repo.is_dir() else Path("/rules")
 
 
 def read_bytes(ctx: ScanContext, entry: InventoryEntry, limit: int = MAX_TEXT_BYTES) -> bytes:

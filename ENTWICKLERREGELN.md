@@ -249,8 +249,7 @@ Die nicht verhandelbaren Regeln stehen in `CLAUDE.md`. Ergänzend:
 
 # Teil C — Backend, API und Worker
 
-- **Pfade:** heute `/api/…`. **Vor der ersten öffentlichen Nutzung durch CLI und CI** wird auf `/api/v1/…`
-  umgestellt; danach Breaking Changes nur mit `v2`.
+- **Pfade:** `/api/v1/…` (außer `/health`). Breaking Changes nur mit `v2`.
 - JSON, Zeitangaben ISO 8601 UTC. Die Oberfläche rechnet in `Europe/Berlin` um, die API nie.
 - **Fehlerformat:** `{"detail": {"code": "…", "text": "…"}}`. `code` ist maschinenlesbar und stabil, `text`
   deutsch und darf sich ändern. Clients werten nie `text` aus.
@@ -433,7 +432,7 @@ Diese Bausteine gibt es **genau einmal**: Annahme (`intake`), Inventar, `finding
 
 ---
 
-# Umsetzungsstand (Abgleich 27.09.2026)
+# Umsetzungsstand (Abgleich 27.09.2026, nachgeführt am selben Tag)
 
 | Regel | Stand | Anmerkung |
 |---|---|---|
@@ -442,18 +441,19 @@ Diese Bausteine gibt es **genau einmal**: Annahme (`intake`), Inventar, `finding
 | A9 ein Eingang, Adapter, Storage | ✅ | |
 | A10 `owner_id`, UUIDs, reversible Migrationen | ✅ | Migrationstest |
 | A12 Zugriff, CSRF, URL-Prüfung, Netzisolation, Regex-Timeout | ✅ | |
-| A12 Client-IP hinter dem Proxy | ❌ | `X-Forwarded-For` offen, deshalb `ANNAHME_OFFEN` aus |
+| A12 Client-IP hinter dem Proxy | ✅ | uvicorn mit vertrauenswürdigem Cluster-Netz, auf dem Server belegt |
 | A13.2 Praxistest an echten Repos | ✅ | seit S1-6 |
 | A13.9 Dateien einzeln committen | ✅ ab 27.09. | davor `git add -A`, fremde Datei im Repo |
-| A13.10 alle Prüfungen vor dem Commit | ⚠️ | einmal nur pytest (S1-5 rot); kein Git-Hook |
+| A13.10 alle Prüfungen vor dem Commit | ✅ | `.githooks/pre-commit` (einmal je Klon aktivieren) |
 | A14 ADRs | ❌ | `docs/adr/` leer, Entscheidungen nur in `docs/log.md` |
 | A5/A6 Tokens, Schriften lokal | ⚠️ | Web noch Gerüst: `globals.css` hat ein Farbliteral und `system-ui` |
-| A11 `docs/drittdienste.md`, `docs/vvt.md` | ❌ | fehlen; mittwald, GitHub, osv.dev eintragen |
+| A11 `docs/drittdienste.md` | ✅ | angelegt |
+| A11 `docs/vvt.md` | ❌ | Verzeichnis von Verarbeitungstätigkeiten fehlt noch |
 | G1 AV-Vertrag mit mittwald für luibui | ❓ | S0-13 (Len), Stand nicht dokumentiert |
-| A11 keine IP-Adressen im Log | ⚠️ | uvicorn-Zugriffslog schreibt Client-IPs (Proxy-IPs) |
-| C Fehlerformat mit `code` | ⚠️ | teils `{"detail": "Text"}`, teils `{"grund", "text"}` — vor Sprint 2 vereinheitlichen |
-| C Versionierung `/api/v1` | ❌ | vor der ersten Nutzung durch CLI/CI |
-| F4 Modulgröße 400 Zeilen | ⚠️ | `a_dateien.py` 656 Zeilen, in Teilmodule zerlegen |
-| F7 Git-Hook vor dem Commit | ❌ | vorschlagen: `.githooks/pre-commit` ohne neue Abhängigkeit |
-| F7 Secret-Scan und OSV über das eigene Repo in der CI | ❌ | Werkzeuge sind in der CI schon installiert |
-| F7 CI läuft | ❌ | GitHub-Abrechnung sperrt Jobs seit 27.09., 08:08 |
+| A11 keine IP-Adressen im Log | ✅ | Zugriffslog aus (`LUIBUI_ACCESS_LOG` nur für kurze Prüfungen) |
+| C Fehlerformat mit `code` | ✅ | `luibui_api/errors.py`, Validierung ohne Echo der Eingaben |
+| C Versionierung `/api/v1` | ✅ | alle Routen außer `/health` |
+| F4 Modulgröße 400 Zeilen | ✅ | `a_dateien.py` in drei Module geteilt (größtes 353 Zeilen) |
+| F7 Git-Hook vor dem Commit | ✅ | ruff, Format, mypy, Tests ohne DB, Web-Lint |
+| F7 Secret-Scan und OSV über das eigene Repo in der CI | ✅ | ganze Historie; postcss-Lücke dabei gefunden und behoben |
+| F7 CI läuft | ✅ | seit das Repo öffentlich ist |

@@ -14,8 +14,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path, PurePosixPath
 
-from luibui_scan.analyzers._common import finding, read_bytes, visible
-from luibui_scan.analyzers.a_dateien import rules_dir
+from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import InventoryEntry, ScanContext

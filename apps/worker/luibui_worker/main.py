@@ -14,7 +14,7 @@ from types import FrameType
 
 from sqlalchemy import Engine, create_engine
 
-from luibui_worker import osvdb, queue, results
+from luibui_worker import maintenance, osvdb, queue, results
 from luibui_worker.handlers import DEFAULT_HANDLERS
 from luibui_worker.runner import Outcome, run_in_child
 from luibui_worker.scratch import create_scratch, remove_scratch, scratch_path, sweep_orphans
@@ -50,6 +50,7 @@ class Worker:
         )
         self.handlers = dict(DEFAULT_HANDLERS if handlers is None else handlers)
         self._stop = threading.Event()
+        self._housekeeping = maintenance.Every(3600)
 
     def stop(self, *_: object) -> None:
         self._stop.set()
@@ -139,12 +140,24 @@ class Worker:
         if self.settings.osv_refresh:
             osvdb.refresh(self.settings.osv_db, self.settings.osv_max_age_hours * 3600)
 
+    def housekeeping(self) -> None:
+        if not self._housekeeping.due():
+            return
+        with self.engine.begin() as conn:
+            purged = maintenance.purge_expired_quickscans(conn)
+        if purged:
+            log.info("deleted %d expired quick scan(s)", purged)
+
     def run_forever(self) -> None:
         self.recover()
         self.refresh_osv()
         log.info("worker %s ready", self.settings.worker_id)
         while not self._stop.is_set():
             self.refresh_osv()
+            try:
+                self.housekeeping()
+            except Exception:
+                log.exception("housekeeping failed")
             try:
                 worked = self.run_once()
             except Exception:

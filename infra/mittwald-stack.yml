@@ -44,6 +44,10 @@ services:
       LUIBUI_ENV: prod
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
       MASTER_KEY: ${MASTER_KEY}
+      # Ingress and our own containers live in the cluster network; only they may set X-Forwarded-For.
+      FORWARDED_ALLOW_IPS: 100.121.0.0/16
+      # Empty or 0: no access log (client IPs are personal data). 1 only for a short check.
+      LUIBUI_ACCESS_LOG: ${LUIBUI_ACCESS_LOG}
     volumes:
       - luibui-projects:/projects
       - luibui-scratch:/scratch

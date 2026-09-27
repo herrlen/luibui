@@ -679,3 +679,20 @@ RAM steht in `docs/infra-kapazitaet.md`.
 ginge nur mit Umschreiben der Historie und Force-Push, und das nur auf Lens Wort.
 `docs/infra-kapazitaet.md` nennt Projekt- und Container-IDs und den Namen des SSH-Schlüssels. Das sind
 keine Geheimnisse, aber Hinweise für Angreifer.
+
+## 2026-09-27 — S1-1 Nachtrag: Client-IP hinter dem Proxy, Löschlauf für Schnellscans
+
+**Client-IP:** uvicorn läuft mit `--proxy-headers --forwarded-allow-ips` (`FORWARDED_ALLOW_IPS`). Auf
+mittwald vertraut die API `X-Forwarded-For` nur aus dem Cluster-Netz `100.121.0.0/16`: Dort liegen der
+Ingress (gesehen: `100.121.49.66`, `100.121.23.66`) und unsere Container (API `.161`, Web `.160`, Worker
+`.162`). uvicorn liest die Kette von rechts und nimmt die erste nicht vertrauenswürdige Adresse, eine
+gefälschte linke Hälfte zählt also nicht (Test). **Restrisiko:** Ein anderer Pod im Cluster-Netz könnte
+eine IP vortäuschen. Damit ließe sich nur die Begrenzung je IP umgehen, an Anmeldung und Rechten ändert
+das nichts. Lokal ist der Standard `127.0.0.1`.
+
+**Zugriffslog aus:** Mit echten Client-IPs wären die Zugriffslogs personenbezogen (ENTWICKLERREGELN A11).
+Deshalb gilt standardmäßig `--no-access-log`. `LUIBUI_ACCESS_LOG=1` schaltet es für eine kurze Prüfung
+ein.
+
+**Löschlauf:** Der Elternprozess des Workers löscht zwischen zwei Jobs höchstens stündlich abgelaufene
+Schnellscans samt Befunden (Test). Einen eigenen Cronjob braucht es damit nicht.

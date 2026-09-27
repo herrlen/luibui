@@ -975,3 +975,20 @@ tut. Neue Weiterleitung `hallo@luibui.com` → `info@websecureaudit.de` bei mitt
 Auftragsverarbeiter). Ob ein zweiter schneller Kontaktweg neben der E-Mail nötig ist (websecureaudit
 hat ein Anfrageformular, luibui noch nicht). Rechtliche Prüfung der Texte (DoD Sprint 3).
 Konto löschen und Datenexport im Portal (S2-10); bis dahin per E-Mail, so steht es in der Erklärung.
+
+## 2026-09-27 – Kontaktformular, Rechtstexte abgeschlossen
+
+**Was:** `/kontakt` auf beiden Hosts als zweiter Kontaktweg im Impressum. `POST /api/v1/kontakt`
+schickt die Nachricht per SMTP (Postfach `noreply@luibui.com` bei mittwald, `mail.agenturserver.de:587`,
+STARTTLS) an `hallo@luibui.com` (Weiterleitung an `info@websecureaudit.de`), Absender als
+Reply-To, nichts wird gespeichert. Fünf Nachrichten pro IP und Stunde (nur Arbeitsspeicher),
+Honeypot-Feld. `SMTP_PASSWORD` ist Stack-Variable; das Passwort wurde lokal erzeugt, nie
+angezeigt und nach dem Ausrollen lokal gelöscht, `scripts/release.sh` übernimmt es aus dem Stack.
+
+**Len, 27.09.2026:** AV-Vertrag mit mittwald gilt, die Rechtstexte sind geprüft. Die
+Datenschutzerklärung nennt den Vertrag jetzt ausdrücklich.
+
+**Geprüft:** 1.025 Python-Tests; Live-Testnachricht über luibui.com angenommen (202).
+
+**Beobachtung:** Nach jedem Ausrollen antworten luibui.com und app.luibui.com einige Sekunden
+bis Minuten mit 503/504 von nginx, weil mittwald die Container ohne Überlappung austauscht.

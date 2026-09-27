@@ -38,6 +38,7 @@ def test_ok_returns_result_and_runs_with_empty_env(
     # LC_CTYPE is set by Python's locale coercion (PEP 538), __CF_* by macOS itself.
     allowed = {"PATH", "HOME", "TMPDIR", "PYTHONDONTWRITEBYTECODE", "LANG", "LC_ALL", "TZ"}
     allowed |= {"LUIBUI_RULES_DIR", "LUIBUI_GITLEAKS", "LUIBUI_OSV_SCANNER", "LUIBUI_OSV_DB"}
+    allowed.add("LUIBUI_NETZ_ISOLIEREN")
     allowed |= {"LC_CTYPE", "__CF_USER_TEXT_ENCODING"}
     assert env <= allowed
     assert Path(result.result["cwd"]).resolve() == Path(result.result["scratch"]).resolve()
@@ -71,3 +72,20 @@ def test_request_reaches_child_as_json(tmp_path: Path) -> None:
     result = _run(tmp_path, "ok", note="'; rm -rf / #\"")
     assert result.outcome is Outcome.OK
     json.dumps(result.result)
+
+
+def test_required_isolation_is_real_or_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With LUIBUI_NETZ_ISOLIEREN=1 a job either runs with loopback only or does not run at all.
+
+    Which one depends on the host (mittwald: isolated; macOS and Docker's seccomp: refused).
+    """
+    monkeypatch.setenv("LUIBUI_NETZ_ISOLIEREN", "1")
+    result = _run(tmp_path, "net")
+    if result.outcome is Outcome.OK:
+        assert result.result is not None
+        assert set(result.result["interfaces"]) <= {"lo"}
+    else:
+        assert result.outcome is Outcome.FAILED
+        assert result.error is not None and "Netzisolation nicht möglich" in result.error

@@ -27,6 +27,7 @@ CHILD_ENV_KEEP = (
     "LUIBUI_GITLEAKS",
     "LUIBUI_OSV_SCANNER",
     "LUIBUI_OSV_DB",
+    "LUIBUI_NETZ_ISOLIEREN",
 )
 """Only non-secret settings reach the child: locale and where rules and scanners are."""
 

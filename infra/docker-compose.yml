@@ -63,6 +63,9 @@ services:
     image: ${IMAGE_PREFIX:-luibui}/worker:${IMAGE_TAG:-local}
     environment:
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+      # Locally the worker sits on the internal network only, and Docker's default seccomp profile
+      # forbids unshare(). On mittwald the image default 1 applies (docs/infra-kapazitaet.md).
+      LUIBUI_NETZ_ISOLIEREN: "0"
     volumes:
       - luibui-scratch:/scratch
       - luibui-rules:/rules:ro

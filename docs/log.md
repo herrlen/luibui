@@ -589,3 +589,28 @@ nicht verdeckt:
 **Sprint 1, Analyzer:** A, B-Inhalte, B-Muster, Secrets und D sind fertig. Die Scan-Art
 „schnell“ hat damit alle vorgesehenen Prüfungen, sobald die OSV-Datenbank da ist. Intensiv und
 lokal warten auf C, E und G aus Sprint 2.
+
+## 2026-09-27 — S0-12 Nachtrag: Worker-Kindprozess ohne Netz (Bedrohungsmodell T13)
+
+Auf mittwald hatte der Worker Internet, weil mittwald keine Compose-Netze übernimmt. **Gelöst im
+Kindprozess selbst:** Wenn `LUIBUI_NETZ_ISOLIEREN=1` gesetzt ist (Standard im Worker-Image), tritt
+der Kindprozess vor jeder Arbeit in einen eigenen User- und Netz-Namensraum ein
+(`os.unshare(CLONE_NEWUSER | CLONE_NEWNET)`) und bildet nur seine eigene UID/GID ab. Danach gibt es
+nur noch die Loopback-Schnittstelle. Alle Scanner (gitleaks, osv-scanner) erben das.
+
+**Auf dem Server geprüft** (im laufenden Worker-Container per SSH, vor dem Einbau):
+- Vorher gelingt eine Verbindung zu 1.1.1.1:443.
+- Danach scheitert sie mit errno 101 (Netz nicht erreichbar), auch aus einem Unterprozess.
+- Lesen und Schreiben im Scratch funktioniert mit der UID-Abbildung weiter.
+
+**Scheitert geschlossen:** Ist die Isolation verlangt und nicht möglich, läuft der Job nicht
+(„Netzisolation nicht möglich“), statt ungeschützt zu prüfen. Der Test akzeptiert genau zwei
+Ausgänge: nur Loopback oder Ablehnung.
+
+**Lokal:** Dockers Standard-Seccomp-Profil verbietet `unshare()` bei `cap_drop: ALL` (geprüft).
+Compose setzt deshalb `LUIBUI_NETZ_ISOLIEREN: "0"`, denn lokal hängt der Worker ohnehin nur im
+internen Netz.
+
+**Noch offen:** Der Elternprozess des Workers hat weiter Netz. Er braucht es für die Datenbank,
+fasst aber keine Paketinhalte an. Die Annahme (`ANNAHME_OFFEN`) kann aufgehen, sobald zusätzlich
+`X-Forwarded-For` geklärt ist.

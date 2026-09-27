@@ -29,7 +29,8 @@ COPY rules /app/rules
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     SCRATCH_ROOT=/scratch LITELLM_LOCAL_MODEL_COST_MAP=True \
     LUIBUI_RULES_DIR=/app/rules LUIBUI_GITLEAKS=/usr/local/bin/gitleaks \
-    LUIBUI_OSV_SCANNER=/usr/local/bin/osv-scanner LUIBUI_OSV_DB=/rules/osv
+    LUIBUI_OSV_SCANNER=/usr/local/bin/osv-scanner LUIBUI_OSV_DB=/rules/osv \
+    LUIBUI_NETZ_ISOLIEREN=1
 USER 10001
 WORKDIR /scratch
 ENTRYPOINT ["luibui-worker"]

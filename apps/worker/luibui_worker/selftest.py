@@ -40,7 +40,15 @@ def hang(ctx: JobContext) -> dict[str, Any]:
     return {}
 
 
+def net(ctx: JobContext) -> dict[str, Any]:
+    """Report the network interfaces the child sees (isolation check)."""
+    import socket
+
+    return {"interfaces": sorted(name for _, name in socket.if_nameindex())}
+
+
 SELFTEST_HANDLERS: dict[str, str] = {
+    "selftest.net": "luibui_worker.selftest:net",
     "selftest.ok": "luibui_worker.selftest:ok",
     "selftest.crash": "luibui_worker.selftest:crash",
     "selftest.fail": "luibui_worker.selftest:fail",

@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     smtp_password: SecretStr | None = None
     """Without it the contact form answers 503 and names the e-mail address instead."""
     kontakt_an: str = "hallo@luibui.com"
+    email_bestaetigung_pflicht: bool = True
+    """Checks in the developer area need a confirmed e-mail (the quick scan does not)."""
+    paypal_client_id: str | None = None
+    paypal_secret: SecretStr | None = None
+    paypal_modus: str = "live"
+    """live or sandbox; a key pair only works for one of them."""
+    paypal_webhook_id: str | None = None
     kontakt_pro_ip_und_stunde: int = 5
     session_days: int = 14
     session_cookie_secure: bool = True

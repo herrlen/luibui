@@ -381,3 +381,78 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = _created()
 
     __table_args__ = (Index("ix_audit_log_created_at", "created_at"),)
+
+
+class EmailToken(Base):
+    """One-time link to confirm the e-mail address. Only the SHA-256 hash is stored."""
+
+    __tablename__ = "email_tokens"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_id: Mapped[uuid.UUID] = _owner()
+    secret_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = _created()
+
+
+ZAHLUNG_STATUS = _enum("zahlung_status", "angelegt", "bezahlt", "abgebrochen")
+
+
+class Payment(Base):
+    """A credit purchase through PayPal. Kept 10 years (§ 147 AO); the owner link is dropped when
+    the account is deleted, the receipt data stay."""
+
+    __tablename__ = "payments"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    order_id: Mapped[str] = mapped_column(String(64), unique=True)
+    capture_id: Mapped[str | None] = mapped_column(String(64))
+    paket: Mapped[str] = mapped_column(String(20))
+    pruefungen: Mapped[int] = mapped_column(Integer)
+    betrag_cent: Mapped[int] = mapped_column(Integer)
+    waehrung: Mapped[str] = mapped_column(String(3), server_default="EUR")
+    status: Mapped[str] = mapped_column(ZAHLUNG_STATUS, server_default="angelegt")
+    belegnummer: Mapped[int | None] = mapped_column(BigInteger, unique=True)
+    kaeufer_email: Mapped[str | None] = mapped_column(String(320))
+    """The account e-mail at the time of purchase, for the receipt."""
+    created_at: Mapped[datetime] = _created()
+    bezahlt_am: Mapped[datetime | None]
+
+
+class CreditEntry(Base):
+    """Credit ledger: the balance is the sum of ``delta``. +3 start credit once the e-mail is
+    confirmed, +n per purchase, -1 per check, +1 back when a check fails on our side."""
+
+    __tablename__ = "credit_entries"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_id: Mapped[uuid.UUID] = _owner()
+    delta: Mapped[int] = mapped_column(Integer)
+    grund: Mapped[str] = mapped_column(String(20))
+    scan_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("scans.id", ondelete="SET NULL"), index=True
+    )
+    payment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("payments.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = _created()
+
+    __table_args__ = (
+        CheckConstraint("grund IN ('start', 'kauf', 'pruefung', 'erstattung')", name="grund"),
+        Index(
+            "uq_credit_entries_start",
+            "owner_id",
+            unique=True,
+            postgresql_where=text("grund = 'start'"),
+        ),
+        Index(
+            "uq_credit_entries_erstattung",
+            "scan_id",
+            unique=True,
+            postgresql_where=text("grund = 'erstattung'"),
+        ),
+    )

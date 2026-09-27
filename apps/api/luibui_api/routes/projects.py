@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 
+from luibui_api import guthaben
 from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, get_owned
 from luibui_api.models import Project, ProjectVersion, Scan, StoredFile
@@ -87,6 +88,7 @@ def _out(p: Project, letzte: Scan | None = None) -> Projekt:
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def anlegen(body: ProjektNeu, caller: CurrentCaller, db: DbSession) -> Projekt:
+    guthaben.projekt_erlaubt(db, caller.user)
     project = Project(
         owner_id=caller.user.id,
         name=body.name.strip(),

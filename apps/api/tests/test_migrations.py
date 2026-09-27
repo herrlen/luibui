@@ -25,6 +25,9 @@ EXPECTED_TABLES = {
     "packages",
     "versions",
     "audit_log",
+    "email_tokens",
+    "payments",
+    "credit_entries",
 }
 # Tables without owner_id and why: users is the owner itself; audit_log records the actor instead.
 WITHOUT_OWNER = {"users", "audit_log"}

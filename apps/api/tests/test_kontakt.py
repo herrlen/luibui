@@ -6,6 +6,7 @@ from typing import Any, ClassVar
 import pytest
 from fastapi.testclient import TestClient
 
+from luibui_api import mail
 from luibui_api.main import create_app
 from luibui_api.routes import kontakt
 
@@ -43,7 +44,7 @@ class FakeSMTP:
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("SMTP_PASSWORD", "test-passwort")
-    monkeypatch.setattr(kontakt.smtplib, "SMTP", FakeSMTP)
+    monkeypatch.setattr(mail.smtplib, "SMTP", FakeSMTP)
     FakeSMTP.sent, FakeSMTP.fail = [], False
     kontakt.kontakt_limiter.cache_clear()
     return TestClient(create_app())

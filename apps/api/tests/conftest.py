@@ -79,6 +79,8 @@ def api(_migrated: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iter
     monkeypatch.setenv("DATABASE_URL", _migrated)
     monkeypatch.setenv("MASTER_KEY", MASTER_KEY_B64)
     monkeypatch.setenv("ANNAHME_OFFEN", "true")
+    # Most tests are about uploads, not about the confirmation mail; test_guthaben turns it on.
+    monkeypatch.setenv("EMAIL_BESTAETIGUNG_PFLICHT", "false")
     monkeypatch.setenv("STORAGE_ROOT", str(tmp_path / "projects"))
     monkeypatch.setenv("SCRATCH_ROOT", str(tmp_path / "scratch"))
     (tmp_path / "scratch").mkdir()

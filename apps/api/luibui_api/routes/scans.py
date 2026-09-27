@@ -10,9 +10,10 @@ from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import FormData, UploadFile
 
+from luibui_api import guthaben
 from luibui_api.audit import audit
 from luibui_api.auth import AnnahmeOffen, CurrentCaller, DbSession, get_owned
-from luibui_api.models import Project, Scan
+from luibui_api.models import CreditEntry, Project, Scan
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, create_scan
 from luibui_scan.intake import DEFAULT_LIMITS
@@ -71,6 +72,13 @@ def _check_size(request: Request) -> None:
         raise HTTPException(status.HTTP_411_LENGTH_REQUIRED, "Content-Length fehlt")
     if int(length) > get_settings().upload_max_bytes:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Upload zu groß")
+
+
+def _verknuepfen(db: DbSession, buchung: CreditEntry | None, scan: Scan) -> None:
+    """The debit was committed together with the scan; link it so a failure can refund it."""
+    if buchung is not None:
+        buchung.scan_id = scan.id
+        db.commit()
 
 
 def _upload_from(
@@ -137,13 +145,16 @@ async def scan_starten(
     For ``git`` the URL comes in ``git_url`` or from the project."""
     project = get_owned(db, Project, project_id, caller)
     _check_size(request)
+    guthaben.email_pruefen(caller.user)
     limit = DEFAULT_LIMITS.auswahl_dateien
     form = await request.form(max_files=limit + 1, max_fields=limit + 10)
     try:
         upload, _ = _upload_from(form, _ARTEN, project.git_url)
+        buchung = guthaben.pruefung_abbuchen(db, caller.user)
         scan = await run_in_threadpool(
             lambda: create_scan(db, upload, project=project, name=project.name)
         )
+        _verknuepfen(db, buchung, scan)
     finally:
         await form.close()
     art = upload.art
@@ -181,13 +192,16 @@ async def einzelpruefung_starten(
     """Drag and drop on the overview: a full check without a project. The files are not kept,
     the report stays until the owner deletes it. Same form fields as a project upload, no Git."""
     _check_size(request)
+    guthaben.email_pruefen(caller.user)
     limit = DEFAULT_LIMITS.auswahl_dateien
     form = await request.form(max_files=limit + 1, max_fields=limit + 10)
     try:
         upload, name = _upload_from(form, _EINZEL_ARTEN, None)
+        buchung = guthaben.pruefung_abbuchen(db, caller.user)
         scan = await run_in_threadpool(
             lambda: create_scan(db, upload, project=None, name=name, owner_id=caller.user.id)
         )
+        _verknuepfen(db, buchung, scan)
     finally:
         await form.close()
     audit(db, caller.user.id, "scan.gestartet", "scan", scan.id, art=upload.art.value)

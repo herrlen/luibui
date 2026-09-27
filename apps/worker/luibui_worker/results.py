@@ -59,6 +59,16 @@ def mark_failed(conn: Connection, scan_id: uuid.UUID, error: str) -> None:
         ),
         {"id": scan_id, "error": error[:500]},
     )
+    # A paid check that fails on our side is booked back, once (unique index per scan).
+    conn.execute(
+        text(
+            "INSERT INTO credit_entries (owner_id, delta, grund, scan_id) "
+            "SELECT owner_id, 1, 'erstattung', scan_id FROM credit_entries "
+            "WHERE scan_id = :id AND grund = 'pruefung' "
+            "ON CONFLICT (scan_id) WHERE grund = 'erstattung' DO NOTHING"
+        ),
+        {"id": scan_id},
+    )
 
 
 _INSERT_FINDING = text("""

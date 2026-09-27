@@ -2,7 +2,7 @@
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from typing import Annotated
 
@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from luibui_api import guthaben, mail
 from luibui_api.audit import audit
 from luibui_api.auth import (
     AnnahmeOffen,
@@ -21,7 +22,7 @@ from luibui_api.auth import (
     start_session,
 )
 from luibui_api.errors import fehler
-from luibui_api.models import User
+from luibui_api.models import EmailToken, User
 from luibui_api.ratelimit import RateLimiter
 from luibui_api.security import (
     PASSWORD_MAX,
@@ -29,7 +30,9 @@ from luibui_api.security import (
     decrypt_totp_secret,
     encrypt_totp_secret,
     hash_password,
+    new_secret,
     new_totp_secret,
+    sha256_hex,
     totp_uri,
     verify_password,
     verify_totp,
@@ -72,10 +75,105 @@ class Ich(BaseModel):
     id: uuid.UUID
     email: str
     totp_aktiv: bool
+    email_bestaetigt: bool
 
 
 def _ich(user: User) -> Ich:
-    return Ich(id=user.id, email=user.email, totp_aktiv=user.totp_confirmed_at is not None)
+    return Ich(
+        id=user.id,
+        email=user.email,
+        totp_aktiv=user.totp_confirmed_at is not None,
+        email_bestaetigt=user.email_verified_at is not None,
+    )
+
+
+# --- e-mail confirmation ---------------------------------------------------------------------
+
+BESTAETIGUNG_STUNDEN = 24
+
+
+@lru_cache
+def bestaetigung_limiter() -> RateLimiter:
+    return RateLimiter(3, 3600)
+
+
+def _bestaetigung_senden(db: DbSession, user: User) -> bool:
+    """Create a one-time link and mail it. False if the mail could not be sent."""
+    secret = new_secret()
+    db.add(
+        EmailToken(
+            owner_id=user.id,
+            secret_hash=sha256_hex(secret),
+            expires_at=datetime.now(UTC) + timedelta(hours=BESTAETIGUNG_STUNDEN),
+        )
+    )
+    db.flush()
+    link = f"{get_settings().app_origin}/bestaetigen?token={secret}"
+    try:
+        mail.senden(
+            user.email,
+            "luibui: Bitte bestätige deine E-Mail-Adresse",
+            "Hallo,\n\nbitte bestätige deine E-Mail-Adresse für luibui mit diesem Link:\n\n"
+            f"{link}\n\nDer Link gilt {BESTAETIGUNG_STUNDEN} Stunden und nur einmal. Danach stehen "
+            "dir ein Projekt und drei Prüfungen gratis zur Verfügung.\n\n"
+            "Hast du dich nicht bei luibui registriert, kannst du diese Mail ignorieren.\n\n"
+            "-- \nluibui · luibui.com · Diese Mail wurde automatisch verschickt.\n",
+        )
+    except mail.MailError:
+        return False
+    return True
+
+
+class Bestaetigung(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+
+
+@router.post("/bestaetigen")
+def bestaetigen(body: Bestaetigung, db: DbSession) -> dict[str, bool]:
+    """Works without a session: the link may be opened on another device."""
+    now = datetime.now(UTC)
+    token = db.scalar(
+        select(EmailToken).where(EmailToken.secret_hash == sha256_hex(body.token)).with_for_update()
+    )
+    if token is None or token.used_at is not None or token.expires_at < now:
+        raise fehler(
+            status.HTTP_400_BAD_REQUEST,
+            "link_ungueltig",
+            "Der Link ist abgelaufen oder wurde schon benutzt. "
+            "Fordere in der Übersicht einen neuen an.",
+        )
+    token.used_at = now
+    user = db.get(User, token.owner_id)
+    if user is not None and user.email_verified_at is None:
+        user.email_verified_at = now
+        guthaben.startguthaben(db, user)
+        audit(db, user.id, "konto.email_bestaetigt", "user", user.id)
+    db.commit()
+    return {"bestaetigt": True}
+
+
+@router.post("/bestaetigung-senden", status_code=status.HTTP_202_ACCEPTED)
+def bestaetigung_senden(caller: CurrentCaller, db: DbSession) -> dict[str, bool]:
+    user = caller.user
+    if user.email_verified_at is not None:
+        return {"gesendet": False}
+    limiter = bestaetigung_limiter()
+    if limiter.blocked(f"user:{user.id}"):
+        raise fehler(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "zu_viele_mails",
+            "Höchstens drei Mails pro Stunde. Bitte schau auch im Spam-Ordner nach.",
+        )
+    limiter.hit(f"user:{user.id}")
+    gesendet = _bestaetigung_senden(db, user)
+    db.commit()
+    if not gesendet:
+        raise fehler(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "mail_fehlgeschlagen",
+            "Die Mail konnte gerade nicht verschickt werden. Bitte später erneut.",
+        )
+    return {"gesendet": True}
 
 
 @router.post("/registrieren", status_code=status.HTTP_201_CREATED, dependencies=[AnnahmeOffen])
@@ -91,6 +189,7 @@ def registrieren(body: Registrierung, response: Response, db: DbSession) -> Ich:
         ) from None
     audit(db, user.id, "konto.registriert", "user", user.id)
     start_session(db, response, user)
+    _bestaetigung_senden(db, user)  # a failed mail can be requested again from the overview
     db.commit()
     return _ich(user)
 

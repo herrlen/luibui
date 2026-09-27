@@ -963,3 +963,15 @@ Health. Der Schalter behält beim nächsten Lauf seinen Wert, außer er wird ges
 „nicht freigeschaltet“.
 
 **Offen:** Impressum und Datenschutzerklärung (Len); GitHub-Abrechnung.
+
+## 2026-09-27 – Impressum und Datenschutzerklärung
+
+**Was:** `/impressum` und `/datenschutz` auf luibui.com und app.luibui.com (gemeinsame Komponenten
+`components/recht/`), verlinkt in beiden Fußzeilen und im Registrierungsformular. Vorlage: die
+Rechtstexte von websecureaudit.de (gleicher Betreiber), angepasst an das, was luibui tatsächlich
+tut. Neue Weiterleitung `hallo@luibui.com` → `info@websecureaudit.de` bei mittwald (kein Postfach).
+
+**Offen (Len):** Den AV-Vertrag mit mittwald bestätigen (die Erklärung nennt mittwald als
+Auftragsverarbeiter). Ob ein zweiter schneller Kontaktweg neben der E-Mail nötig ist (websecureaudit
+hat ein Anfrageformular, luibui noch nicht). Rechtliche Prüfung der Texte (DoD Sprint 3).
+Konto löschen und Datenexport im Portal (S2-10); bis dahin per E-Mail, so steht es in der Erklärung.

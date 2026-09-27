@@ -948,3 +948,18 @@ lokal aus einem sauberen `git archive` von `22744ec` gebaut und nach ghcr.io gep
 alle CI-Prüfungen lokal grün waren. Worker lädt die Liste (1.144.645 Hashes), Health ok.
 
 **Offen (Len):** GitHub-Abrechnung klären, sonst läuft keine CI.
+
+## 2026-09-27 – Annahme geöffnet, Ausrollen mit Docker Desktop
+
+**Was:** Auf Lens Entscheidung ist die Annahme offen (`ANNAHME_OFFEN=true`, jetzt Variable im
+Stack): Registrierung, Upload und Schnellscan funktionieren für alle. Impressum und
+Datenschutzerklärung fehlen weiterhin; Len trägt das Risiko bewusst.
+`scripts/release.sh` ersetzt die blockierte GitHub-CI: Prüfungen wie in der CI (1.018
+Python-Tests mit Datenbank, Web-Lint, -Tests und -Build), Images aus `git archive HEAD` für
+linux/amd64 mit Docker Desktop, Push nach ghcr.io mit dem gh-Token, `mw stack deploy`, Warten auf
+Health. Der Schalter behält beim nächsten Lauf seinen Wert, außer er wird gesetzt.
+
+**Geprüft:** Ausgerollt `398197d`, Health ok, Registrierung antwortet mit Eingabeprüfung statt
+„nicht freigeschaltet“.
+
+**Offen:** Impressum und Datenschutzerklärung (Len); GitHub-Abrechnung.

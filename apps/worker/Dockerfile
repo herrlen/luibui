@@ -23,7 +23,8 @@ ADD --checksum=sha256:ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d974
 FROM python:3.12-slim-trixie
 COPY --from=scanners /usr/local/bin/gitleaks /usr/local/bin/osv-scanner /usr/local/bin/
 RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui \
- && mkdir -p /scratch /rules && chown 10001:10001 /scratch && chmod 700 /scratch
+ && mkdir -p /scratch /rules/osv && chown 10001:10001 /scratch /rules /rules/osv \
+ && chmod 700 /scratch
 COPY --from=build /app/.venv /app/.venv
 COPY rules /app/rules
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \

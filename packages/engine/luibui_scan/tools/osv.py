@@ -117,25 +117,36 @@ def _parse(data: object, root: Path) -> list[Vuln]:
         )
         for pkg in result.get("packages") or []:
             info = pkg.get("package") or {}
-            scores = {
-                vid: _score(g.get("max_severity"))
+            vulns = {str(v.get("id", ""))[:100]: v for v in pkg.get("vulnerabilities") or []}
+            vulns.pop("", None)
+            groups = [
+                [str(i) for i in g.get("ids") or [] if str(i) in vulns]
                 for g in pkg.get("groups") or []
-                for vid in g.get("ids") or []
+            ]
+            grouped = {i for g in groups for i in g}
+            groups += [[vid] for vid in vulns if vid not in grouped]
+            scores = {
+                str(i): _score(g.get("max_severity"))
+                for g in pkg.get("groups") or []
+                for i in g.get("ids") or []
             }
-            for v in pkg.get("vulnerabilities") or []:
-                vid = str(v.get("id", ""))[:100]
-                if not vid:
+            for ids in groups:
+                if not ids:
                     continue
+                # One finding per vulnerability: prefer GHSA, then the rest as aliases.
+                ids = sorted(ids, key=lambda i: (not i.startswith(("MAL-", "GHSA-")), i))
+                main = vulns[ids[0]]
+                aliases = [*ids[1:], *(str(a)[:100] for a in main.get("aliases") or [])]
                 out.append(
                     Vuln(
-                        id=vid,
-                        aliases=tuple(str(a)[:100] for a in v.get("aliases") or [])[:10],
-                        summary=str(v.get("summary", ""))[:300],
+                        id=ids[0],
+                        aliases=tuple(dict.fromkeys(a for a in aliases if a != ids[0]))[:10],
+                        summary=str(main.get("summary", ""))[:300],
                         package=str(info.get("name", ""))[:200],
                         version=str(info.get("version", ""))[:100],
                         ecosystem=str(info.get("ecosystem", ""))[:50],
                         datei=datei,
-                        cvss=scores.get(vid),
+                        cvss=scores.get(ids[0]),
                     )
                 )
     return out

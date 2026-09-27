@@ -238,3 +238,36 @@ def test_missing_database_fails_the_analyzer(
         ctx_for(tmp_path / "pkg", {"requirements.txt": "requests==2.32.3\n"}), reg
     )
     assert [f.analyzer for f in result.failed] == ["d_osv"]
+
+
+@pytest.mark.skipif(osv_missing, reason="osv-scanner nicht installiert (CI installiert es)")
+def test_osv_aliases_become_one_finding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """PYSEC and GHSA entries for the same flaw (seen with pillow in anthropics/skills)."""
+    db = tmp_path / "db" / "osv-scalibr" / "PyPI"
+    db.mkdir(parents=True)
+    affected = [
+        {"package": {"ecosystem": "PyPI", "name": "luibui-testfixture-alt"}, "versions": ["1.0.0"]}
+    ]
+    pair = [
+        {
+            "id": "PYSEC-2026-1",
+            "aliases": ["GHSA-aaaa-bbbb-cccc"],
+            "modified": "2026-09-01T00:00:00Z",
+            "affected": affected,
+        },
+        {
+            "id": "GHSA-aaaa-bbbb-cccc",
+            "aliases": ["PYSEC-2026-1"],
+            "modified": "2026-09-01T00:00:00Z",
+            "affected": affected,
+        },
+    ]
+    with zipfile.ZipFile(db / "all.zip", "w") as zf:
+        for adv in pair:
+            zf.writestr(f"{adv['id']}.json", json.dumps(adv))
+    monkeypatch.setenv("LUIBUI_OSV_DB", str(tmp_path / "db"))
+    found = OsvAnalyzer().analyze(
+        ctx_for(tmp_path / "pkg", {"requirements.txt": "luibui-testfixture-alt==1.0.0\n"})
+    )
+    assert [f.rule_id for f in found] == ["osv:GHSA-aaaa-bbbb-cccc"]
+    assert "PYSEC-2026-1" in (found[0].beleg or "")

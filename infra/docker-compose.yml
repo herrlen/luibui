@@ -68,7 +68,10 @@ services:
       LUIBUI_NETZ_ISOLIEREN: "0"
     volumes:
       - luibui-scratch:/scratch
-      - luibui-rules:/rules:ro
+      # The parent process keeps the OSV database in /rules/osv up to date. Locally it has no
+      # internet (internal network), so D01/D02 stay "fehlgeschlagen" unless a database is placed
+      # there by hand.
+      - luibui-rules:/rules
     tmpfs: [/tmp]
     networks: [backend]
     mem_limit: 1536m

@@ -614,3 +614,28 @@ internen Netz.
 **Noch offen:** Der Elternprozess des Workers hat weiter Netz. Er braucht es für die Datenbank,
 fasst aber keine Paketinhalte an. Die Annahme (`ANNAHME_OFFEN`) kann aufgehen, sobald zusätzlich
 `X-Forwarded-For` geklärt ist.
+
+## 2026-09-27 — S1-9 Nachtrag: OSV-Datenbank im Betrieb
+
+Len hat den Download der OSV-Datenbank von osv.devs Speicher (Google Cloud Storage) freigegeben.
+`apps/worker/luibui_worker/osvdb.py` lädt `all.zip` für PyPI, npm, Go und crates.io (zusammen
+etwa 255 MB, npm allein 207 MB) nach `/rules/osv/osv-scalibr/<Ökosystem>/`, höchstens einmal
+täglich und nur **im Elternprozess zwischen zwei Jobs**. Der prüfende Kindprozess bleibt ohne Netz.
+Die neue Datei ersetzt die alte erst, wenn sie vollständig ist und sich als ZIP mit Einträgen
+öffnen lässt. Obergrenze 1 GB je Datei, nur `https://`. Das Image legt `/rules/osv` für Nutzer
+10001 an. 4 neue Tests.
+
+**Echter Lauf** (Datenbank mit diesem Code geladen, 25 s): Die drei Vergleichs-Repos zeigen
+jetzt echte, bekannte Schwachstellen, etwa `pillow 10.0.0` (CVSS 9,8 → H) in
+`anthropics/skills`, `anyio` und `gitpython` in `modelcontextprotocol/servers`. Rot ist dort
+berechtigt.
+
+**Doppelte Befunde behoben:** OSV führt dieselbe Lücke unter mehreren Kennungen (`PYSEC-…`,
+`GHSA-…`). Befunde werden jetzt nach den Gruppen von osv-scanner zusammengefasst: einer je Lücke,
+bevorzugt mit `GHSA`-Kennung, die übrigen stehen als Alias im Beleg (Test).
+
+**Außerdem:** `ENTWICKLERREGELN.md` (das Regelwerk von wanalyse) war mit `git add -A` in `ddc35de`
+ins luibui-Repo geraten und ist wieder entfernt (`813072d`); die Datei liegt weiter auf der
+Platte. Commits nennen ab jetzt ihre Dateien ausdrücklich. Eine gitleaks-Prüfung der ganzen
+Git-Historie fand keine echten Secrets, nur zwei Platzhalter (leeres `POSTGRES_PASSWORD` in
+`.env.example`, erfundener Test-Schlüssel).

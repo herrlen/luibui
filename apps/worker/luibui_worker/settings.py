@@ -21,6 +21,9 @@ class WorkerSettings(BaseSettings):
     kill_grace_seconds: float = 5.0
     stale_grace_seconds: int = 60
     max_result_bytes: int = 20 * 1024 * 1024
+    osv_db: Path = Path("/rules/osv")
+    osv_max_age_hours: float = 24.0
+    osv_refresh: bool = True
 
 
 @lru_cache

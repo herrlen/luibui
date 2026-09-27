@@ -658,3 +658,24 @@ luibui übertragen:
 
 CLAUDE.md verweist jetzt auf die Datei. Die frühere wanalyse-Fassung steht weiter in der Git-Historie
 (`ddc35de`).
+
+## 2026-09-27 — Repo öffentlich, CI läuft, `02d85be` ausgerollt
+
+Len hat das Repo auf **öffentlich** gestellt. Damit sind die GitHub-Actions-Minuten frei, und die CI
+läuft wieder. Der erste echte Lauf seit S1-7 ist komplett grün: Python ohne übersprungene Tests (also
+mit gitleaks und osv-scanner), Web und alle drei Images. CLAUDE.md sagt jetzt „öffentlich“.
+
+`02d85be` ist ausgerollt, die Annahme bleibt geschlossen. **Im Produktions-Worker geprüft:**
+- Netz-Isolation greift, der Kindprozess sieht nur `lo`.
+- Die OSV-Datenbank lädt beim Start (255 MB in 13 s).
+- Ein entschärftes Testpaket wird ohne Netz vollständig geprüft und gesperrt (B01, gitleaks,
+  OSV/pillow).
+- Für den Schnellscan fehlt keine vorgesehene Prüfung mehr; ein sauberes Paket kann dort grün werden.
+
+RAM steht in `docs/infra-kapazitaet.md`.
+
+**Folge der Öffentlichkeit:** Die frühere wanalyse-Fassung von `ENTWICKLERREGELN.md` steht in der
+öffentlichen Historie (`ddc35de`). Sie enthält keine Secrets, aber Interna von wanalyse. Entfernen
+ginge nur mit Umschreiben der Historie und Force-Push, und das nur auf Lens Wort.
+`docs/infra-kapazitaet.md` nennt Projekt- und Container-IDs und den Namen des SSH-Schlüssels. Das sind
+keine Geheimnisse, aber Hinweise für Angreifer.

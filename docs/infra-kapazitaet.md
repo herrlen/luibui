@@ -60,6 +60,13 @@ Next.js-Laufzeit, die API trotz Anmeldung und Verschlüsselung nicht. Migration 
 Server gelaufen (`alembic_version` = 0002). Die API sieht als Client nur Ingress-Adressen aus
 `100.121.0.0/16`; ohne `X-Forwarded-For` greift keine Begrenzung je IP.
 
+**Nach dem Ausrollen von `02d85be` (2026-09-27, 10:35, Analyzer, gitleaks, osv-scanner, Netz-Isolation,
+Annahme geschlossen):** api 81 MiB (Spitze 132), worker 315 MiB (Spitze 469, nach OSV-Download von 255 MB
+und einem Testscan), web 121 MiB, postgres 54 MiB (Spitze 98). Der Worker lädt die OSV-Datenbank beim Start
+in 13 s nach `/rules/osv`. **Im Produktions-Worker geprüft:** Der Kindprozess sieht nur `lo`; ein
+entschärftes Testpaket (Unicode-Tags, Test-Token, `pillow 10.0.0`) wird ohne Netz vollständig geprüft
+und gesperrt, der Scratch ist danach leer.
+
 mittwald liest `768m` als 768 **Megabyte** (10⁶), nicht Mebibyte; die wirksamen Limits sind
 deshalb rund 5 % kleiner als lokal. Aussagekräftig wird die Messung erst mit echten Prüfungen und
 Scannern (S1-12).
@@ -81,7 +88,7 @@ zusätzlich erzwingt, fehlt auf dem Server:
 
 | Lokal | mittwald | Folge |
 |---|---|---|
-| Worker nur im internen Netz, kein Internet | alle Container im Projekt erreichen sich, Worker hat Internet | **muss vor Sprint 1 gelöst werden**, bevor der Worker Uploads verarbeitet (Bedrohungsmodell T13, offene Frage 2) |
+| Worker nur im internen Netz, kein Internet | alle Container im Projekt erreichen sich, Worker-Elternprozess hat Internet | **gelöst seit 2026-09-27:** Der prüfende Kindprozess läuft in eigenem Netz-Namensraum (`LUIBUI_NETZ_ISOLIEREN=1`), geprüft auf dem Server |
 | `read_only`, `cap_drop: ALL`, `no-new-privileges` | nicht verfügbar | Container laufen weiter als Nicht-Root (`USER` im Image) |
 | `depends_on` mit Healthcheck | nicht verfügbar | API und Worker starten neu, bis Postgres bereit ist |
 | `tmpfs`, `pids_limit`, `stop_grace_period` | nicht verfügbar | – |

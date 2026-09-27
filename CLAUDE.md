@@ -95,7 +95,8 @@ Jeder Upload ist potenziell feindlich. Die Prüfstelle darf nie selbst zum Angri
   Anfrage würde die API leicht überlastbar machen).
 
 ## Infrastruktur
-- Code: GitHub `herrlen/luibui` (privat), https://github.com/herrlen/luibui, Standardzweig `main`.
+- Code: GitHub `herrlen/luibui` (**öffentlich** seit 2026-09-27), https://github.com/herrlen/luibui, Standardzweig `main`.
+  Alles im Repo ist für alle lesbar: keine Secrets, keine Kundendaten, keine internen Dokumente anderer Projekte.
 - Deployment über den mittwald-MCP-Server, falls in dieser Claude-Code-Umgebung eingerichtet, sonst `mw` CLI oder GitHub Action.
 - Nie etwas Kostenpflichtiges buchen. Buchungen macht Len.
 - Nach jedem Deploy: Health prüfen, Container-Logs ansehen, RAM-Verbrauch in `docs/infra-kapazitaet.md` notieren.

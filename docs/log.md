@@ -395,3 +395,38 @@ A01, Secrets sind B20, und B18 (LLM) sperrt nie allein. Umgesetzt:
   Unsichtbare Zeichen im Namen stehen escaped im Beleg; `datei` wird nur bei einem gültigen
   relativen Pfad gesetzt.
 - CLAUDE.md nennt jetzt „A01–H04“. Im Bedrohungsmodell steht T1 auf A01 und T5 auf B03.
+
+## 2026-09-27 — S1-6 Analyzer B – versteckte Inhalte (B01–B07)
+
+`analyzers/b_inhalte.py` meldet Unicode-Tags (B01, K, gesperrt), Zero-Width-Zeichen und
+Variation Selectors (B02), Bidi-Steuerzeichen in Text und Dateinamen (B03), Wörter mit gemischten
+Schriftsystemen (B04), versteckten Text in Kommentaren oder mit unsichtbarem Stil (B05),
+lesbaren Text in Base64 oder Hex (B06) und Bild-Links mit Platzhaltern für Daten (B07, K,
+gesperrt). Es gibt einen Befund je Datei und Prüfung mit der Trefferzahl, und der Beleg macht
+unsichtbare Zeichen als `<U+XXXX>` sichtbar. B01 zeigt den dekodierten versteckten Text.
+`analyzers/_common.py` ist die gemeinsame Grundlage (Dateien lesen ohne Symlinks folgen,
+Befunde bauen). 35 neue Tests, jede Regel mit positiven und negativen Fällen. **Die Definition
+of Done aus Sprint 1 ist erfüllt:** Eine einzelne `SKILL.md` mit versteckter Unicode-Anweisung
+wird gesperrt (Test).
+
+**Ausnahmen gegen Fehlalarme:** ZWJ zwischen Emojis, ZWNJ in arabischer, persischer oder
+indischer Schrift, weiches Trennzeichen im Wort, BOM am Dateianfang, `data:`-URLs, Badges mit
+normaler Query. B06 prüft nur Anweisungsdateien (Markdown, YAML, JSON, TOML, Text), keinen
+Code. **B05 prüft nur Markdown, SVG und Text:** In der HTML-Oberfläche eines Skills sind
+eingeklappte Bereiche mit `display:none` normal (Fehlalarm in `anthropics/skills`, behoben).
+`color: white` allein gilt nicht mehr als versteckt.
+
+**Probe an echten Repos** (über `safe_git`): `anthropics/skills` (419 Dateien) ohne Befund,
+`modelcontextprotocol/servers` (156 Dateien) ohne Befund.
+
+**Neu: erwartete Prüfungen je Scan-Art** (`scan.ERWARTET`). Sonst hätte schon dieser erste
+Analyzer ein sauberes Paket grün gemacht, obwohl Dateien, Code, Secrets und Abhängigkeiten noch
+gar nicht geprüft werden. Schnellscan: A, B-Inhalte, B-Muster, Secrets, D. Intensiv und lokal:
+dazu C, E, G. Fehlt eine davon, ist das Ergebnis höchstens Gelb, und der Bericht führt sie unter
+„nicht geprüft: noch nicht eingebaut“. Was es gibt, aber für den Umfang nicht gilt (etwa D bei
+einer Einzeldatei), ist Umfang und keine Lücke.
+
+**Offen:** `luibui scan` auf einen Projektordner mit pnpm-`node_modules` scheitert an Symlinks
+(A01). Das ist richtig für Uploads, aber unbequem lokal. Zu entscheiden ist, ob die CLI
+installierte Abhängigkeiten (`node_modules`, `.venv`) auslässt. Die prüft ohnehin D über das
+Lockfile.

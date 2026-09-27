@@ -47,7 +47,7 @@ def test_folder_text(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFi
     assert "DSGVO:      nicht bewertet" in out
     assert "Gesamt:     Gelb, Prüfung nötig" in out
     assert "Note:       100 von 100" in out
-    assert "sagt nichts über die Sicherheit" in out
+    assert "noch nicht eingebaut" in out
     assert "grün" not in out.lower()
     assert list(private_tmp.iterdir()) == []
 
@@ -208,7 +208,8 @@ def test_green_wording_never_says_safe(tmp_path: Path) -> None:
     (tmp_path / "luibui.json").write_text("{}")
     registry = AnalyzerRegistry()
     registry.add(Clean())
-    out = render_text(tmp_path, scan_prepared(tmp_path, Eingabe.LOKAL, ScanArt.LOKAL, registry))
+    result = scan_prepared(tmp_path, Eingabe.LOKAL, ScanArt.LOKAL, registry, erwartet={})
+    out = render_text(tmp_path, result)
     assert "Gesamt:     Grün, keine bekannten Befunde, geprüft am " in out
     assert "sicher" not in out.replace("Sicherheit", "")
 

@@ -42,13 +42,19 @@ def hinweise(result: ScanResult) -> list[str]:
             f"Prüfung unvollständig: {len(result.pipeline.failed)} Prüfung(en) fehlgeschlagen, "
             "deshalb höchstens Gelb."
         )
+    elif result.fehlend:
+        out.append(
+            f"Prüfung unvollständig: {len(result.fehlend)} vorgesehene Prüfung(en) sind noch nicht "
+            "eingebaut, deshalb höchstens Gelb."
+        )
     return out
 
 
 def nicht_geprueft(result: ScanResult) -> list[dict[str, str]]:
     skipped = [{"pruefung": s.titel, "grund": s.grund} for s in result.pipeline.skipped]
     failed = [{"pruefung": f.titel, "grund": "fehlgeschlagen"} for f in result.pipeline.failed]
-    return skipped + failed
+    missing = [{"pruefung": t, "grund": "noch nicht eingebaut"} for t in result.fehlend]
+    return skipped + failed + missing
 
 
 def build_report(

@@ -81,7 +81,7 @@ def report_for(
 ) -> dict[str, Any]:
     for rel, text in files.items():
         (tmp_path / rel).write_text(text)
-    result = scan_prepared(tmp_path, eingabe, art, reg)
+    result = scan_prepared(tmp_path, eingabe, art, reg, erwartet={})
     report = build_report(
         result,
         name="paket",
@@ -142,3 +142,21 @@ def test_dsgvo_finding_in_package(tmp_path: Path, schwere: Schwere) -> None:
     files = {"a.md": "x", "luibui.json": "{}"}
     reg = registry(Reports("a", [finding(schwere, "LB-G1-test", Achse.DSGVO)]))
     report_for(tmp_path, files, Eingabe.ZIP, ScanArt.INTENSIV, reg)
+
+
+def test_missing_expected_analyzers_block_green(tmp_path: Path) -> None:
+    """A clean package is not green while planned checks are not built yet."""
+    (tmp_path / "SKILL.md").write_text("x")
+    (tmp_path / "luibui.json").write_text("{}")
+    result = scan_prepared(
+        tmp_path,
+        Eingabe.ZIP,
+        ScanArt.INTENSIV,
+        registry(Reports("a", [])),
+        erwartet={"a": "A", "c_code": "C – Code"},
+    )
+    report = build_report(result, name="p")
+    VALIDATOR.validate(report)
+    assert report["ampeln"]["gesamt"] == "gelb"
+    assert {"pruefung": "C – Code", "grund": "noch nicht eingebaut"} in report["nicht_geprueft"]
+    assert any("noch nicht eingebaut" in h for h in report["hinweise"])

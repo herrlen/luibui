@@ -810,3 +810,16 @@ nicht dass 82 % nachweislich angreifbar sind; der Text sagt das so.
   Len alleiniger Urheber ist, möglich) oder Quellcode auf Anfrage bereitstellen.
 - Teil C des Scanner-Abdeckungs-Prompts (öffentliche Seite `/pruefkatalog` mit voller Matrix) widerspricht
   der neuen Vorgabe und wird nicht umgesetzt, solange Len es nicht anders sagt.
+
+## 2026-09-27 – Scanner-Abdeckung, Teil A
+
+**Was:** `docs/scanner-abdeckung.md` gleicht Lens Scanner-Matrix (48 Zeilen) mit dem Code ab. Ergebnis:
+2 umgesetzt, 23 teilweise, 16 fehlen, 5 nur geplant (Sprint 2), 2 Konflikt. Nicht committet, weil das
+Repository öffentlich ist und die Datei die Lücken der Prüfung genau benennt; Len entscheidet.
+
+**Direkt behoben:** Die Startseite nannte bei MCP-Servern „Startbefehle in der MCP-Konfiguration“.
+`.mcp.json` wird heute aber nicht ausgewertet (AGT-06). Ersetzt durch „Unsichtbare Zeichen in
+Tool-Beschreibungen“ (B01/B02 laufen über alle Textdateien). Ausgerollt.
+
+**Offen (Len):** OK für Teil B; Entscheidungen zu verschachtelten Archiven, tar/7z/rar, „jedes K sperrt“
+in der Matrix gegen ● im Katalog, AGT-06 mit Netz gegen Worker ohne Netz.

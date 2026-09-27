@@ -40,7 +40,7 @@ class SecretsAnalyzer:
                 finding(
                     rule_id=f"gitleaks:{rule}",
                     ebene=Ebene.B,
-                    schwere=Schwere.H if sample else Schwere.K,
+                    schwere=Schwere.M if sample else Schwere.K,
                     titel=f"Zugangsdaten im Paket: {leak.beschreibung or leak.rule_id}"[:200],
                     erklaerung=(
                         "Im Paket steht etwas, das wie ein echter Schlüssel, ein Token oder ein "

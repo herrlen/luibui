@@ -476,6 +476,11 @@ _USUAL_DOT = frozenset(
         ".babelrc",
         ".swcrc",
         ".vscodeignore",
+        ".git-blame-ignore-revs",
+        ".overrides",
+        ".readthedocs.yaml",
+        ".readthedocs.yml",
+        ".mailmap",
     ]
 )
 

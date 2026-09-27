@@ -37,7 +37,7 @@ def test_ok_returns_result_and_runs_with_empty_env(
     assert "MASTER_KEY" not in env
     # LC_CTYPE is set by Python's locale coercion (PEP 538), __CF_* by macOS itself.
     allowed = {"PATH", "HOME", "TMPDIR", "PYTHONDONTWRITEBYTECODE", "LANG", "LC_ALL", "TZ"}
-    allowed |= {"LUIBUI_RULES_DIR", "LUIBUI_GITLEAKS"}  # where rules and scanners are, not secret
+    allowed |= {"LUIBUI_RULES_DIR", "LUIBUI_GITLEAKS", "LUIBUI_OSV_SCANNER", "LUIBUI_OSV_DB"}
     allowed |= {"LC_CTYPE", "__CF_USER_TEXT_ENCODING"}
     assert env <= allowed
     assert Path(result.result["cwd"]).resolve() == Path(result.result["scratch"]).resolve()

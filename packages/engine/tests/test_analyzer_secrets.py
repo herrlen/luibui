@@ -58,9 +58,10 @@ def test_clean_package(tmp_path: Path) -> None:
     )
 
 
-def test_sample_paths_are_high_not_critical(tmp_path: Path) -> None:
+def test_sample_paths_are_medium_not_critical(tmp_path: Path) -> None:
+    """Placeholders in examples and tests (seen in modelcontextprotocol/python-sdk)."""
     (f,) = scan(tmp_path, {"examples/demo.py": f'TOKEN = "{fake_token()}"\n'})
-    assert f.schwere.value == "H"
+    assert f.schwere.value == "M"
 
 
 @pytest.mark.parametrize(

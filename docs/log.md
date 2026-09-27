@@ -536,3 +536,56 @@ Paket). `modelcontextprotocol/servers` ist ohne Befund.
 
 **Grenze der Kalibrierung:** Der Vergleichsbestand umfasst drei Repos. S3-6 (Benchmark) erweitert
 ihn und misst Erkennungs- und Fehlalarmrate.
+
+## 2026-09-27 — S1-9 Analyzer D – Abhängigkeiten (D01–D05)
+
+Die Ebene D besteht aus zwei Analyzern, damit eine fehlende OSV-Datenbank die übrigen Prüfungen
+nicht verdeckt:
+- **`d_abhaengigkeiten`:**
+  - D03, Typosquatting: Abstand 1 zu verbreiteten Paketen, bei langen Namen 2, mit vertauschten
+    Nachbarbuchstaben. Grundlage sind die eigenen Listen `rules/data/beliebte-pakete-{pypi,npm}.txt`.
+  - D04, kein Lockfile oder keine festen Versionen.
+  - D05, Git ohne Commit, `http://`, Pfade außerhalb, Direkt-Downloads.
+
+  Manifeste (`requirements*.txt`, `pyproject.toml`, `package.json`) werden nur als Daten gelesen.
+- **`d_osv`:** osv-scanner 2.6.0 **nur offline**, für D01 (bekannte Schadpakete, `osv:MAL-…`, K,
+  gesperrt) und D02 (Schwachstellen; CVSS ≥ 9 → H, ≥ 7 → M, sonst N, unbekannt M). Die Quelle
+  `https://osv.dev/<ID>` steht in jedem Befund (CC-BY-Pflicht der OSV-Daten).
+- Beide laufen nur beim Paket und bei der Auswahl; bei Einzeldateien erscheinen sie als
+  „nicht geprüft“.
+
+31 neue Tests. Die OSV-Tests bauen eine eigene Mini-Datenbank und laden nichts herunter.
+
+**Härtung osv-scanner:**
+- **`--no-call-analysis=all`:** Laut Hilfe „will run build scripts“, das wäre ein Verstoß gegen
+  Regel 1.
+- `--offline --offline-vulnerabilities --no-resolve`, leere Umgebung, temporäres HOME außerhalb
+  des Pakets, Timeout.
+- In der Binärdatei stecken Validierer, die gefundene Secrets live bei Anbietern prüfen würden.
+  Auch deshalb läuft das Werkzeug nur offline.
+- Die Datenbank liegt **unter `<dir>/osv-scalibr/<Ökosystem>/all.zip`**, nicht wie dokumentiert
+  unter `osv-scanner/`. Belegt im Quellcode von osv-scalibr 0.5.2.
+
+**Betrieb:**
+- osv-scanner ist mit Prüfsumme in Worker-Image und CI.
+- Die Datenbank erwartet der Worker unter `/rules/osv` (Volume `luibui-rules`).
+  **Sie ist noch nicht da:** Das Laden kommt von Googles Speicher, und die Frage „US-CDN“ ist
+  offen. Bis dahin schlägt `d_osv` fehl, und Prüfungen sind höchstens Gelb.
+- Der Kindprozess bekommt `LUIBUI_OSV_SCANNER` und `LUIBUI_OSV_DB`.
+
+**Probe an echten Repos und Folgen:**
+- `python-sdk` hatte 1.676 Dateien. Die CLI prüft lokale Ordner deshalb jetzt mit den
+  Repository-Grenzen (10.000 Dateien, 200 MB) statt mit denen einer Upload-Auswahl.
+- Fehlalarm D03: `httpx2` (legitimer Fork von Pydantic) galt als Typosquat von `httpx`. Er steht
+  jetzt samt `httpcore2` in der Liste.
+- gitleaks-Treffer in Beispiel- und Testpfaden (`.env.example`, `tests/`) sind jetzt **M statt H**.
+  Dort stehen fast immer Platzhalter.
+- A09 kennt jetzt auch `.git-blame-ignore-revs`, `.overrides`, `.readthedocs.yaml`, `.mailmap`.
+- Ergebnis: `anthropics/skills` gelb (berechtigtes D04: `requirements.txt` ohne Versionen),
+  `servers` ohne Befund, `python-sdk` gelb (Platzhalter-Secrets in Tests).
+- **Nebenbei geklärt:** Hinweise zu fehlgeschlagenen und zu noch nicht eingebauten Prüfungen
+  erscheinen jetzt beide, nicht nur der erste.
+
+**Sprint 1, Analyzer:** A, B-Inhalte, B-Muster, Secrets und D sind fertig. Die Scan-Art
+„schnell“ hat damit alle vorgesehenen Prüfungen, sobald die OSV-Datenbank da ist. Intensiv und
+lokal warten auf C, E und G aus Sprint 2.

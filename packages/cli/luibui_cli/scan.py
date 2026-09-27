@@ -20,6 +20,7 @@ from luibui_scan.intake import (
     extract_zip,
     rejection_finding,
 )
+from luibui_scan.intake.safe_git import GIT_LIMITS
 from luibui_scan.models import Finding, Pruefumfang, ScanArt
 from luibui_scan.report import build_report, hinweise, sort_findings
 from luibui_scan.scan import Eingabe, ScanResult, scan_prepared
@@ -112,7 +113,8 @@ def exit_code(result: ScanResult, fail_on: str | None) -> int:
 
 def _intake(source: Path, scratch: Path) -> Eingabe:
     if source.is_dir():
-        accept_directory(source, scratch)
+        # A local folder is treated like a repository, not like a browser file selection.
+        accept_directory(source, scratch, GIT_LIMITS)
         return Eingabe.LOKAL
     if source.suffix.lower() == ".zip":
         extract_zip(source, scratch)

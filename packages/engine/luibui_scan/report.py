@@ -37,12 +37,13 @@ def hinweise(result: ScanResult) -> list[str]:
             "Es ist noch keine Prüfung eingebaut. Das Ergebnis sagt nichts über die Sicherheit "
             "des Pakets aus, deshalb höchstens Gelb."
         )
-    elif result.pipeline.failed:
+        return out
+    if result.pipeline.failed:
         out.append(
             f"Prüfung unvollständig: {len(result.pipeline.failed)} Prüfung(en) fehlgeschlagen, "
             "deshalb höchstens Gelb."
         )
-    elif result.fehlend:
+    if result.fehlend:
         out.append(
             f"Prüfung unvollständig: {len(result.fehlend)} vorgesehene Prüfung(en) sind noch nicht "
             "eingebaut, deshalb höchstens Gelb."

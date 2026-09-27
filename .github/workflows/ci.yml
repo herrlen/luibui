@@ -42,6 +42,12 @@ jobs:
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tgz" | sha256sum -c -
           sudo tar -xzf /tmp/gitleaks.tgz -C /usr/local/bin gitleaks
           gitleaks version
+      - name: Install osv-scanner 2.6.0 (pinned, checksum from the official release)
+        run: |
+          curl -fsSLo /tmp/osv-scanner https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64
+          echo "ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108  /tmp/osv-scanner" | sha256sum -c -
+          sudo install -m 755 /tmp/osv-scanner /usr/local/bin/osv-scanner
+          osv-scanner --version
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .

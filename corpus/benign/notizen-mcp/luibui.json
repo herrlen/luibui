@@ -1,0 +1,20 @@
+{
+  "$schema": "https://luibui.com/spec/luibui.schema.json",
+  "schema_version": "1",
+  "name": "beispiel/notizen-mcp",
+  "version": "0.3.1",
+  "typ": "mcp-server",
+  "beschreibung": "Speichert kurze Notizen lokal im Ordner ~/Notizen.",
+  "lizenz": "Apache-2.0",
+  "einstieg": "src/notizen/server.py",
+  "rechte": {
+    "netzwerk": false,
+    "dateien": { "lesen": ["~/Notizen"], "schreiben": ["~/Notizen"] },
+    "shell": false,
+    "zugangsdaten": false,
+    "umgebungsvariablen": []
+  },
+  "endpunkte": [],
+  "datenkategorien": ["nutzereingaben"],
+  "speicherung": { "lokal": true, "dauer": "bis der Nutzer löscht" }
+}

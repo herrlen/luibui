@@ -1,0 +1,7 @@
+{
+  "name": "repo-helfer",
+  "version": "1.1.0",
+  "description": "Hilft beim Schreiben von Changelogs und Commit-Nachrichten.",
+  "author": { "name": "Beispiel e. V." },
+  "license": "MIT"
+}

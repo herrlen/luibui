@@ -34,17 +34,24 @@ class Freigabe(StrEnum):
 ABZUG: dict[Schwere, int] = {Schwere.K: 40, Schwere.H: 15, Schwere.M: 5, Schwere.N: 1, Schwere.I: 0}
 """Grade deductions per finding (Konzept §5)."""
 
-SPERRLISTE_KATALOG: frozenset[str] = frozenset()
-"""Prüfkatalog IDs (e.g. ``B01``) whose critical findings lock the package.
+SPERRLISTE_KATALOG: frozenset[str] = frozenset(
+    {
+        "A02", "A08",
+        "B01", "B07", "B08", "B09", "B10", "B11", "B12", "B13", "B16",
+        "C03", "C04", "C05", "C07", "C08", "C09", "C10",
+        "E01", "E02",
+        "F02", "F04", "F05",
+    }
+)  # fmt: skip
+"""Prüfkatalog IDs whose critical findings lock the package (docs/luibui_Pruefkatalog.md §10).
 
-Empty until ``luibui_Pruefkatalog.md`` assigns IDs to the categories of Konzept §5 (known malware,
-autostart files with commands, invisible Unicode instructions, …). Own rules are matched by the
-catalog ID inside ``LB-<ID>-<name>``, so every rule of a listed check counts.
+Own rules are matched by the catalog ID inside ``LB-<ID>-<name>``, so every rule of a listed check
+counts. B18 (LLM) is deliberately absent: a language model alone never locks a package.
 """
 
 SPERRLISTE_EXTERN: tuple[str, ...] = (
-    "gitleaks:",  # echte Secrets
-    "osv:MAL-",  # bekannte Schadpakete (OSV malicious-packages database)
+    "gitleaks:",  # echte Secrets (B20)
+    "osv:MAL-",  # bekannte Schadpakete (D01, OSV malicious-packages database)
 )
 """Rule-ID prefixes of external tools whose critical findings lock the package."""
 

@@ -63,7 +63,9 @@ def test_incomplete_scan_is_never_green() -> None:
         ("osv:MAL-2026-1234", "K", True),
         ("osv:GHSA-xxxx-yyyy-zzzz", "K", False),
         ("gitleaks:aws-access-token", "H", False),
-        ("LB-B01-unicode-tags", "K", False),  # catalog IDs follow with luibui_Pruefkatalog.md
+        ("LB-B01-unicode-tags", "K", True),
+        ("LB-B18-llm-anweisung", "K", False),  # a language model alone never locks
+        ("LB-B14-sudo", "K", False),  # critical but not on the block list: red
     ],
 )
 def test_block_list(rule_id: str, schwere: str, locked: bool) -> None:

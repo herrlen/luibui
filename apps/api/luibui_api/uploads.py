@@ -27,6 +27,7 @@ from luibui_scan.intake import (
     accept_selection,
     accept_text,
     extract_zip,
+    rejection_finding,
 )
 from luibui_scan.intake.safe_git import GitError, clone_into
 from luibui_scan.inventory import Inventory, build_inventory
@@ -47,7 +48,12 @@ QUICKSCAN_TIMEOUT_SECONDS = 60
 
 
 def rejected(exc: IntakeRejectedError) -> HTTPException:
-    detail = {"grund": exc.grund.value, "text": exc.text, "pfad": exc.pfad}
+    detail = {
+        "grund": exc.grund.value,
+        "text": exc.text,
+        "pfad": exc.pfad,
+        "befund": rejection_finding(exc).to_json_dict(),
+    }
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail)
 
 

@@ -384,3 +384,14 @@ Unicode-Tags und gesperrt).
 unbenutzt, die Annahme bekommt A01 statt A2/A3, Secrets werden B20. Erst nach Lens Freigabe kommen
 die IDs in `SPERRLISTE_KATALOG` (`scoring.py`) und in die Annahme-Befunde, und erst dann starten
 die Analyzer S1-5 bis S1-9.
+
+## 2026-09-27 — S0-2 Prüfkatalog freigegeben, IDs im Code
+
+Len hat den Katalog mit allen sieben Entscheidungen freigegeben: I bleibt frei, die Annahme ist
+A01, Secrets sind B20, und B18 (LLM) sperrt nie allein. Umgesetzt:
+- `SPERRLISTE_KATALOG` in `scoring.py` enthält die 23 IDs aus Katalog §10.
+- Jede Ablehnung der Annahme wird zu einem Befund `LB-A01-<grund>` mit Schwere laut §11
+  (`rejection_finding`). Die CLI gibt ihn bei `--json` mit aus, die API in der 422-Antwort.
+  Unsichtbare Zeichen im Namen stehen escaped im Beleg; `datei` wird nur bei einem gültigen
+  relativen Pfad gesetzt.
+- CLAUDE.md nennt jetzt „A01–H04“. Im Bedrohungsmodell steht T1 auf A01 und T5 auf B03.

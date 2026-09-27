@@ -1,6 +1,6 @@
 # luibui – Prüfkatalog
 
-> Stand: 27.09.2026 · Task S0-2 · Status: **Entwurf von Claude, wartet auf Freigabe durch Len.**
+> Stand: 27.09.2026 · Task S0-2 · Status: **freigegeben von Len am 27.09.2026** (Entwurf von Claude).
 > Grundlage: `luibui_Konzept.md` §4 und §5, `luibui_Sprintplanung.md`, `threat-model.md`,
 > `scanner-tools.md`. Wo diese Dokumente sich widersprechen oder schweigen, ist die Entscheidung
 > unten unter „Offene Fragen“ aufgeführt.
@@ -270,7 +270,9 @@ Diese Befunde dienen nur der Erklärung; eine abgelehnte Eingabe wird nie bewert
 
 ---
 
-## 12. Offene Fragen an Len
+## 12. Entscheidungen (Len, 27.09.2026)
+
+Alle sieben Punkte sind so freigegeben, wie sie hier stehen.
 
 1. **Ebene I.** CLAUDE.md nennt „A1–I“, das Schema und das Konzept kennen nur A–H. Der Entwurf
    lässt **I unbenutzt und reserviert**. Soll CLAUDE.md auf „A01–H04“ geändert werden?

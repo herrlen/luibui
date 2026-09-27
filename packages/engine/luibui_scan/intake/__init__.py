@@ -5,7 +5,7 @@ Every function writes into an existing, empty scratch directory owned by the job
 Git clones follow in ``safe_git`` (S1-3).
 """
 
-from luibui_scan.intake.errors import Ablehnung, IntakeRejectedError
+from luibui_scan.intake.errors import Ablehnung, IntakeRejectedError, rejection_finding
 from luibui_scan.intake.limits import DEFAULT_LIMITS, Limits
 from luibui_scan.intake.safe_extract import extract_zip
 from luibui_scan.intake.sources import (
@@ -25,4 +25,5 @@ __all__ = [
     "accept_selection",
     "accept_text",
     "extract_zip",
+    "rejection_finding",
 ]

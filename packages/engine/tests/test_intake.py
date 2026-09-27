@@ -369,3 +369,26 @@ def test_directory_limits_apply(tmp_path: Path, root: Path) -> None:
     for i in range(4):
         (src / f"{i}.md").write_bytes(b"x")
     rejected(Ablehnung.ZU_VIELE_DATEIEN, accept_directory, src, root, SMALL)
+
+
+# --- finding A01 -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("grund", list(Ablehnung))
+def test_every_rejection_becomes_a_valid_finding(grund: Ablehnung) -> None:
+    from luibui_scan.intake import rejection_finding
+
+    f = rejection_finding(IntakeRejectedError(grund, "a/b.md"))
+    assert f.rule_id == f"LB-A01-{grund.value.replace('_', '-')}"
+    assert f.ebene.value == "A" and f.datei == "a/b.md"
+
+
+@pytest.mark.parametrize("pfad", ["../../evil.sh", "/etc/passwd", "a\\b", "x\x00y", "‮gpj.md"])
+def test_rejection_finding_escapes_hostile_names(pfad: str) -> None:
+    from luibui_scan.intake import rejection_finding
+
+    f = rejection_finding(IntakeRejectedError(Ablehnung.PFAD_AUSSERHALB, pfad))
+    assert f.beleg is not None
+    assert "\x00" not in f.beleg and "‮" not in f.beleg
+    if pfad != "‮gpj.md":
+        assert f.datei is None

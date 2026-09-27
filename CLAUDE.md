@@ -14,7 +14,7 @@ Geprüfte Pakete können im Register veröffentlicht und in Claude, ChatGPT, Gem
 Maßgebliche Dokumente, vor jeder Architekturentscheidung lesen:
 - `docs/luibui_Konzept.md` – Produkt, Pipeline, Bewertung, Architektur
 - `docs/luibui_Sprintplanung.md` – Tasks mit IDs (S1-5 usw.) und Definition of Done
-- `docs/luibui_Pruefkatalog.md` – alle Prüfungen mit IDs (A1–I), Schweregraden, Quellen
+- `docs/luibui_Pruefkatalog.md` – alle Prüfungen mit IDs (A01–H04), Schweregraden, Sperrliste, Quellen
 
 ## Repo-Struktur
 ```

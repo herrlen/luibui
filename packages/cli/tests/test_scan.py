@@ -117,13 +117,14 @@ def test_rejection_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> N
     (src / "link").symlink_to("/etc/passwd")
     code, out, _ = run(capsys, str(src), "--json")
     assert code == 3
-    assert json.loads(out) == {
-        "abgelehnt": {
-            "grund": "verknuepfung",
-            "text": "Das Paket enthält eine Verknüpfung oder Sonderdatei.",
-            "pfad": "link",
-        }
+    data = json.loads(out)
+    assert data["abgelehnt"] == {
+        "grund": "verknuepfung",
+        "text": "Das Paket enthält eine Verknüpfung oder Sonderdatei.",
+        "pfad": "link",
     }
+    assert data["befund"]["rule_id"] == "LB-A01-verknuepfung"
+    assert data["befund"]["schwere"] == "H"
 
 
 def test_missing_path(capsys: pytest.CaptureFixture[str]) -> None:

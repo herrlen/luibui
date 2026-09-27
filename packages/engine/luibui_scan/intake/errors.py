@@ -1,6 +1,10 @@
 """Rejection of an input. Every intake check raises ``IntakeRejectedError`` and stops the intake."""
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from luibui_scan.models import Finding
 
 
 class Ablehnung(StrEnum):
@@ -59,3 +63,90 @@ class IntakeRejectedError(Exception):
     def text(self) -> str:
         """Plain German explanation for the user, without package content."""
         return _TEXT[self.grund] if self.detail is None else f"{_TEXT[self.grund]} {self.detail}"
+
+
+# --- finding A01 (docs/luibui_Pruefkatalog.md §11) -------------------------------------------
+
+_A01: dict[Ablehnung, tuple[str, str, str]] = {
+    Ablehnung.PFAD_AUSSERHALB: (
+        "H",
+        "Ein Eintrag würde außerhalb des Pakets landen (`..`, absoluter Pfad oder Laufwerk). "
+        "So überschreiben Archive beim Entpacken fremde Dateien (Zip-Slip).",
+        "Das Paket ohne Pfade mit `..` oder `/` am Anfang neu packen.",
+    ),
+    Ablehnung.VERKNUEPFUNG: (
+        "H",
+        "Das Paket enthält eine Verknüpfung (Symlink, Hardlink) oder Sonderdatei. Sie kann auf "
+        "Dateien außerhalb des Pakets zeigen, zum Beispiel auf Zugangsdaten.",
+        "Verknüpfungen durch echte Dateien ersetzen.",
+    ),
+    Ablehnung.KOMPRESSIONSRATE: (
+        "H",
+        "Das Archiv ist über 100-fach komprimiert. So sehen Zip-Bomben aus, die beim Entpacken "
+        "Platte oder Speicher füllen.",
+        "Große, gleichförmige Dateien aus dem Paket entfernen.",
+    ),
+    Ablehnung.VERSCHLUESSELT: (
+        "M",
+        "Das Archiv enthält verschlüsselte Einträge. Ihr Inhalt lässt sich nicht prüfen.",
+        "Das Paket ohne Passwort packen.",
+    ),
+    Ablehnung.DOPPELTER_NAME: (
+        "M",
+        "Zwei Einträge heißen gleich, wenn man Groß- und Kleinschreibung oder Unicode-"
+        "Schreibweisen gleichsetzt. Je nach System gewinnt ein anderer.",
+        "Eine der beiden Dateien umbenennen.",
+    ),
+    Ablehnung.UNGUELTIGER_NAME: (
+        "M",
+        "Ein Name enthält Steuerzeichen, Backslashes oder leere Pfadteile.",
+        "Die Datei umbenennen.",
+    ),
+    Ablehnung.NAME_ZU_LANG: ("N", "Ein Datei- oder Pfadname ist zu lang.", "Kürzer benennen."),
+    Ablehnung.ZU_TIEF: ("N", "Ordner sind tiefer als 20 Ebenen verschachtelt.", "Flacher ordnen."),
+    Ablehnung.ZU_GROSS: ("N", "Die Eingabe überschreitet die Größengrenze.", "Kleiner packen."),
+    Ablehnung.ZU_VIELE_DATEIEN: (
+        "N",
+        "Die Eingabe enthält mehr Dateien als erlaubt.",
+        "Unnötige Dateien entfernen.",
+    ),
+    Ablehnung.DEFEKTES_ARCHIV: (
+        "N",
+        "Das Archiv ist beschädigt oder nutzt ein nicht unterstütztes Format.",
+        "Neu als normales ZIP packen.",
+    ),
+}
+
+
+def rejection_finding(exc: IntakeRejectedError) -> "Finding":
+    """The rejection as finding A01. The name goes into ``beleg`` with invisible characters
+    escaped; ``datei`` is set only if the name is a valid relative path."""
+    from luibui_scan.models import Achse, Ebene, Finding, Nachweisgrad, Schwere
+
+    schwere, erklaerung, fix = _A01[exc.grund]
+    datei = exc.pfad
+    if datei is not None and (
+        not datei
+        or datei.startswith("/")
+        or "\\" in datei
+        or "\x00" in datei
+        or ".." in datei.split("/")
+        or len(datei) > 1024
+    ):
+        datei = None
+    beleg = None if exc.pfad is None else ascii(exc.pfad)[1:-1][:500]
+    return Finding(
+        rule_id=f"LB-A01-{exc.grund.value.replace('_', '-')}",
+        ebene=Ebene.A,
+        schwere=Schwere(schwere),
+        achse=Achse.SICHERHEIT,
+        titel=_TEXT[exc.grund],
+        erklaerung=erklaerung,
+        datei=datei,
+        zeile=None,
+        beleg=beleg,
+        nachweisgrad=Nachweisgrad.STATISCH_ERKANNT,
+        normbezug=("OWASP-ASI04",),
+        fix=fix,
+        fix_prompt="",
+    )

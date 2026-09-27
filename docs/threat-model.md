@@ -59,11 +59,11 @@ umgesetzt und getestet wird.
 
 | # | STRIDE | Bedrohung | Schwere | Gegenmaßnahme | Task |
 |---|---|---|---|---|---|
-| T1 | T, E | **Zip-Slip:** Eintrag `../../app/main.py` oder `/etc/cron.d/x` schreibt außerhalb des Scratch | K | Jeder Pfad wird normalisiert und muss unter `/scratch/<job-id>` bleiben; `..`, absolute Pfade, Laufwerksbuchstaben, Backslashes, NUL → Befund A2/A3 + Abbruch. Gilt identisch für relative Pfade aus Ordner-Uploads | S1-2 |
+| T1 | T, E | **Zip-Slip:** Eintrag `../../app/main.py` oder `/etc/cron.d/x` schreibt außerhalb des Scratch | K | Jeder Pfad wird normalisiert und muss unter `/scratch/<job-id>` bleiben; `..`, absolute Pfade, Laufwerksbuchstaben, Backslashes, NUL → Befund A01 + Abbruch. Gilt identisch für relative Pfade aus Ordner-Uploads | S1-2 |
 | T2 | T, E | **Symlink / Hardlink** im ZIP zeigt auf `/etc/passwd` oder `/proc/self/environ`, spätere Leser folgen ihm | K | Symlinks und Hardlinks nie anlegen; Einträge mit Unix-Mode `S_IFLNK` → Befund + Abbruch. Analyzer öffnen Dateien mit `O_NOFOLLOW` | S1-2 |
 | T3 | D | **Zip-Bombe** (Kompressionsrate, verschachtelte ZIPs, Quines) füllt Platte oder RAM | H | Limits aus `CLAUDE.md` Regel 2: 50 MB gepackt, 200 MB entpackt, 10.000 Dateien, Tiefe 20, Rate > 100. Größe wird **beim Schreiben** gezählt, nicht aus dem Header geglaubt. Verschachtelte Archive werden nicht automatisch entpackt | S1-2 |
 | T4 | D | **Verschlüsselte Einträge**, kaputte Header, überlappende Einträge (ZIP-Parser-Differenzen) | M | Verschlüsselt → Befund + Abbruch; nur Einträge aus dem Central Directory; doppelte Namen und Einträge, die sich unter Groß-/Kleinschreibung oder Unicode-Normalisierung (NFC) gleichen → Abbruch | S1-2 |
-| T5 | T | **Dateinamen als Waffe:** Steuerzeichen, Bidi-Zeichen, sehr lange Namen, Namen wie `<img src=x onerror=…>.md` | M | Namen werden gespeichert, aber nie als HTML ausgegeben (siehe T15); Länge ≤ 255 Byte je Segment, Pfad ≤ 1024; Bidi/Steuerzeichen im Namen → Befund A | S1-2, S1-6 |
+| T5 | T | **Dateinamen als Waffe:** Steuerzeichen, Bidi-Zeichen, sehr lange Namen, Namen wie `<img src=x onerror=…>.md` | M | Namen werden gespeichert, aber nie als HTML ausgegeben (siehe T15); Länge ≤ 255 Byte je Segment, Pfad ≤ 1024; Bidi/Steuerzeichen im Namen → Befund B03 (Inhalts-Analyzer) | S1-2, S1-6 |
 | T6 | D | **Viele kleine Dateien** oder tiefe Ordner sprengen Inventar und Analyzer | M | Datei- und Tiefenlimit (T3), Worker-Timeout 5 min, eine Prüfung gleichzeitig | S0-9, S1-2 |
 
 ### 4.2 Feindliche Git-Repositories

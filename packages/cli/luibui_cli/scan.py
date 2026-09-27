@@ -18,6 +18,7 @@ from luibui_scan.intake import (
     accept_directory,
     accept_file,
     extract_zip,
+    rejection_finding,
 )
 from luibui_scan.models import Finding, Pruefumfang, ScanArt
 from luibui_scan.report import build_report, hinweise, sort_findings
@@ -141,7 +142,10 @@ def _escape(c: str) -> str:
 
 def _print_rejected(exc: IntakeRejectedError, as_json: bool, out: TextIO) -> None:
     if as_json:
-        data = {"abgelehnt": {"grund": exc.grund.value, "text": exc.text, "pfad": exc.pfad}}
+        data = {
+            "abgelehnt": {"grund": exc.grund.value, "text": exc.text, "pfad": exc.pfad},
+            "befund": rejection_finding(exc).to_json_dict(),
+        }
         json.dump(data, out, indent=2, ensure_ascii=True)
         out.write("\n")
         return

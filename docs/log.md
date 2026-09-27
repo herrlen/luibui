@@ -727,3 +727,27 @@ Schnellscans samt Befunden (Test). Einen eigenen Cronjob braucht es damit nicht.
   Verhalten unverändert, alle Tests grün.
 - Der Umsetzungsstand in `ENTWICKLERREGELN.md` ist nachgeführt. Offen bleiben ADRs, `docs/vvt.md`, die
   Oberfläche nach A5/A6/F6 (Sprint 2) und der AV-Vertrag mit mittwald.
+
+## 2026-09-27 — S1-12 Kapazitätsmessung und Definition of Done Sprint 1
+
+S1-12 ist gemessen, die Ergebnisse und die Empfehlung stehen in `docs/infra-kapazitaet.md`: klein 3,8 s,
+mittel 20 s, groß 52 s, Speicher unkritisch, CPU-gebunden durch `b_muster`. Empfehlung: kein vServer vor
+Sprint 4/6.
+
+**Definition of Done Sprint 1 (Sprintplanung), Punkt für Punkt:**
+- [x] Präparierte Archive (Bombe, `../`, Symlink, verschlüsselt) und Dateiauswahlen mit manipulierten
+  Pfaden werden erkannt und verworfen — `test_intake.py`, `test_scans.py` (API), `test_safe_git.py`.
+- [x] Eine einzelne `SKILL.md` mit versteckten Unicode-Anweisungen wird als Einzeldatei geprüft und
+  gesperrt — `test_sprint1_dod_single_skill_file_with_hidden_instruction_is_locked`, zusätzlich im
+  Produktions-Worker belegt.
+- [x] Jede Regel in `rules/` hat mindestens einen positiven und einen negativen Testfall — eigene Regeln
+  mindestens zwei je Richtung, übernommene ATR-Regeln bestehen ihre eigenen Testfälle
+  (`test_analyzer_b_muster.py`).
+- [x] `luibui scan corpus/benign/*` liefert keine K/H-Befunde — fünf Pakete, `test_corpus.py`.
+- [x] Scratch ist nach jedem Scan leer — Worker-Tests und im Produktions-Worker geprüft.
+- [ ] **Entscheidung vServer getroffen** — Empfehlung liegt vor (kein vServer vor Sprint 4/6), die
+  Entscheidung trifft Len.
+
+**Tasks Sprint 1:** S1-1 bis S1-12 sind umgesetzt. Zusätzlich vorgezogen: S2-6 (Anmeldung), S2-7
+(Ablage), Teile von S2-13 (Schnellscan-API, ohne Oberfläche) und S3-1 (gutartiger Korpus). Offen aus
+Sprint 1: nur die Server-Entscheidung.

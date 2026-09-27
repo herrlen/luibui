@@ -136,3 +136,35 @@ Projekt-Dateien. Wird er beim Ausrollen weggelassen oder ersetzt, sind alle gesp
 unlesbar. Beim ersten Ausrollen mit `openssl rand -base64 32` erzeugen, danach immer aus der
 Stack-Konfiguration übernehmen. **Zusätzlich an einem zweiten Ort sichern (Len):** Ohne ihn hilft
 auch ein Datenbank-Backup nicht.
+
+## S1-12 Kapazitätsmessung (2026-09-27)
+
+Gemessen im Produktions-Worker (`c-w7jjv1`, Stand `16e47c6`) wie ein echter Job: sichere Annahme,
+Kindprozess mit Netz-Isolation, alle Analyzer aus Sprint 1, OSV-Datenbank vorhanden, Scan-Art
+„intensiv“. Limits des Containers: 1,5 CPU (2 Kerne sichtbar), 1.464 MiB RAM.
+
+| Paket | Dateien | Größe | Dauer | CPU | größter Prozess | cgroup-Spitze |
+|---|---|---|---|---|---|---|
+| klein: eine `SKILL.md` | 1 | 1 KB | 3,8 s | 2,5 s | 57 MB | 239 MB |
+| mittel: `anthropics/skills` | 419 | 10,5 MB | 20,1 s | 19,5 s | 144 MB | 360 MB |
+| groß: `modelcontextprotocol/python-sdk` | 1.676 | 14,4 MB | 52,1 s | 50,9 s | 147 MB | 383 MB |
+
+**Befund:**
+- **Arbeitsspeicher ist unkritisch.** Die Spitze des ganzen Containers (inklusive Seiten-Cache und
+  Elternprozess) liegt bei rund einem Viertel des Limits. Der größte einzelne Prozess braucht unter
+  150 MB.
+- **Die Prüfung ist CPU-gebunden** (Dauer ≈ CPU-Zeit). Lokal gemessen verbraucht **`b_muster` rund 85 %**
+  der Zeit: 168 Regex-Regeln über alle Anweisungstexte (beim großen Repo 811 Dateien, 6,5 MB). Die
+  Kosten verteilen sich breit; die zehn teuersten Regeln machen 28 % aus.
+- **Durchsatz:** eine Prüfung gleichzeitig (Konzept §8), also etwa 180 mittelgroße oder 70 große
+  Pakete pro Stunde.
+- **Schnellscan** (Ziel < 30 s, Limit 60 s): typische Skill-Pakete liegen deutlich darunter. Ein sehr
+  großes Repo wie `python-sdk` kommt mit 52 s nah an das Limit.
+
+**Empfehlung zur Server-Frage (DoD Sprint 1):** **Für Sprint 1–3 und die Beta genügt der heutige
+mittwald-Container, kein vServer.** Ein eigener Server wird nötig:
+- für ClamAV (Sprint 4, rund 1,2 GB RAM zusätzlich), spätestens aber
+- für die Sandbox (Sprint 6, eigener Server laut CLAUDE.md Regel 1).
+
+Vorher lohnt die Optimierung von `b_muster` (Parallelisierung auf die verfügbaren Kerne, bringt höchstens
+Faktor 1,5; Vorfilter je Regel) im Benchmark S3-6. Die endgültige Entscheidung trifft Len.

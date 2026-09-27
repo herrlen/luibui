@@ -10,6 +10,7 @@ from collections.abc import Iterator
 from pathlib import PurePosixPath
 
 from luibui_scan.analyzers._a_ausfuehrung import _a02, _a03
+from luibui_scan.analyzers._a_dokumente import _dokumente
 from luibui_scan.analyzers._a_formate import _a13, _a14, _a15, _installer
 from luibui_scan.analyzers._a_herkunft import _a10, _a11, _a12
 from luibui_scan.analyzers._a_modelle import _a16_pickle, _a18_safetensors, _a19_config
@@ -380,6 +381,7 @@ class DateienAnalyzer:
             _a16_pickle,
             _a18_safetensors,
             _a19_config,
+            _dokumente,
         ):
             findings.extend(check(ctx))
         return findings

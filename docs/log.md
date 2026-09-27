@@ -919,3 +919,32 @@ dieser Sandbox auch ohne die Änderung (Umgebung, nicht Code).
   Download des Workers) wirkt die Liste in Produktion.
 - Die CLI hat die große Liste nicht; ein `luibui update`-Befehl oder ein Download beim Scan folgt später.
 - ClamAV und YARA-X (Rest von S4-10) bleiben in Sprint 4.
+
+## 2026-09-27 – S3-9: Beispielbericht auf der Startseite, Lizenz und Schadsoftware-Liste ausgerollt
+
+**Was:**
+- Branch `claude/exciting-heisenberg-c29a9j` per Fast-Forward nach `main` (Lizenzwechsel auf
+  „Alle Rechte vorbehalten“, MalwareBazaar-Liste für A08). Das Repository ist wieder privat.
+- Startseite: Abschnitt „So sieht ein luibui-Prüfbericht aus“ direkt unter den Zahlen. Neue
+  Komponente `components/report/ReportView` mit aufklappbaren Befunden (`aria-expanded`), die jetzt
+  auch Entwicklerbereich und Schnellscan-Ergebnis nutzen; `showDsgvo={false}` auf der Startseite.
+  Fixture `apps/web/content/beispielbericht.json`, Datum = Build-Datum. CSV-Download
+  `/beispielbericht.csv` (statisch, Formel-Schutz), PDF-Knopf deaktiviert bis S3-11.
+- Chip im Hero „Offen“ → „Nicht-kommerziell“ (Lizenzwechsel).
+
+**Abweichungen vom Auftrag, bewusst:** Regel-IDs folgen dem Prüfkatalog statt der Vorlage
+(`LB-A02-npm-install-skript` statt „A09“, `LB-C12-pfad-ohne-grenze` statt „C03“, `osv:BEISPIEL-2026-0001`).
+Der niedrige Befund ist `LB-A09-versteckte-dateien`, weil ein fehlendes Lockfile (D04) laut
+Katalog M ist und die Note dann 20 statt 24 wäre. Der Knopf heißt „Eigenes Repository prüfen –
+Schnellscan“, weil der Schnellscan noch keine Dateien annimmt (S2-13).
+
+**Geprüft:** 1.017 Python-Tests mit Datenbank, gitleaks und OSV; Web-Tests (Schema, Bewertung
+gegen `scoring.py`, `<script>` im Beleg als Text, keine DSGVO-Elemente mit `showDsgvo={false}`,
+CSV-Formeln); Lighthouse Barrierefreiheit 100; 375 px ohne seitliches Scrollen.
+
+**Ausrollen ohne CI:** GitHub Actions startet im privaten Repository nicht („recent account
+payments have failed or your spending limit needs to be increased“). Die Images wurden deshalb
+lokal aus einem sauberen `git archive` von `22744ec` gebaut und nach ghcr.io gepusht, nachdem
+alle CI-Prüfungen lokal grün waren. Worker lädt die Liste (1.144.645 Hashes), Health ok.
+
+**Offen (Len):** GitHub-Abrechnung klären, sonst läuft keine CI.

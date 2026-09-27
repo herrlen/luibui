@@ -174,3 +174,8 @@ Faktor 1,5; Vorfilter je Regel) im Benchmark S3-6. Die endgültige Entscheidung 
 Leerlauf direkt nach dem Start (cgroup `memory.current`): api 75 MiB, worker 57 MiB, web 147 MiB.
 Keine neuen Werkzeuge im Worker; die neuen Prüfungen sind Python-Code im selben Prozess. Eine
 Messung unter Last folgt mit dem nächsten echten Intensivscan (Annahme ist noch zu).
+
+## Nach Deploy `22744ec` (27.09.2026, Schadsoftware-Liste und Beispielbericht)
+
+Nach dem Start mit geladener MalwareBazaar-Liste (1.144.645 Hashes, 36,6 MB auf `luibui-rules`):
+api 77 MiB, worker 122 MiB, web 119 MiB.

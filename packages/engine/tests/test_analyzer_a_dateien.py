@@ -275,7 +275,9 @@ def test_a12_positive(tmp_path: Path, files: dict[str, str]) -> None:
     [
         {"requirements.txt": "requests==2.32\n--index-url https://pypi.org/simple\n"},
         {".npmrc": "registry=https://registry.npmjs.org/\nsave-exact=true\n"},
-        {".npmrc": 'registry="https://registry.npmjs.org/"\n'},  # seen in modelcontextprotocol/servers
+        {
+            ".npmrc": 'registry="https://registry.npmjs.org/"\n'
+        },  # seen in modelcontextprotocol/servers
         {"pyproject.toml": '[project]\nname = "x"\n'},
     ],
 )

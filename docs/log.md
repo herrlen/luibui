@@ -465,3 +465,34 @@ Je Regel gibt es höchstens 20 Befunde, der letzte fasst den Rest zusammen. 41 n
 **Probe an echten Repos:** In `anthropics/skills` ein berechtigtes A07 (ein `.tar.gz` im Skill).
 In `modelcontextprotocol/servers` ein Fehlalarm A12, weil die offizielle npm-Adresse in
 Anführungszeichen stand. Behoben und als Test aufgenommen, danach ohne Befund.
+
+## 2026-09-27 — S1-8 Secrets mit gitleaks (B20)
+
+Adapter `luibui_scan/tools/gitleaks.py` und Analyzer `analyzers/secrets.py`. Befunde heißen
+`gitleaks:<regel>`, Ebene B. **K (gesperrt)**, in Test-, Beispiel- und Doku-Pfaden **H**. Im
+Beleg steht nur der von gitleaks geschwärzte Treffer (`REDACTED`); was danach noch wie ein langer
+Token aussieht, kürzen wir zusätzlich auf 4 Zeichen und „…“. Fehlt gitleaks, schlägt der
+Analyzer fehl, und das Ergebnis wird nie grün (Test). 8 neue Tests.
+
+**Härtung gegen das geprüfte Paket (alle mit Test):** gitleaks läuft immer mit **unserem**
+`--config` (`rules/gitleaks/gitleaks.toml`, Standardregeln) und **unserer** leeren
+Ignore-Datei, dazu mit `--ignore-gitleaks-allow`, `--redact=100`, ohne Archive und Symlinks,
+mit leerer Umgebung und Timeout. Belegt: Ohne `--config` übernimmt gitleaks eine
+`.gitleaks.toml` aus dem Paket und findet den Test-Token nicht mehr. Befunde außerhalb des
+Paketordners werden verworfen.
+
+**Betrieb:**
+- gitleaks 8.30.1 wird im Worker-Image und in der CI mit Prüfsumme aus dem offiziellen Release
+  geladen.
+- `rules/` liegt im Image unter `/app/rules` (`LUIBUI_RULES_DIR`).
+- Der Kindprozess des Workers bekommt zusätzlich die nicht geheimen Variablen
+  `LUIBUI_RULES_DIR` und `LUIBUI_GITLEAKS`, sonst fände er Regeln und Werkzeug nicht.
+- Im echten Image und ohne Netz (`--network none`) geprüft: Der Token wird trotz eingeschmuggelter
+  `.gitleaks.toml` gefunden, und das Paket ist gesperrt.
+
+**Abweichung von CLAUDE.md Regel 6:** Die Regel verlangt „erste 4 Zeichen + …“. Weil gitleaks
+schon im eigenen Prozess vollständig schwärzt, erreicht kein Zeichen des Secrets luibui. Das ist
+strenger als die Regel.
+
+**Probe an echten Repos:** `anthropics/skills` und `modelcontextprotocol/servers` ohne
+Secrets-Befund.

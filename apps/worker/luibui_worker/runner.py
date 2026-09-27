@@ -19,7 +19,8 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-CHILD_ENV_KEEP = ("LANG", "LC_ALL", "TZ")
+CHILD_ENV_KEEP = ("LANG", "LC_ALL", "TZ", "LUIBUI_RULES_DIR", "LUIBUI_GITLEAKS")
+"""Only non-secret settings reach the child: locale and where rules and scanners are."""
 
 
 class Outcome(StrEnum):

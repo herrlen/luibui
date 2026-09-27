@@ -1,0 +1,6 @@
+# luibui: gitleaks configuration (Prüfkatalog B20). Always passed with --config, so a
+# .gitleaks.toml inside a scanned package can never change or silence the rules.
+title = "luibui"
+
+[extend]
+useDefault = true

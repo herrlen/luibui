@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 
+from luibui_api import errors
 from luibui_api.routes import auth, health, projects, quickscans, scans, tokens
 from luibui_api.settings import get_settings
 
@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url=None if settings.is_prod else "/openapi.json",
     )
+    errors.install(app)
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(tokens.router)

@@ -35,7 +35,9 @@ def fake_clone(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 
 def git_scan(c, pid: str, **data: str):  # type: ignore[no-untyped-def]
-    return c.post(f"/api/projects/{pid}/scans", data={"art": "git", **data}, files={"x": ("", b"")})
+    return c.post(
+        f"/api/v1/projects/{pid}/scans", data={"art": "git", **data}, files={"x": ("", b"")}
+    )
 
 
 # --- projects with Git -----------------------------------------------------------------------
@@ -44,11 +46,11 @@ def git_scan(c, pid: str, **data: str):  # type: ignore[no-untyped-def]
 def test_project_git_url_is_validated_and_canonical(api: Api) -> None:
     c = api.user("anna@example.org")
     bad = c.post(
-        "/api/projects", json={"name": "x", "typ": "skill", "git_url": "http://evil.example/a/b"}
+        "/api/v1/projects", json={"name": "x", "typ": "skill", "git_url": "http://evil.example/a/b"}
     )
     assert bad.status_code == 422
     pid = project(c, quelle="git", git_url="https://GitHub.com/a/b")
-    assert c.get(f"/api/projects/{pid}").json()["git_url"] == "https://github.com/a/b.git"
+    assert c.get(f"/api/v1/projects/{pid}").json()["git_url"] == "https://github.com/a/b.git"
 
 
 def test_git_scan_stores_commit(api: Api, fake_clone: list[str], _migrated: str) -> None:
@@ -80,7 +82,7 @@ def test_git_scan_errors_leave_nothing(
     c = api.user("anna@example.org")
     r = git_scan(c, project(c), git_url=url)
     assert r.status_code == 422
-    assert r.json()["detail"]["grund"] == grund
+    assert r.json()["detail"]["code"] == grund
     assert scratch_dirs(tmp_path) == [] and blobs(tmp_path) == []
 
 
@@ -89,7 +91,7 @@ def test_git_scan_errors_leave_nothing(
 
 def quick(api: Api, url: str = "https://github.com/a/b", ip_client: Any = None):  # type: ignore[no-untyped-def]
     c = ip_client or api.client("https://luibui.com")
-    return c.post("/api/quickscans", json={"git_url": url})
+    return c.post("/api/v1/quickscans", json={"git_url": url})
 
 
 def test_quickscan_without_account(
@@ -107,15 +109,15 @@ def test_quickscan_without_account(
     assert blobs(tmp_path) == []  # nothing stored
     assert len(scratch_dirs(tmp_path)) == 1  # only the worker's input
     anyone = api.client("https://luibui.com")
-    assert anyone.get(f"/api/quickscans/{s['id']}").status_code == 200
+    assert anyone.get(f"/api/v1/quickscans/{s['id']}").status_code == 200
 
 
 def test_quickscan_route_never_shows_account_scans(api: Api, fake_clone: list[str]) -> None:
     """The public route must not become a way around the owner check."""
     c = api.user("anna@example.org")
     scan_id = git_scan(c, project(c), git_url="https://github.com/a/b").json()["id"]
-    assert api.client().get(f"/api/quickscans/{scan_id}").status_code == 404
-    assert c.get(f"/api/quickscans/{scan_id}").status_code == 404
+    assert api.client().get(f"/api/v1/quickscans/{scan_id}").status_code == 404
+    assert c.get(f"/api/v1/quickscans/{scan_id}").status_code == 404
 
 
 def test_expired_quickscan_is_gone(api: Api, fake_clone: list[str], _migrated: str) -> None:
@@ -124,7 +126,7 @@ def test_expired_quickscan_is_gone(api: Api, fake_clone: list[str], _migrated: s
     with engine.begin() as conn:
         conn.execute(text("UPDATE scans SET expires_at = now() - interval '1 second'"))
     engine.dispose()
-    assert api.client().get(f"/api/quickscans/{scan_id}").status_code == 404
+    assert api.client().get(f"/api/v1/quickscans/{scan_id}").status_code == 404
 
 
 def test_quickscan_rate_limit(api: Api, fake_clone: list[str]) -> None:
@@ -165,7 +167,7 @@ def test_quickscan_end_to_end_says_ohne_gewaehr(
         engine=engine,
     ).run_once()
     engine.dispose()
-    s = api.client().get(f"/api/quickscans/{scan_id}").json()
+    s = api.client().get(f"/api/v1/quickscans/{scan_id}").json()
     assert s["status"] == "fertig", s
     assert any("ohne Gewähr" in h for h in s["bericht"]["hinweise"])
     assert s["bericht"]["paket"]["name"] == "github.com/a/b"

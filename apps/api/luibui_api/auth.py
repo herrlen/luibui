@@ -17,6 +17,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from luibui_api.db import get_session
+from luibui_api.errors import fehler
 from luibui_api.models import Base, Token, User, UserSession
 from luibui_api.security import TOKEN_PREFIX, new_secret, sha256_hex
 from luibui_api.settings import get_settings
@@ -79,10 +80,14 @@ def _check_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     if origin is not None:
         if origin != get_settings().app_origin:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Ungültige Herkunft der Anfrage")
+            raise fehler(
+                status.HTTP_403_FORBIDDEN, "herkunft_ungueltig", "Ungültige Herkunft der Anfrage"
+            )
         return
     if request.headers.get("sec-fetch-site") != "same-origin":
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Ungültige Herkunft der Anfrage")
+        raise fehler(
+            status.HTTP_403_FORBIDDEN, "herkunft_ungueltig", "Ungültige Herkunft der Anfrage"
+        )
 
 
 def _from_token(db: Session, raw: str) -> Caller | None:
@@ -136,15 +141,20 @@ def get_caller(request: Request, db: DbSession) -> Caller:
 def get_session_caller(caller: Annotated[Caller, Depends(get_caller)]) -> Caller:
     """For account actions (tokens, 2FA): an API token must not be able to mint more tokens."""
     if caller.via != "session":
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur mit Anmeldung im Browser möglich")
+        raise fehler(
+            status.HTTP_403_FORBIDDEN,
+            "browser_anmeldung_noetig",
+            "Nur mit Anmeldung im Browser möglich",
+        )
     return caller
 
 
 def require_annahme_offen() -> None:
     """Gate for everything that brings new accounts or package content into the system."""
     if not get_settings().annahme_offen:
-        raise HTTPException(
+        raise fehler(
             status.HTTP_503_SERVICE_UNAVAILABLE,
+            "nicht_freigeschaltet",
             "luibui ist noch nicht freigeschaltet. Bitte später erneut versuchen.",
         )
 

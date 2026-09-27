@@ -15,7 +15,7 @@ from luibui_api.models import Project, ProjectVersion, StoredFile
 from luibui_api.storage import blob_store
 from luibui_scan.intake.safe_git import canonical_url
 
-router = APIRouter(prefix="/api/projects", tags=["projects"])
+router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 Typ = Literal["skill", "mcp-server", "plugin", "tool", "einzeldatei"]
 Quelle = Literal["datei", "auswahl", "text", "zip", "git"]
@@ -72,7 +72,8 @@ def anlegen(body: ProjektNeu, caller: CurrentCaller, db: DbSession) -> Projekt:
     except IntegrityError:
         db.rollback()
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "Es gibt schon ein Projekt mit diesem Namen"
+            status.HTTP_409_CONFLICT,
+            {"code": "name_vergeben", "text": "Es gibt schon ein Projekt mit diesem Namen"},
         ) from None
     db.refresh(project)
     audit(db, caller.user.id, "projekt.angelegt", "project", project.id)

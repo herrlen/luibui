@@ -73,7 +73,7 @@ def _check_size(request: Request) -> None:
 
 
 @router.post(
-    "/api/projects/{project_id}/scans",
+    "/api/v1/projects/{project_id}/scans",
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[AnnahmeOffen],
     openapi_extra={
@@ -138,6 +138,6 @@ async def scan_starten(
     return scan_status_of(scan)
 
 
-@router.get("/api/scans/{scan_id}")
+@router.get("/api/v1/scans/{scan_id}")
 def scan_status(scan_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> ScanStatus:
     return scan_status_of(get_owned(db, Scan, scan_id, caller))

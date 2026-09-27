@@ -20,7 +20,7 @@ from luibui_scan.intake.safe_git import canonical_url
 from luibui_scan.models import ScanArt
 from luibui_scan.scan import Eingabe
 
-router = APIRouter(prefix="/api/quickscans", tags=["quickscans"])
+router = APIRouter(prefix="/api/v1/quickscans", tags=["quickscans"])
 
 
 @lru_cache
@@ -34,7 +34,7 @@ class SchnellscanNeu(BaseModel):
 
 def _unprocessable(grund: str, text: str) -> HTTPException:
     return HTTPException(
-        status.HTTP_422_UNPROCESSABLE_CONTENT, {"grund": grund, "text": text, "pfad": None}
+        status.HTTP_422_UNPROCESSABLE_CONTENT, {"code": grund, "text": text, "pfad": None}
     )
 
 
@@ -49,7 +49,10 @@ async def starten(body: SchnellscanNeu, request: Request, db: DbSession) -> Scan
     if limiter.blocked(f"ip:{client}"):
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
-            "Höchstens 3 Schnellscans pro Tag. Mit einem Konto geht mehr.",
+            {
+                "code": "zu_viele_schnellscans",
+                "text": "Höchstens 3 Schnellscans pro Tag. Mit einem Konto geht mehr.",
+            },
         )
     waiting = db.scalar(
         select(func.count())
@@ -59,7 +62,8 @@ async def starten(body: SchnellscanNeu, request: Request, db: DbSession) -> Scan
     )
     if int(waiting or 0) >= get_settings().quickscan_queue_max:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, "Gerade sind zu viele Schnellscans in Arbeit."
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            {"code": "warteschlange_voll", "text": "Gerade sind zu viele Schnellscans in Arbeit."},
         )
     limiter.hit(f"ip:{client}")
     name = url.removeprefix("https://").removesuffix(".git")

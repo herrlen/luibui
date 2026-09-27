@@ -50,7 +50,7 @@ QUICKSCAN_TIMEOUT_SECONDS = 60
 
 def rejected(exc: IntakeRejectedError) -> HTTPException:
     detail = {
-        "grund": exc.grund.value,
+        "code": exc.grund.value,
         "text": exc.text,
         "pfad": exc.pfad,
         "befund": rejection_finding(exc).to_json_dict(),
@@ -60,7 +60,7 @@ def rejected(exc: IntakeRejectedError) -> HTTPException:
 
 def _unprocessable(grund: str, text: str) -> HTTPException:
     return HTTPException(
-        status.HTTP_422_UNPROCESSABLE_CONTENT, {"grund": grund, "text": text, "pfad": None}
+        status.HTTP_422_UNPROCESSABLE_CONTENT, {"code": grund, "text": text, "pfad": None}
     )
 
 
@@ -128,7 +128,10 @@ def _store_version(
     if int(used or 0) + inventory.bytes > settings.account_quota_bytes:
         raise HTTPException(
             status.HTTP_413_CONTENT_TOO_LARGE,
-            "Speicherplatz voll (500 MB pro Konto). Alte Versionen oder Projekte löschen.",
+            {
+                "code": "speicher_voll",
+                "text": "Speicherplatz voll (500 MB pro Konto). Alte Versionen löschen.",
+            },
         )
     data_key, data_key_enc = project_data_key(project.id, project.data_key_enc)
     project.data_key_enc = data_key_enc

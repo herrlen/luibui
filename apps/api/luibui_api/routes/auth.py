@@ -20,6 +20,7 @@ from luibui_api.auth import (
     end_session,
     start_session,
 )
+from luibui_api.errors import fehler
 from luibui_api.models import User
 from luibui_api.ratelimit import RateLimiter
 from luibui_api.security import (
@@ -35,7 +36,7 @@ from luibui_api.security import (
 )
 from luibui_api.settings import get_settings
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 _EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s.]{2,63}$")
 Passwort = Annotated[str, Field(min_length=PASSWORD_MIN, max_length=PASSWORD_MAX)]
@@ -85,8 +86,8 @@ def registrieren(body: Registrierung, response: Response, db: DbSession) -> Ich:
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, "Diese E-Mail ist bereits registriert"
+        raise fehler(
+            status.HTTP_409_CONFLICT, "email_vergeben", "Diese E-Mail ist bereits registriert"
         ) from None
     audit(db, user.id, "konto.registriert", "user", user.id)
     start_session(db, response, user)
@@ -101,20 +102,28 @@ def anmelden(body: Anmeldung, request: Request, response: Response, db: DbSessio
     keys = (f"email:{email}", f"ip:{client}")
     limiter = login_limiter()
     if limiter.blocked(*keys):
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, "Zu viele Versuche, bitte später erneut"
+        raise fehler(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "zu_viele_versuche",
+            "Zu viele Versuche, bitte später erneut",
         )
     user = db.scalar(select(User).where(func.lower(User.email) == email))
     if not verify_password(user.password_hash if user else None, body.passwort) or user is None:
         limiter.hit(*keys)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "E-Mail oder Passwort falsch")
+        raise fehler(
+            status.HTTP_401_UNAUTHORIZED, "anmeldung_falsch", "E-Mail oder Passwort falsch"
+        )
     if user.totp_confirmed_at is not None:
         secret = decrypt_totp_secret(user.id, user.totp_secret_enc or b"")
         if not body.totp:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "totp_erforderlich")
+            raise fehler(
+                status.HTTP_401_UNAUTHORIZED,
+                "totp_erforderlich",
+                "Bitte den Code aus der App angeben",
+            )
         if secret is None or not verify_totp(secret, body.totp):
             limiter.hit(*keys)
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Code falsch")
+            raise fehler(status.HTTP_401_UNAUTHORIZED, "totp_falsch", "Code falsch")
     limiter.reset(f"email:{email}")
     user.last_login_at = datetime.now(UTC)
     audit(db, user.id, "konto.angemeldet", "user", user.id)

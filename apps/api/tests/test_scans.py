@@ -34,14 +34,14 @@ SKILL = {"SKILL.md": b"# LUIBUI-TESTFIXTURE Skill\ngeheimer Inhalt\n", "luibui.j
 
 
 def project(c, name: str = "wetter", **extra: Any) -> str:  # type: ignore[no-untyped-def]
-    r = c.post("/api/projects", json={"name": name, "typ": "skill", **extra})
+    r = c.post("/api/v1/projects", json={"name": name, "typ": "skill", **extra})
     assert r.status_code == 201, r.text
     return r.json()["id"]  # type: ignore[no-any-return]
 
 
 def upload_zip(c, pid: str, files: dict[str, bytes] = SKILL):  # type: ignore[no-untyped-def]
     return c.post(
-        f"/api/projects/{pid}/scans",
+        f"/api/v1/projects/{pid}/scans",
         data={"art": "zip"},
         files={"dateien": ("paket.zip", zip_bytes(files), "application/zip")},
     )
@@ -62,14 +62,14 @@ def blobs(tmp_path: Path) -> list[Path]:
 def test_project_crud_and_isolation(api: Api) -> None:
     a, b = api.user("anna@example.org"), api.user("bert@example.org")
     pid = project(a)
-    assert a.get(f"/api/projects/{pid}").json()["name"] == "wetter"
+    assert a.get(f"/api/v1/projects/{pid}").json()["name"] == "wetter"
     assert project(b)  # same name is fine for another owner
-    assert [p["id"] for p in a.get("/api/projects").json()] == [pid]
-    assert b.get(f"/api/projects/{pid}").status_code == 404
-    assert b.delete(f"/api/projects/{pid}").status_code == 404
-    assert a.post("/api/projects", json={"name": "wetter", "typ": "skill"}).status_code == 409
-    assert a.delete(f"/api/projects/{pid}").status_code == 204
-    assert a.get(f"/api/projects/{pid}").status_code == 404
+    assert [p["id"] for p in a.get("/api/v1/projects").json()] == [pid]
+    assert b.get(f"/api/v1/projects/{pid}").status_code == 404
+    assert b.delete(f"/api/v1/projects/{pid}").status_code == 404
+    assert a.post("/api/v1/projects", json={"name": "wetter", "typ": "skill"}).status_code == 409
+    assert a.delete(f"/api/v1/projects/{pid}").status_code == 204
+    assert a.get(f"/api/v1/projects/{pid}").status_code == 404
 
 
 # --- uploads ---------------------------------------------------------------------------------
@@ -116,9 +116,9 @@ def test_other_input_kinds(
 ) -> None:
     c = api.user("anna@example.org")
     pid = project(c)
-    r = c.post(f"/api/projects/{pid}/scans", data=data, files=files or None)
+    r = c.post(f"/api/v1/projects/{pid}/scans", data=data, files=files or None)
     if not files:
-        r = c.post(f"/api/projects/{pid}/scans", data=data, files={"x": ("", b"")})
+        r = c.post(f"/api/v1/projects/{pid}/scans", data=data, files={"x": ("", b"")})
     assert r.status_code == 202, r.text
     assert r.json()["pruefumfang"] == umfang
 
@@ -127,7 +127,7 @@ def test_selection_keeps_folders(api: Api, tmp_path: Path) -> None:
     c = api.user("anna@example.org")
     pid = project(c)
     r = c.post(
-        f"/api/projects/{pid}/scans",
+        f"/api/v1/projects/{pid}/scans",
         data={"art": "auswahl", "pfade": ["plugin/src/a.py"]},
         files=[("dateien", ("a.py", b"print(1)"))],
     )
@@ -141,7 +141,7 @@ def test_zip_slip_is_refused_and_nothing_stays(api: Api, tmp_path: Path, _migrat
     pid = project(c)
     r = upload_zip(c, pid, {"ok.md": b"x", "../../evil.sh": b"echo harmlos"})
     assert r.status_code == 422
-    assert r.json()["detail"]["grund"] == "pfad_ausserhalb"
+    assert r.json()["detail"]["code"] == "pfad_ausserhalb"
     assert r.json()["detail"]["pfad"] == "../../evil.sh"
     assert scratch_dirs(tmp_path) == []
     assert blobs(tmp_path) == []
@@ -162,7 +162,7 @@ def test_zip_slip_is_refused_and_nothing_stays(api: Api, tmp_path: Path, _migrat
 )
 def test_bad_uploads(api: Api, tmp_path: Path, data: dict[str, Any], files: list[Any]) -> None:
     c = api.user("anna@example.org")
-    r = c.post(f"/api/projects/{project(c)}/scans", data=data, files=files)
+    r = c.post(f"/api/v1/projects/{project(c)}/scans", data=data, files=files)
     assert r.status_code == 422, r.text
     assert scratch_dirs(tmp_path) == []
 
@@ -175,7 +175,9 @@ def test_upload_size_limit(api: Api, monkeypatch: pytest.MonkeyPatch) -> None:
 
     get_settings.cache_clear()
     r = c.post(
-        f"/api/projects/{pid}/scans", data={"art": "datei"}, files={"dateien": ("a", b"x" * 2000)}
+        f"/api/v1/projects/{pid}/scans",
+        data={"art": "datei"},
+        files={"dateien": ("a", b"x" * 2000)},
     )
     assert r.status_code == 413
 
@@ -226,19 +228,19 @@ def test_deleting_a_project_deletes_its_files(api: Api, tmp_path: Path) -> None:
     pid = project(c)
     upload_zip(c, pid)
     assert blobs(tmp_path)
-    c.delete(f"/api/projects/{pid}")
+    c.delete(f"/api/v1/projects/{pid}")
     assert blobs(tmp_path) == []
 
 
 def test_api_token_can_upload(api: Api) -> None:
     c = api.user("anna@example.org")
     pid = project(c)
-    token = c.post("/api/tokens", json={"name": "ci"}).json()["token"]
+    token = c.post("/api/v1/tokens", json={"name": "ci"}).json()["token"]
     cli = api.client("https://api.luibui.com")
     cli.headers["Authorization"] = f"Bearer {token}"
     r = upload_zip(cli, pid)
     assert r.status_code == 202
-    assert cli.get(f"/api/scans/{r.json()['id']}").status_code == 200
+    assert cli.get(f"/api/v1/scans/{r.json()['id']}").status_code == 200
 
 
 # --- rule 9 ----------------------------------------------------------------------------------
@@ -249,15 +251,15 @@ def test_b_cannot_upload_to_or_read_from_a(api: Api, tmp_path: Path) -> None:
     pid = project(a)
     scan_id = upload_zip(a, pid).json()["id"]
     assert upload_zip(b, pid).status_code == 404
-    assert b.get(f"/api/scans/{scan_id}").status_code == 404
-    assert a.get(f"/api/scans/{scan_id}").status_code == 200
+    assert b.get(f"/api/v1/scans/{scan_id}").status_code == 404
+    assert a.get(f"/api/v1/scans/{scan_id}").status_code == 200
     assert len(scratch_dirs(tmp_path)) == 1
 
 
 def test_unauthenticated(api: Api) -> None:
     c = api.client()
-    assert c.get("/api/projects").status_code == 401
-    assert c.post("/api/projects", json={"name": "x", "typ": "skill"}).status_code == 401
+    assert c.get("/api/v1/projects").status_code == 401
+    assert c.post("/api/v1/projects", json={"name": "x", "typ": "skill"}).status_code == 401
     pid = project(api.user("anna@example.org"))
     assert upload_zip(c, pid).status_code == 401
 
@@ -280,7 +282,7 @@ def test_worker_scans_the_upload(api: Api, tmp_path: Path, _migrated: str) -> No
     assert worker.run_once()
     engine.dispose()
 
-    s = c.get(f"/api/scans/{scan_id}").json()
+    s = c.get(f"/api/v1/scans/{scan_id}").json()
     assert s["status"] == "fertig", s
     # No analyzers yet: incomplete, so never green.
     assert s["ampeln"] == {"sicherheit": "gelb", "dsgvo": "gelb", "gesamt": "gelb"}

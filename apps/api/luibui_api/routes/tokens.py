@@ -12,7 +12,7 @@ from luibui_api.auth import DbSession, SessionCaller, get_owned
 from luibui_api.models import Token
 from luibui_api.security import new_api_token, sha256_hex
 
-router = APIRouter(prefix="/api/tokens", tags=["tokens"])
+router = APIRouter(prefix="/api/v1/tokens", tags=["tokens"])
 
 _PREFIX_LEN = 11  # "lb_" + 8 characters, enough for the owner to recognise a token
 

@@ -106,6 +106,6 @@ class Api:
 
     def user(self, email: str, passwort: str = "ein-langes-passwort") -> "TestClient":
         c = self.client()
-        r = c.post("/api/auth/registrieren", json={"email": email, "passwort": passwort})
+        r = c.post("/api/v1/auth/registrieren", json={"email": email, "passwort": passwort})
         assert r.status_code == 201, r.text
         return c

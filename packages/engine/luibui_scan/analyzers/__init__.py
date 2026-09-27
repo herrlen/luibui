@@ -10,6 +10,7 @@ from luibui_scan.analyzers import (  # noqa: F401
     a_dateien,
     b_inhalte,
     b_muster,
+    c_konfig,
     d_abhaengigkeiten,
     e_konfig,
     secrets,

@@ -27,6 +27,7 @@ _SCHNELL = {
     "secrets": "B20 – Secrets",
     "d_abhaengigkeiten": "D – Abhängigkeiten",
     "d_osv": "D – Bekannte Schwachstellen und Schadpakete (OSV)",
+    "e_konfig": "E – MCP-Konfiguration und Werkzeugrechte",
 }
 ERWARTET: dict[ScanArt, dict[str, str]] = {
     ScanArt.SCHNELL: _SCHNELL,

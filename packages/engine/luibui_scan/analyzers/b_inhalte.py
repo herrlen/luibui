@@ -4,13 +4,13 @@ Finds text that people do not see but a language model reads. One finding per fi
 with the number of hits, so a file full of hidden characters does not flood the report.
 """
 
-import base64
-import binascii
 import re
 import unicodedata
 from collections.abc import Iterator
 
+from luibui_scan.analyzers._a_ausfuehrung import _DANGEROUS_COMMAND
 from luibui_scan.analyzers._common import TextFile, finding, text_files, visible
+from luibui_scan.analyzers._decode import decode_blocks
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import ScanContext
@@ -86,13 +86,19 @@ def _suspicious_invisible(text: str, i: int) -> bool:
     return not (c == "­" and prev.isalpha() and nxt.isalpha())  # soft hyphen inside a word
 
 
+_VS_RUN = re.compile("[\ufe00-\ufe0f]{2,}")
+"""Emoji smuggling hides bytes in runs of variation selectors after a single emoji."""
+
+
 def _b02(f: TextFile) -> Iterator[Finding]:
     positions = [
         i
         for i, c in enumerate(f.text)
-        if (c in _INVISIBLE or c == "﻿" or ord(c) >= _VARIATION_SUPPLEMENT[0])
+        if (c in _INVISIBLE or c == "\ufeff" or ord(c) >= _VARIATION_SUPPLEMENT[0])
         and _suspicious_invisible(f.text, i)
     ]
+    positions += [m.start() for m in _VS_RUN.finditer(f.text)]
+    positions.sort()
     if not positions:
         return
     line = f.line_of(positions[0])
@@ -288,55 +294,38 @@ def _b05_finding(f: TextFile, offset: int, art: str, content: str) -> Finding:
 
 # --- B06 encoded blocks ----------------------------------------------------------------------
 
-_BASE64 = re.compile(r"(?<![A-Za-z0-9+/=_-])[A-Za-z0-9+/]{120,}={0,2}(?![A-Za-z0-9+/=])")
-_HEX = re.compile(r"(?<![0-9A-Fa-f])(?:[0-9A-Fa-f]{2}){80,}(?![0-9A-Fa-f])")
 _INSTRUCTION_LANGS = frozenset({"markdown", "yaml", "json", "toml", "html", None})
-
-
-def _printable_ratio(data: bytes) -> float:
-    try:
-        text = data.decode("utf-8")
-    except UnicodeDecodeError:
-        return 0.0
-    return sum(c.isprintable() or c in "\n\t" for c in text) / max(len(text), 1)
+_URL = re.compile(r"https?://", re.IGNORECASE)
 
 
 def _b06(f: TextFile) -> Iterator[Finding]:
     if f.entry.sprache not in _INSTRUCTION_LANGS:
         return
-    for m in _BASE64.finditer(f.text):
-        if f.text[max(0, m.start() - 40) : m.start()].rstrip().endswith("base64,"):
-            continue  # data: URL (images, fonts)
-        try:
-            decoded = base64.b64decode(m.group() + "=" * (-len(m.group()) % 4))
-        except (binascii.Error, ValueError):
-            continue
-        if _printable_ratio(decoded) >= 0.9:
-            yield _b06_finding(f, m.start(), "Base64", decoded)
-            return
-    for m in _HEX.finditer(f.text):
-        decoded = bytes.fromhex(m.group())
-        if _printable_ratio(decoded) >= 0.9:
-            yield _b06_finding(f, m.start(), "Hex", decoded)
-            return
-
-
-def _b06_finding(f: TextFile, offset: int, art: str, decoded: bytes) -> Finding:
-    line = f.line_of(offset)
-    return finding(
+    blocks = decode_blocks(f.text)
+    if not blocks:
+        return
+    risky = [b for b in blocks if _DANGEROUS_COMMAND.search(b.text) or _URL.search(b.text)]
+    block = risky[0] if risky else blocks[0]
+    line = f.line_of(block.offset)
+    yield finding(
         rule_id="LB-B06-kodierter-text",
         ebene=Ebene.B,
-        schwere=Schwere.M,
-        titel=f"{art}-kodierter Text",
+        schwere=Schwere.H if risky else Schwere.M,
+        titel=f"{block.art}-kodierter Text" + (" mit Befehl oder Adresse" if risky else ""),
         erklaerung=(
-            f"Ein {art}-Block enthält lesbaren Text. Kodierung verbirgt Anweisungen oder Befehle "
-            "vor Menschen und einfachen Filtern."
+            f"Ein {block.art}-Block enthält lesbaren Text. Kodierung verbirgt Anweisungen oder "
+            "Befehle vor Menschen und einfachen Filtern."
+            + (
+                " Der dekodierte Text enthält einen Befehl oder eine Internetadresse."
+                if risky
+                else ""
+            )
         ),
         datei=f.path,
         zeile=line,
-        beleg="dekodiert: " + visible(decoded.decode("utf-8", errors="replace"), 200),
+        beleg="dekodiert: " + visible(block.text, 200),
         fix="Den Inhalt im Klartext ablegen oder entfernen.",
-        fix_prompt=f"Ersetze in {f.path}, Zeile {line}, den {art}-Block durch Klartext.",
+        fix_prompt=f"Ersetze in {f.path}, Zeile {line}, den kodierten Block durch Klartext.",
         normbezug=NORM_INJECTION,
     )
 

@@ -10,6 +10,7 @@ import re
 from pathlib import PurePosixPath
 
 from luibui_scan.analyzers._common import TextFile, finding, rules_dir, text_files, visible
+from luibui_scan.analyzers._decode import decode_blocks, tag_text
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import ScanContext
@@ -17,8 +18,10 @@ from luibui_scan.models import Ebene, Finding, Schwere
 from luibui_scan.textrules import TextRule, load_all
 
 INSTRUCTION_SUFFIXES = frozenset(
-    {".md", ".mdx", ".markdown", ".txt", ".prompt", ".yaml", ".yml", ".json", ".jsonc", ".toml", ""}
-)
+    {".md", ".mdx", ".mdc", ".markdown", ".txt", ".prompt", ".yaml", ".yml", ".json", ".jsonc",
+     ".jsonl", ".ndjson", ".toml", ".cursorrules", ".windsurfrules", ".clinerules", ""}
+)  # fmt: skip
+"""Also Cursor rules (.mdc), few-shot data (.jsonl) and rule files named like ``.cursorrules``."""
 LOCKFILES = frozenset(
     {"package-lock.json", "pnpm-lock.yaml", "yarn.lock", "poetry.lock", "uv.lock", "cargo.lock",
      "composer.lock", "gemfile.lock", "pipfile.lock", "bun.lock", "npm-shrinkwrap.json"}
@@ -32,10 +35,39 @@ _QUOTES = (("`", "`"), ('"', '"'), ("„", "“"), ("“", "”"), ("«", "»"),
 
 def _is_instruction_text(f: TextFile) -> bool:
     path = PurePosixPath(f.path.lower())
-    return (
-        f.entry.kind == "text"
-        and path.suffix in INSTRUCTION_SUFFIXES
-        and path.name not in LOCKFILES
+    suffix = path.suffix if path.suffix else (path.name if path.name.startswith(".") else "")
+    return f.entry.kind == "text" and suffix in INSTRUCTION_SUFFIXES and path.name not in LOCKFILES
+
+
+def _hidden(f: TextFile) -> list[tuple[int, str, str]]:
+    """Text a model reads but a person does not see: Unicode tags and encoded blocks."""
+    out: list[tuple[int, str, str]] = []
+    tags = tag_text(f.text)
+    if tags:
+        first = next((i for i, c in enumerate(f.text) if 0xE0000 <= ord(c) <= 0xE007F), 0)
+        out.append((first, "Unicode-Tag-Zeichen", tags))
+    if PurePosixPath(f.path.lower()).name not in LOCKFILES:
+        out += [(d.offset, d.art, d.text) for d in decode_blocks(f.text)]
+    return out
+
+
+def _hidden_finding(rule: TextRule, f: TextFile, offset: int, art: str, text: str) -> Finding:
+    line = f.line_of(offset)
+    return finding(
+        rule_id=rule.id,
+        ebene=Ebene.B,
+        schwere=rule.schwere,
+        titel=f"{rule.titel} (versteckt als {art})"[:200],
+        erklaerung=(
+            f"Die Anweisung ist als {art} versteckt und für Menschen unsichtbar. Ein Sprachmodell "
+            f"kann sie trotzdem lesen und befolgen. {rule.erklaerung}"
+        )[:4000],
+        datei=f.path,
+        zeile=line,
+        beleg="verborgen: " + visible(text, 200),
+        fix=rule.fix,
+        fix_prompt=f"Entferne in {f.path}, Zeile {line}, den versteckten {art}-Inhalt.",
+        normbezug=rule.normbezug,
     )
 
 
@@ -115,10 +147,15 @@ class MusterAnalyzer:
             raise FileNotFoundError("keine Regeln für B08–B17 gefunden")
         findings = []
         for f in text_files(ctx):
-            if not _is_instruction_text(f):
-                continue
+            hidden = _hidden(f)
+            visible_text = _is_instruction_text(f)
             for rule in rules:
-                span = _search(rule, f.text)  # RuleTimeoutError fails the analyzer: never green
-                if span is not None:
-                    findings.append(_finding(rule, f, *span))
+                if visible_text:
+                    span = _search(rule, f.text)  # RuleTimeoutError fails the analyzer
+                    if span is not None:
+                        findings.append(_finding(rule, f, *span))
+                for offset, art, text in hidden:
+                    if _search(rule, text) is not None:
+                        findings.append(_hidden_finding(rule, f, offset, art, text))
+                        break
         return findings

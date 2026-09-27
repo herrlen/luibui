@@ -48,6 +48,8 @@ services:
       FORWARDED_ALLOW_IPS: 100.121.0.0/16
       # Empty or 0: no access log (client IPs are personal data). 1 only for a short check.
       LUIBUI_ACCESS_LOG: ${LUIBUI_ACCESS_LOG}
+      # Registration, uploads and quick scans; scripts/release.sh keeps the deployed value.
+      ANNAHME_OFFEN: ${ANNAHME_OFFEN}
     volumes:
       - luibui-projects:/projects
       - luibui-scratch:/scratch

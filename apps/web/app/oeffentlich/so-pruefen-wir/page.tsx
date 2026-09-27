@@ -31,13 +31,6 @@ export default function SoPruefenWir() {
         <li>Ein Sprachmodell allein entscheidet nie über Grün oder eine Sperre.</li>
         <li>Jeder Befund nennt Regel, Datei, Zeile und Beleg.</li>
       </ul>
-      <p className="text-sm text-muted">
-        Alle Prüfungen mit Schweregraden stehen im{" "}
-        <a className="text-petrol underline" href="https://github.com/herrlen/luibui/blob/main/docs/luibui_Pruefkatalog.md">
-          Prüfkatalog
-        </a>
-        , der Quellcode ist offen.
-      </p>
     </article>
   );
 }

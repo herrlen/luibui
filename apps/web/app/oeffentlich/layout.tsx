@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 
 import { appUrl } from "@/lib/hosts";
 
-const QUELLE = "https://github.com/herrlen/luibui";
-
 export default async function OeffentlichLayout({ children }: { children: ReactNode }) {
   const anmelden = await appUrl("/anmelden");
   const registrieren = await appUrl("/registrieren");
@@ -18,12 +16,6 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
           <Link href="/so-pruefen-wir" className="text-sm hover:text-petrol">
             So prüfen wir
           </Link>
-          <a href={`${QUELLE}/blob/main/docs/luibui_Pruefkatalog.md`} className="text-sm hover:text-petrol">
-            Prüfkatalog
-          </a>
-          <a href={QUELLE} className="text-sm hover:text-petrol">
-            Quellcode
-          </a>
           <span className="ml-auto flex items-center gap-3">
             <a href={anmelden} className="text-sm font-semibold hover:text-petrol">
               Anmelden

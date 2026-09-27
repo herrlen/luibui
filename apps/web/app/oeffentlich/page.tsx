@@ -9,6 +9,26 @@ const SCHRITTE = [
   ["Beheben", "Jeder Befund mit Datei, Zeile, Beleg und einem fertigen Prompt für deinen Coding-Agent."],
 ];
 
+const ZAHLEN: [string, string, string][] = [
+  ["36,8 %", "der untersuchten Skills mit mindestens einer Sicherheitslücke", "1"],
+  ["13,4 %", "mit einer kritischen Lücke – mehr als jeder achte", "1"],
+  ["82 %", "der untersuchten MCP-Server mit Dateizugriffen, die für Zugriff außerhalb des erlaubten Bereichs anfällig sind", "2"],
+];
+
+const QUELLEN: [string, string, string][] = [
+  ["1", "Snyk, „ToxicSkills“, Februar 2026: 3.984 Skills aus ClawHub und skills.sh.", "https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/"],
+  ["2", "Endor Labs, 2026: 2.614 MCP-Implementierungen, Path Traversal (CWE-22).", "https://www.endorlabs.com/learn/classic-vulnerabilities-meet-ai-infrastructure-why-mcp-needs-appsec"],
+];
+
+const KIS = ["Claude", "ChatGPT", "Gemini", "Mistral", "Open WebUI", "MCP-Clients"];
+
+const ARTEN: [string, string[]][] = [
+  ["Skills", ["Versteckte Anweisungen an das Sprachmodell", "Unsichtbare Unicode-Zeichen", "Links, über die Daten abfließen"]],
+  ["Plugins", ["Hooks, die Befehle automatisch starten", "Installationsskripte", "Programmdateien ohne Quellcode"]],
+  ["Tools", ["Zugangsdaten im Code", "Abhängigkeiten mit bekannten Lücken", "Pakete aus fremden Quellen"]],
+  ["MCP-Server", ["Startbefehle in der MCP-Konfiguration", "Namensverwechslungen bei Paketen", "Fehlende Lockfiles"]],
+];
+
 const AMPELN: [string, string][] = [
   ["gruen", "Keine bekannten Befunde. Heißt nicht „sicher“, sondern: Wir haben nichts gefunden."],
   ["gelb", "Etwas sollte geprüft werden, oder nicht alle Prüfungen konnten laufen."],
@@ -38,6 +58,58 @@ export default async function Startseite() {
           </a>
         </div>
         <Schnellscan />
+      </section>
+
+      <section aria-labelledby="lage" className="rounded-[14px] bg-ink p-8 text-white sm:p-10">
+        <h2 id="lage" className="max-w-3xl font-display text-3xl font-bold sm:text-4xl">
+          Mehr als jeder dritte KI-Skill hat eine Sicherheitslücke.
+        </h2>
+        <dl className="mt-8 grid gap-6 md:grid-cols-3">
+          {ZAHLEN.map(([zahl, text, quelle]) => (
+            <div key={zahl}>
+              <dt className="font-display text-5xl font-bold">
+                {zahl}
+                <sup className="ml-1 text-lg font-normal">{quelle}</sup>
+              </dt>
+              <dd className="mt-2 text-sm text-white/80">{text}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-8 max-w-3xl text-lg">
+          Skills und Plugins sehen harmlos aus und laufen mit Zugriff auf deine Chats, Dateien und Zugangsdaten. luibui
+          prüft sie, bevor du sie installierst.
+        </p>
+        <ol className="mt-6 flex flex-col gap-1 text-xs text-white/70">
+          {QUELLEN.map(([nr, text, url]) => (
+            <li key={nr}>
+              {nr} {text}{" "}
+              <a href={url} className="underline hover:text-white" rel="noopener noreferrer">
+                Quelle
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-labelledby="umfang">
+        <h2 id="umfang" className="font-display text-3xl font-bold">
+          Was luibui prüft
+        </h2>
+        <p className="mt-3 max-w-3xl text-ink-2">
+          Erweiterungen für {KIS.slice(0, -1).join(", ")} und {KIS[KIS.length - 1]}. Einige Beispiele:
+        </p>
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ARTEN.map(([art, beispiele]) => (
+            <li key={art} className="rounded-[14px] border border-linie bg-surface p-6">
+              <h3 className="text-lg font-semibold">{art}</h3>
+              <ul className="mt-3 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-2">
+                {beispiele.map((b) => (
+                  <li key={b}>{b}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section aria-labelledby="ablauf">

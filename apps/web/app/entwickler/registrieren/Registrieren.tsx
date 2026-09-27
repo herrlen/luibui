@@ -10,7 +10,7 @@ export function Registrieren() {
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   return (
-    <form
+    <form method="post"
       className="flex flex-col gap-4"
       onSubmit={async (e) => {
         e.preventDefault();

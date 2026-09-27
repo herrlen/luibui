@@ -20,7 +20,7 @@ export function Kontaktformular() {
     );
   }
   return (
-    <form
+    <form method="post"
       className="flex flex-col gap-4 rounded-[18px] border border-linie bg-surface p-6 sm:p-8"
       onSubmit={async (e) => {
         e.preventDefault();

@@ -61,7 +61,7 @@ export function Upload({ projektId }: { projektId: string }) {
   }
 
   return (
-    <form
+    <form method="post"
       className="flex flex-col gap-4 rounded-[14px] border border-linie bg-surface p-6"
       onSubmit={(e) => {
         e.preventDefault();

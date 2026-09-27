@@ -11,7 +11,7 @@ export function Anmelden() {
   const [totp, setTotp] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   return (
-    <form
+    <form method="post"
       className="flex flex-col gap-4"
       onSubmit={async (e) => {
         e.preventDefault();

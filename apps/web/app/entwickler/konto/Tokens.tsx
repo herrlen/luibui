@@ -27,7 +27,7 @@ export function Tokens({ tokens }: { tokens: TokenInfo[] }) {
           </div>
         </div>
       ) : null}
-      <form
+      <form method="post"
         className="flex flex-wrap items-end gap-3"
         onSubmit={async (e) => {
           e.preventDefault();

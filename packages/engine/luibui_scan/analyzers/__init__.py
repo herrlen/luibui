@@ -6,4 +6,4 @@ from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry, r
 __all__ = ["Analyzer", "AnalyzerInfo", "AnalyzerRegistry", "default_registry", "register"]
 
 # Built-in analyzers register themselves on import.
-from luibui_scan.analyzers import b_inhalte  # noqa: F401
+from luibui_scan.analyzers import a_dateien, b_inhalte  # noqa: F401

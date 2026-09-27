@@ -1,0 +1,3 @@
+# Bekannte Schadsoftware (Prüfkatalog A08): ein SHA-256 pro Zeile, Kommentar nach "#".
+# Treffer sperren das Paket, und die Dateien werden nie abgelegt (CLAUDE.md Regel 10).
+# Quelle und Datum jedes Eintrags im Kommentar angeben. Nur Hashes, nie die Dateien selbst.

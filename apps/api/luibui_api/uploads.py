@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from luibui_api.models import Job, Project, ProjectVersion, Scan, StoredFile
 from luibui_api.settings import get_settings
 from luibui_api.storage import blob_store, new_storage_key, project_data_key
+from luibui_scan.analyzers.a_dateien import known_malware
 from luibui_scan.intake import (
     IntakeRejectedError,
     accept_file,
@@ -63,11 +64,18 @@ def _unprocessable(grund: str, text: str) -> HTTPException:
     )
 
 
-def _intake(upload: Upload, root: Path, scratch_root: Path) -> str | None:
-    """Unpack the upload into ``root``; return the commit for Git input."""
+@dataclass(frozen=True, slots=True)
+class _Intake:
+    commit: str | None = None
+    git_symlinks: tuple[str, ...] = ()
+
+
+def _intake(upload: Upload, root: Path, scratch_root: Path) -> _Intake:
+    """Unpack the upload into ``root``; for Git input also return commit and symlink paths."""
     if upload.art is Eingabe.GIT:
         try:
-            return clone_into(upload.git_url or "", root, scratch_root).commit
+            cloned = clone_into(upload.git_url or "", root, scratch_root)
+            return _Intake(cloned.commit, tuple(cloned.symlinks))
         except ValueError as exc:
             raise _unprocessable("ungueltige_url", str(exc)) from None
         except GitError:
@@ -78,18 +86,18 @@ def _intake(upload: Upload, root: Path, scratch_root: Path) -> str | None:
         if upload.text is None:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Text fehlt")
         accept_text(upload.text, root)
-        return None
+        return _Intake()
     if not upload.files:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Keine Datei übergeben")
     if upload.art is Eingabe.AUSWAHL:
         accept_selection(upload.files, root)
-        return None
+        return _Intake()
     if len(upload.files) != 1:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Genau eine Datei erwartet")
     name, src = upload.files[0]
     if upload.art is Eingabe.DATEI:
         accept_file(name, src, root)
-        return None
+        return _Intake()
     # ZIP: zipfile needs a seekable file with a known size, so it is copied next to the scratch.
     archive = scratch_root / f".upload-{root.name}.zip"
     try:
@@ -98,7 +106,7 @@ def _intake(upload: Upload, root: Path, scratch_root: Path) -> str | None:
         extract_zip(archive, root)
     finally:
         archive.unlink(missing_ok=True)
-    return None
+    return _Intake()
 
 
 def _store_version(
@@ -201,13 +209,19 @@ def create_scan(
     owner_id = project.owner_id if project else None
     try:
         try:
-            commit = _intake(upload, root, settings.scratch_root)
+            intake = _intake(upload, root, settings.scratch_root)
         except IntakeRejectedError as exc:
             raise rejected(exc) from None
         inventory = build_inventory(root)
         version_id = None
-        if project is not None and not project.delete_files_after_scan:
-            version_id = _store_version(db, project, inventory, root, written, commit)
+        malware = known_malware()
+        # Rule 10: known malware is never stored. The scan still runs and reports A08.
+        if (
+            project is not None
+            and not project.delete_files_after_scan
+            and not any(e.sha256 in malware for e in inventory.entries)
+        ):
+            version_id = _store_version(db, project, inventory, root, written, intake.commit)
         scan = Scan(
             owner_id=owner_id,
             project_id=project.id if project else None,
@@ -235,6 +249,7 @@ def create_scan(
                     "eingabe": upload.art.value,
                     "scan_art": scan_art.value,
                     "name": name,
+                    "options": {"git_symlinks": list(intake.git_symlinks)},
                 },
             )
         )

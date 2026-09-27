@@ -31,8 +31,12 @@ def scan(ctx: JobContext) -> dict[str, Any]:
 
     if not any(ctx.scratch.iterdir()):
         raise RuntimeError("leeres Prüfverzeichnis")
+    options = ctx.payload.get("options")
     result = scan_prepared(
-        ctx.scratch, Eingabe(ctx.payload["eingabe"]), ScanArt(ctx.payload["scan_art"])
+        ctx.scratch,
+        Eingabe(ctx.payload["eingabe"]),
+        ScanArt(ctx.payload["scan_art"]),
+        options=options if isinstance(options, dict) else None,
     )
     report = build_report(
         result, name=str(ctx.payload["name"]), scan_id=uuid.UUID(ctx.payload["scan_id"])

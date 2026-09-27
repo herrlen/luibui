@@ -291,3 +291,22 @@ def test_worker_scans_the_upload(api: Api, tmp_path: Path, _migrated: str) -> No
     (status,) = db_rows(_migrated, "SELECT status FROM jobs")[0]
     assert status == "done"
     json.dumps(s["bericht"])
+
+
+def test_known_malware_is_never_stored(
+    api: Api, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _migrated: str
+) -> None:
+    import hashlib
+
+    from luibui_api import uploads
+
+    payload = b"LUIBUI-TESTFIXTURE: entschaerft\n"
+    monkeypatch.setattr(
+        uploads, "known_malware", lambda: frozenset({hashlib.sha256(payload).hexdigest()})
+    )
+    c = api.user("anna@example.org")
+    r = upload_zip(c, project(c), {"x.bin": payload, "SKILL.md": b"# x"})
+    assert r.status_code == 202
+    assert blobs(tmp_path) == []
+    assert db_rows(_migrated, "SELECT count(*) FROM project_versions")[0][0] == 0
+    assert len(scratch_dirs(tmp_path)) == 1  # still scanned, so the report shows A08

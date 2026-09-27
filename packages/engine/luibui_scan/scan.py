@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry
 from luibui_scan.context import ScanContext
@@ -78,6 +79,7 @@ def scan_prepared(
     scan_art: ScanArt,
     registry: AnalyzerRegistry | None = None,
     erwartet: Mapping[str, str] | None = None,
+    options: Mapping[str, Any] | None = None,
 ) -> ScanResult:
     """Scan the files intake wrote to ``root``. Never executes anything from it.
 
@@ -91,6 +93,7 @@ def scan_prepared(
         pruefumfang=umfang,
         inventory=inventory.entries,
         pakettyp=inventory.pakettyp,
+        options=dict(options or {}),
     )
     pipeline = run_pipeline(ctx, registry)
     names = {a.info.name for a in (default_registry if registry is None else registry)}

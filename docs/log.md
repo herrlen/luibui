@@ -430,3 +430,38 @@ einer Einzeldatei), ist Umfang und keine Lücke.
 (A01). Das ist richtig für Uploads, aber unbequem lokal. Zu entscheiden ist, ob die CLI
 installierte Abhängigkeiten (`node_modules`, `.venv`) auslässt. Die prüft ohnehin D über das
 Lockfile.
+
+## 2026-09-27 — S1-5 Analyzer A – Dateien (A02–A12)
+
+`analyzers/a_dateien.py` prüft:
+- **A02, automatisch laufende Befehle:** Claude-Code-Hooks, VS-Code-Aufgaben bei
+  `folderOpen`, npm-`pre`/`post`/`install`, Git-Hooks, `.envrc`.
+- **A03, Installationsskripte,** die nachladen oder Prozesse starten.
+- **A04, Programmdateien.**
+- **A05, Endung passt nicht zum Inhalt.**
+- **A06, kompiliert ohne Quelle:** `.pyc` ohne `.py`, minifiziertes JS ohne Map.
+- **A07, Archive im Paket.**
+- **A08, bekannte Schadsoftware** gegen `rules/data/schadsoftware-sha256.txt`.
+- **A09, `.env` und ungewöhnliche versteckte Dateien.**
+- **A10, Git-Symlinks, die aus dem Paket zeigen.**
+- **A11, Submodule.**
+- **A12, fremde Paketquellen** (`--extra-index-url`, `registry=`, `[[tool.uv.index]]`).
+
+Je Regel gibt es höchstens 20 Befunde, der letzte fasst den Rest zusammen. 41 neue Tests.
+
+**Entscheidungen:**
+- **A02 sperrt nur bei gefährlichen Befehlen.** Automatische Befehle allein ergeben H (Rot),
+  denn Hooks und `postinstall` sind in legitimen Plugins und Paketen üblich. K (gesperrt) gibt es
+  erst, wenn der Befehl herunterlädt und ausführt (`curl … | sh`), dekodiert (`base64 -d`) oder
+  Code inline startet (`eval`, `python -c`, `/dev/tcp`). `.envrc` bleibt M, weil direnv erst nach
+  `direnv allow` ausführt. `prepare` zählt nicht als Installations-Hook.
+- **A08 und Regel 10:** Die API legt ein Paket nicht ab, wenn eine Datei auf der Hash-Liste
+  steht. Geprüft wird es trotzdem, damit der Bericht A08 zeigt (Test). Die Liste ist leer; wie
+  sie gefüllt wird, bleibt offen (ClamAV ab Sprint 4 oder gepflegte Hash-Liste).
+- **A10** braucht die Symlink-Liste aus dem Git-Clone. Sie geht von der API über die
+  Job-Payload (`options.git_symlinks`) an den Worker und dort in `ScanContext.options`.
+- Regeldateien: `LUIBUI_RULES_DIR`, sonst `rules/` im Repository, sonst `/rules`.
+
+**Probe an echten Repos:** In `anthropics/skills` ein berechtigtes A07 (ein `.tar.gz` im Skill).
+In `modelcontextprotocol/servers` ein Fehlalarm A12, weil die offizielle npm-Adresse in
+Anführungszeichen stand. Behoben und als Test aufgenommen, danach ohne Befund.

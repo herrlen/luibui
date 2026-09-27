@@ -7,11 +7,12 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 
 from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, get_owned
-from luibui_api.models import Project, ProjectVersion, StoredFile
+from luibui_api.models import Project, ProjectVersion, Scan, StoredFile
 from luibui_api.storage import blob_store
 from luibui_scan.intake.safe_git import canonical_url
 
@@ -34,6 +35,19 @@ class ProjektNeu(BaseModel):
         return None if value is None else canonical_url(value)
 
 
+class Pruefungskurz(BaseModel):
+    """A scan in lists: status and verdict, without the report."""
+
+    id: uuid.UUID
+    status: str
+    pruefumfang: str
+    ampel_gesamt: str | None
+    note: int | None
+    freigabe: str | None
+    created_at: datetime
+    finished_at: datetime | None
+
+
 class Projekt(BaseModel):
     id: uuid.UUID
     name: str
@@ -42,9 +56,23 @@ class Projekt(BaseModel):
     git_url: str | None
     nach_pruefung_loeschen: bool
     created_at: datetime
+    letzte_pruefung: Pruefungskurz | None = None
 
 
-def _out(p: Project) -> Projekt:
+def kurz(s: Scan) -> Pruefungskurz:
+    return Pruefungskurz(
+        id=s.id,
+        status=s.status,
+        pruefumfang=s.pruefumfang,
+        ampel_gesamt=s.ampel_gesamt,
+        note=s.note,
+        freigabe=s.freigabe,
+        created_at=s.created_at,
+        finished_at=s.finished_at,
+    )
+
+
+def _out(p: Project, letzte: Scan | None = None) -> Projekt:
     return Projekt(
         id=p.id,
         name=p.name,
@@ -53,6 +81,7 @@ def _out(p: Project) -> Projekt:
         git_url=p.git_url,
         nach_pruefung_loeschen=p.delete_files_after_scan,
         created_at=p.created_at,
+        letzte_pruefung=kurz(letzte) if letzte else None,
     )
 
 
@@ -83,10 +112,33 @@ def anlegen(body: ProjektNeu, caller: CurrentCaller, db: DbSession) -> Projekt:
 
 @router.get("")
 def liste(caller: CurrentCaller, db: DbSession) -> list[Projekt]:
-    rows = db.scalars(
-        select(Project).where(Project.owner_id == caller.user.id).order_by(Project.created_at)
+    rows = list(
+        db.scalars(
+            select(Project).where(Project.owner_id == caller.user.id).order_by(Project.created_at)
+        )
     )
-    return [_out(p) for p in rows]
+    latest = {
+        s.project_id: s
+        for s in db.scalars(
+            select(Scan)
+            .where(Scan.owner_id == caller.user.id, Scan.project_id.is_not(None))
+            .ext(distinct_on(Scan.project_id))
+            .order_by(Scan.project_id, Scan.created_at.desc())
+        )
+    }
+    return [_out(p, latest.get(p.id)) for p in rows]
+
+
+@router.get("/{project_id}/scans")
+def pruefungen(project_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> list[Pruefungskurz]:
+    project = get_owned(db, Project, project_id, caller)
+    rows = db.scalars(
+        select(Scan)
+        .where(Scan.project_id == project.id, Scan.owner_id == caller.user.id)
+        .order_by(Scan.created_at.desc())
+        .limit(100)
+    )
+    return [kurz(s) for s in rows]
 
 
 @router.get("/{project_id}")

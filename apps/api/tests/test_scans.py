@@ -312,3 +312,16 @@ def test_known_malware_is_never_stored(
     assert blobs(tmp_path) == []
     assert db_rows(_migrated, "SELECT count(*) FROM project_versions")[0][0] == 0
     assert len(scratch_dirs(tmp_path)) == 1  # still scanned, so the report shows A08
+
+
+def test_project_list_shows_latest_scan_and_scan_list(api: Api) -> None:
+    a, b = api.user("anna@example.org"), api.user("bert@example.org")
+    pid = project(a)
+    first = upload_zip(a, pid).json()["id"]
+    second = upload_zip(a, pid).json()["id"]
+    (p,) = a.get("/api/v1/projects").json()
+    assert p["letzte_pruefung"]["id"] == second and p["letzte_pruefung"]["status"] == "wartend"
+    ids = [s["id"] for s in a.get(f"/api/v1/projects/{pid}/scans").json()]
+    assert ids == [second, first]
+    assert b.get(f"/api/v1/projects/{pid}/scans").status_code == 404
+    assert b.get("/api/v1/projects").json() == []

@@ -10,6 +10,7 @@ from collections.abc import Iterator
 from pathlib import PurePosixPath
 
 from luibui_scan.analyzers._a_ausfuehrung import _a02, _a03
+from luibui_scan.analyzers._a_formate import _a13, _a14, _a15, _installer
 from luibui_scan.analyzers._a_herkunft import _a10, _a11, _a12
 from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
@@ -90,6 +91,8 @@ _KIND_LABEL = {
     "pe": "Windows",
     "java-class": "Java",
     "wasm": "WebAssembly",
+    "deb": "Debian-Paket",
+    "rpm": "RPM-Paket",
 }
 
 
@@ -153,9 +156,9 @@ def _a04_to_a07(ctx: ScanContext) -> Iterator[Finding]:
                     normbezug=("OWASP-ASI04",),
                 )
             )
-        if ext == ".pyc" and entry.path[: -len(ext)].split("__pycache__/")[-1].split(".")[
-            0
-        ] not in {p[:-3].rsplit("/", 1)[-1] for p in paths if p.endswith(".py")}:
+        if (ext == ".pyc" or kind == "pyc") and entry.path[: -len(ext) or None].split(
+            "__pycache__/"
+        )[-1].split(".")[0] not in {p[:-3].rsplit("/", 1)[-1] for p in paths if p.endswith(".py")}:
             compiled.append(_a06(entry, "Python-Bytecode ohne passende .py-Datei"))
         elif ext == ".js" and entry.kind == "text" and entry.size > 50_000:
             head = read_bytes(ctx, entry, 200_000)
@@ -355,6 +358,19 @@ class DateienAnalyzer:
 
     def analyze(self, ctx: ScanContext) -> list[Finding]:
         findings: list[Finding] = []
-        for check in (_a02, _a03, _a04_to_a07, _a08, _a09, _a10, _a11, _a12):
+        for check in (
+            _a02,
+            _a03,
+            _a04_to_a07,
+            _installer,
+            _a08,
+            _a09,
+            _a10,
+            _a11,
+            _a12,
+            _a13,
+            _a14,
+            _a15,
+        ):
             findings.extend(check(ctx))
         return findings

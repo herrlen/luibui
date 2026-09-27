@@ -60,9 +60,14 @@ _MAGIC: tuple[tuple[bytes, str], ...] = (
     (b"GIF89a", "gif"),
     (b"SQLite format 3\x00", "sqlite"),
     (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", "ole"),
+    (b"!<arch>\ndebian", "deb"),
+    (b"\xed\xab\xee\xdb", "rpm"),
+    (b"GGUF", "gguf"),
+    (b"\x89HDF\r\n\x1a\n", "hdf5"),
 )
 
-EXECUTABLE_KINDS = frozenset({"elf", "macho", "pe", "java-class", "wasm"})
+EXECUTABLE_KINDS = frozenset({"elf", "macho", "pe", "java-class", "wasm", "deb", "rpm"})
+MODEL_KINDS = frozenset({"pickle", "safetensors", "gguf", "hdf5", "tflite"})
 
 
 def detect_kind(head: bytes) -> str:
@@ -81,9 +86,33 @@ def detect_kind(head: bytes) -> str:
         return "webp"
     if len(head) > 262 and head[257:262] == b"ustar":
         return "tar"
+    if _is_pickle(head):
+        return "pickle"
+    if _is_safetensors(head):
+        return "safetensors"
+    if head[4:8] == b"TFL3":
+        return "tflite"
+    if len(head) >= 16 and head[2:4] == b"\r\n" and not _is_text(head):
+        # CPython bytecode: two magic bytes that change per version, then CR LF.
+        return "pyc"
     if _is_text(head):
         return "script" if head.startswith(b"#!") else "text"
     return "binary"
+
+
+def _is_pickle(head: bytes) -> bool:
+    """Pickle protocol 2–5 starts with PROTO; protocol 4 and 5 follow with a FRAME opcode."""
+    if len(head) < 3 or head[0] != 0x80 or head[1] not in (2, 3, 4, 5):
+        return False
+    return head[1] < 4 or head[2] == 0x95
+
+
+def _is_safetensors(head: bytes) -> bool:
+    """safetensors: 8-byte little-endian header length, then a JSON object."""
+    if len(head) < 10:
+        return False
+    length = int.from_bytes(head[:8], "little")
+    return 2 <= length <= 100 * 1024 * 1024 and head[8:10] in (b'{"', b"{ ", b"{}")
 
 
 def _is_text(head: bytes) -> bool:

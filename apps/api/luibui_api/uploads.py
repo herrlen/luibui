@@ -27,7 +27,7 @@ from luibui_scan.intake import (
     accept_file,
     accept_selection,
     accept_text,
-    extract_zip,
+    extract_archive,
     rejection_finding,
 )
 from luibui_scan.intake.safe_git import GitError, clone_into
@@ -98,12 +98,12 @@ def _intake(upload: Upload, root: Path, scratch_root: Path) -> _Intake:
     if upload.art is Eingabe.DATEI:
         accept_file(name, src, root)
         return _Intake()
-    # ZIP: zipfile needs a seekable file with a known size, so it is copied next to the scratch.
-    archive = scratch_root / f".upload-{root.name}.zip"
+    # ZIP or tar: both need a seekable file with a known size, so it is copied next to the scratch.
+    archive = scratch_root / f".upload-{root.name}.archiv"
     try:
         with archive.open("xb") as out:
             shutil.copyfileobj(src, out, 1024 * 1024)
-        extract_zip(archive, root)
+        extract_archive(archive, root)
     finally:
         archive.unlink(missing_ok=True)
     return _Intake()

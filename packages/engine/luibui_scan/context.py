@@ -37,6 +37,10 @@ class ScanContext:
     manifest: dict[str, Any] | None = None
     """Parsed luibui.json, if present and valid."""
     options: dict[str, Any] = field(default_factory=dict)
+    entpackt: tuple[str, ...] = ()
+    """Package-format archives that intake unpacked one level deep into ``<path>.inhalt/``."""
+    nicht_entpackt: tuple[tuple[str, str], ...] = ()
+    """Package-format archives that stayed packed, with the rejection reason."""
 
     def resolve(self, relative: str) -> Path:
         """Return the absolute path of a package file, refusing anything outside ``root``."""

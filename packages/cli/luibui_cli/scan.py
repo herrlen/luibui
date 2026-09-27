@@ -17,7 +17,7 @@ from luibui_scan.intake import (
     IntakeRejectedError,
     accept_directory,
     accept_file,
-    extract_zip,
+    extract_archive,
     rejection_finding,
 )
 from luibui_scan.intake.safe_git import GIT_LIMITS
@@ -116,8 +116,8 @@ def _intake(source: Path, scratch: Path) -> Eingabe:
         # A local folder is treated like a repository, not like a browser file selection.
         accept_directory(source, scratch, GIT_LIMITS)
         return Eingabe.LOKAL
-    if source.suffix.lower() == ".zip":
-        extract_zip(source, scratch)
+    if source.name.lower().endswith((".zip", ".tar", ".tgz", ".tar.gz", ".tar.bz2", ".tar.xz")):
+        extract_archive(source, scratch)
         return Eingabe.ZIP
     with source.open("rb") as f:
         accept_file(source.name, f, scratch)

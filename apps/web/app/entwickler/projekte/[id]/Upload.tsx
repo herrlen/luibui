@@ -10,7 +10,7 @@ type Art = "dateien" | "ordner" | "zip" | "text" | "git";
 const ARTEN: [Art, string][] = [
   ["dateien", "Datei(en)"],
   ["ordner", "Ordner"],
-  ["zip", "ZIP"],
+  ["zip", "Archiv (ZIP, tar)"],
   ["text", "Text einfügen"],
   ["git", "Git-Repository"],
 ];
@@ -103,7 +103,7 @@ export function Upload({ projektId }: { projektId: string }) {
           key={art}
           type="file"
           multiple={art !== "zip"}
-          accept={art === "zip" ? ".zip,application/zip" : undefined}
+          accept={art === "zip" ? ".zip,.tar,.tgz,.gz,.bz2,.xz,application/zip,application/x-tar,application/gzip" : undefined}
           {...(art === "ordner" ? { webkitdirectory: "", directory: "" } : {})}
           className="text-sm"
         />

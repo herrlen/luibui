@@ -12,6 +12,7 @@ from typing import Any
 
 from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry
 from luibui_scan.context import ScanContext
+from luibui_scan.intake.nested import expand_packages
 from luibui_scan.inventory import Inventory, build_inventory
 from luibui_scan.models import Pruefumfang, ScanArt
 from luibui_scan.pipeline import PipelineResult, run_pipeline
@@ -86,6 +87,7 @@ def scan_prepared(
 
     ``erwartet`` overrides ``ERWARTET`` (tests with their own registry pass ``{}``).
     """
+    nested = expand_packages(root)
     inventory = build_inventory(root)
     umfang = pruefumfang_for(eingabe, inventory)
     ctx = ScanContext(
@@ -95,6 +97,8 @@ def scan_prepared(
         inventory=inventory.entries,
         pakettyp=inventory.pakettyp,
         options=dict(options or {}),
+        entpackt=nested.entpackt,
+        nicht_entpackt=nested.abgelehnt,
     )
     pipeline = run_pipeline(ctx, registry)
     names = {a.info.name for a in (default_registry if registry is None else registry)}

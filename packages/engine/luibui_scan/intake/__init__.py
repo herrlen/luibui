@@ -7,7 +7,7 @@ Git clones follow in ``safe_git`` (S1-3).
 
 from luibui_scan.intake.errors import Ablehnung, IntakeRejectedError, rejection_finding
 from luibui_scan.intake.limits import DEFAULT_LIMITS, Limits
-from luibui_scan.intake.safe_extract import extract_zip
+from luibui_scan.intake.safe_extract import extract_archive, extract_zip
 from luibui_scan.intake.sources import (
     accept_directory,
     accept_file,
@@ -24,6 +24,7 @@ __all__ = [
     "accept_file",
     "accept_selection",
     "accept_text",
+    "extract_archive",
     "extract_zip",
     "rejection_finding",
 ]

@@ -107,6 +107,8 @@ def _capped(findings: list[Finding]) -> list[Finding]:
 def _a04_to_a07(ctx: ScanContext) -> Iterator[Finding]:
     binaries, disguised, compiled, archives = [], [], [], []
     paths = {e.path for e in ctx.inventory}
+    entpackt = set(ctx.entpackt)
+    nicht_entpackt = dict(ctx.nicht_entpackt)
     for entry in ctx.inventory:
         ext = PurePosixPath(entry.path).suffix.lower()
         kind = entry.kind or "binary"
@@ -159,7 +161,8 @@ def _a04_to_a07(ctx: ScanContext) -> Iterator[Finding]:
             head = read_bytes(ctx, entry, 200_000)
             if head.count(b"\n") < 5 and not any(p == entry.path + ".map" for p in paths):
                 compiled.append(_a06(entry, "Minifizierter JavaScript-Code ohne Quelle"))
-        if kind in _ARCHIVE_KINDS and ext not in _OFFICE_EXT:
+        if kind in _ARCHIVE_KINDS and ext not in _OFFICE_EXT and entry.path not in entpackt:
+            grund = nicht_entpackt.get(entry.path)
             archives.append(
                 finding(
                     rule_id="LB-A07-archiv-im-paket",
@@ -169,10 +172,14 @@ def _a04_to_a07(ctx: ScanContext) -> Iterator[Finding]:
                     erklaerung=(
                         "Verschachtelte Archive werden nicht entpackt. Ihr Inhalt ist nicht "
                         "Teil dieser Prüfung."
+                        if grund is None
+                        else "Das Paket im Paket ließ sich nicht sicher entpacken. Sein Inhalt "
+                        "ist nicht Teil dieser Prüfung."
                     ),
                     datei=entry.path,
                     zeile=None,
-                    beleg=f"Typ: {kind}, {entry.size} Byte",
+                    beleg=f"Typ: {kind}, {entry.size} Byte"
+                    + ("" if grund is None else f", Grund: {grund}"),
                     fix="Den Inhalt entpackt ins Paket legen oder das Archiv entfernen.",
                     fix_prompt=f"Entpacke {entry.path} ins Paket oder entferne es.",
                     normbezug=("OWASP-ASI04",),

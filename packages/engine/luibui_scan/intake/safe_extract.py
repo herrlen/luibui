@@ -19,6 +19,17 @@ _WINDOWS_REPARSE_POINT = 0x400
 _LOCAL_HEADER_MIN = 30
 
 
+def extract_archive(archive: Path, root: Path, limits: Limits = DEFAULT_LIMITS) -> list[str]:
+    """Unpack a ZIP or tar archive (also .tar.gz/.tgz/.tar.bz2/.tar.xz), chosen by content."""
+    from luibui_scan.intake.safe_tar import extract_tar, is_tar
+
+    if zipfile.is_zipfile(archive):
+        return extract_zip(archive, root, limits)
+    if is_tar(archive):
+        return extract_tar(archive, root, limits)
+    raise IntakeRejectedError(Ablehnung.DEFEKTES_ARCHIV)
+
+
 def extract_zip(archive: Path, root: Path, limits: Limits = DEFAULT_LIMITS) -> list[str]:
     """Unpack ``archive`` into the existing directory ``root``; return the file paths, sorted."""
     packed = archive.stat().st_size

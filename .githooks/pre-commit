@@ -1,0 +1,23 @@
+#!/bin/sh
+# luibui pre-commit (ENTWICKLERREGELN F7): lint, format, types and the fast tests before every commit.
+# Activate once per clone:  git config core.hooksPath .githooks
+# Skip in an emergency only: git commit --no-verify (and say why in docs/log.md).
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+if echo "$staged" | grep -qE '\.py$|^pyproject\.toml$|^uv\.lock$'; then
+  echo "pre-commit: ruff, mypy, pytest (ohne Datenbank)"
+  uv run ruff check .
+  uv run ruff format --check .
+  uv run mypy packages apps/api apps/worker scripts
+  uv run pytest -q -p no:cacheprovider -m "not db"
+fi
+
+if echo "$staged" | grep -q '^apps/web/'; then
+  echo "pre-commit: web lint"
+  (cd apps/web && pnpm lint)
+fi
+

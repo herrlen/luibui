@@ -32,6 +32,8 @@ jobs:
       TEST_DATABASE_URL: postgresql+psycopg://postgres:ci@localhost:5432/postgres
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # gitleaks checks the whole history
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -56,6 +58,13 @@ jobs:
         run: |
           uv run pytest -ra -p no:cacheprovider | tee pytest.log
           if grep -q "SKIPPED" pytest.log; then echo "::error::tests were skipped"; exit 1; fi
+      - name: Secrets in the whole history of this repository (gitleaks)
+        run: gitleaks git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore
+      - name: Known vulnerabilities in our own dependencies (osv-scanner)
+        run: |
+          osv-scanner scan source --offline-vulnerabilities --download-offline-databases \
+            --no-resolve --no-call-analysis=all \
+            -L uv.lock -L apps/web/pnpm-lock.yaml
 
   web:
     name: Web (eslint, tsc, vitest, build)

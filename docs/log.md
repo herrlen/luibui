@@ -696,3 +696,18 @@ ein.
 
 **Löschlauf:** Der Elternprozess des Workers löscht zwischen zwei Jobs höchstens stündlich abgelaufene
 Schnellscans samt Befunden (Test). Einen eigenen Cronjob braucht es damit nicht.
+
+## 2026-09-27 — Lücken aus dem Regel-Abgleich (Teil 1)
+
+- **Git-Hook** `.githooks/pre-commit` ohne neue Abhängigkeit: ruff, Format, mypy und die Tests ohne
+  Datenbank, bei Web-Änderungen `pnpm lint`. Aktivieren je Klon mit `git config core.hooksPath .githooks`
+  (hier gesetzt).
+- **CI prüft jetzt das eigene Repo:** gitleaks über die ganze Historie (`fetch-depth: 0`, bekannte
+  Platzhalter in `.gitleaksignore`) und osv-scanner über `uv.lock` und `apps/web/pnpm-lock.yaml`.
+- **Eigene Lücke behoben:** `postcss 8.4.31` (über Next.js) hatte vier bekannte Schwachstellen bis
+  CVSS 7,5. Ein pnpm-Override hebt es auf `8.5.28`; Lint, Tests und Build laufen. Die Python-Abhängigkeiten
+  waren ohne Befund.
+- **`docs/drittdienste.md`** angelegt: mittwald, GitHub, osv.dev (nur Download), Git-Hosts.
+- Bei beiden Voraussetzungen fürs Freischalten ist der Nachweis erbracht: Der Worker hat kein Netz,
+  und die API sieht die echte Client-IP (geprüft mit kurz eingeschaltetem Zugriffslog, danach wieder
+  aus). `ANNAHME_OFFEN` bleibt aus, bis Len entscheidet.

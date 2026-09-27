@@ -1,0 +1,4 @@
+# Known placeholders in luibui's own history (not real secrets). Applies only to scanning this
+# repository in CI; scanned packages always use rules/gitleaks/leer.gitleaksignore.
+0a258ba496f91299ddbea00e6dd0bf1f0f9d8d3b:apps/api/tests/conftest.py:generic-api-key:43
+142eec190df2389c82ff36e71b35294fd784ddac:infra/.env.example:generic-api-key:2

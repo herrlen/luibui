@@ -11,6 +11,7 @@ export function Schnellscan() {
   const [laeuft, setLaeuft] = useState(false);
   return (
     <form
+      id="schnellscan"
       aria-labelledby="schnellscan-titel"
       className="flex flex-col gap-5 rounded-[18px] border border-linie bg-surface p-6 shadow-[0_30px_60px_-30px_rgba(21,23,28,0.35)] sm:p-8"
       onSubmit={async (e) => {

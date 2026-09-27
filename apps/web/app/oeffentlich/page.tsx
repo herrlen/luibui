@@ -1,6 +1,7 @@
 import { Ampel } from "@/components/Ampel";
 import { appUrl } from "@/lib/hosts";
 
+import { Beispielbericht } from "./Beispielbericht";
 import { Schnellscan } from "./Schnellscan";
 
 const SCHRITTE = [
@@ -31,7 +32,7 @@ const AMPELN: [string, string][] = [
   ["gesperrt", "Ein kritischer Befund aus der Sperrliste, etwa versteckte Anweisungen oder echte Zugangsdaten."],
 ];
 
-const CHIPS = ["Offen", "Kostenlos", "Gehostet in Deutschland"];
+const CHIPS = ["Nicht-kommerziell", "Kostenlos", "Gehostet in Deutschland"];
 
 const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[40px]";
 
@@ -88,6 +89,8 @@ export default async function Startseite() {
           prüft sie, bevor du sie installierst.
         </p>
       </section>
+
+      <Beispielbericht registrieren={registrieren} />
 
       <section aria-labelledby="umfang" className="flex flex-col gap-7">
         <h2 id="umfang" className={H2}>

@@ -5,6 +5,7 @@ The file name prefix (finding-, report-, luibui-) selects the schema.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -68,3 +69,27 @@ def test_valid_example_is_accepted(example: Path) -> None:
 @pytest.mark.parametrize("example", INVALID, ids=lambda p: p.name)
 def test_invalid_example_is_rejected(example: Path) -> None:
     assert not validator_for(example).is_valid(_load(example))
+
+
+def test_example_report_on_the_landing_page() -> None:
+    """apps/web/content/beispielbericht.json (S3-9): valid, and its verdict is what scoring.py
+    computes from its findings, so the landing page never shows a made-up grade."""
+    from luibui_scan.models import Finding, Pruefumfang
+    from luibui_scan.scoring import bewerte
+
+    report = _load(SPEC.parent / "apps" / "web" / "content" / "beispielbericht.json")
+    validator = Draft202012Validator(_load(SPEC / "report.schema.json"), registry=REGISTRY)
+    errors = [e.message for e in validator.iter_errors(report)]
+    assert errors == []
+    findings = [Finding.model_validate(f) for f in report["befunde"]]
+    b = bewerte(findings, pruefumfang=Pruefumfang.PAKET, has_manifest=True, complete=True)
+    assert (b.sicherheit.value, b.dsgvo.value, b.gesamt.value) == (
+        report["ampeln"]["sicherheit"],
+        report["ampeln"]["dsgvo"],
+        report["ampeln"]["gesamt"],
+    )
+    assert (b.note, b.freigabe.value) == (report["note"], report["freigabe"]) == (24, "blockiert")
+    for f in report["befunde"]:
+        for text in (f["beleg"] or "", f["erklaerung"], f["fix_prompt"]):
+            hosts = re.findall(r"https?://([^/\s\"]+)", text)
+            assert all(h.endswith(".example") for h in hosts), hosts

@@ -25,7 +25,7 @@ export type Bericht = {
   pruefumfang: "paket" | "auswahl" | "einzeldatei";
   geprueft_am: string;
   engine_version: string;
-  paket: { name: string; quelle: string; dateien?: number; bytes?: number };
+  paket: { name: string; version?: string | null; quelle: string; dateien?: number; bytes?: number };
   ampeln: { sicherheit: AmpelSicherheit; dsgvo: AmpelDsgvo; gesamt: AmpelSicherheit };
   note: number;
   freigabe: "freigegeben" | "pruefung_noetig" | "blockiert";

@@ -1,3 +1,9 @@
+import path from "node:path";
+
 import { defineConfig } from "vitest/config";
 
-export default defineConfig({ test: { include: ["**/*.test.ts"], exclude: ["node_modules/**", ".next/**"] } });
+export default defineConfig({
+  oxc: { jsx: { runtime: "automatic" } },
+  resolve: { alias: { "@": path.resolve(__dirname) } },
+  test: { include: ["**/*.test.ts", "**/*.test.tsx"], exclude: ["node_modules/**", ".next/**"] },
+});

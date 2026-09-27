@@ -751,3 +751,41 @@ Sprint 4/6.
 **Tasks Sprint 1:** S1-1 bis S1-12 sind umgesetzt. Zusätzlich vorgezogen: S2-6 (Anmeldung), S2-7
 (Ablage), Teile von S2-13 (Schnellscan-API, ohne Oberfläche) und S3-1 (gutartiger Korpus). Offen aus
 Sprint 1: nur die Server-Entscheidung.
+
+## 2026-09-27 — Sprint 2 begonnen: Oberflächen für luibui.com und app.luibui.com
+
+**Umgesetzt und ausgerollt** (`e38d316`, `6d1b3af`, `13e8b1c`):
+- **Host-Weiche** (`apps/web/middleware.ts`): `app.*` → Entwicklerbereich (`app/entwickler`), sonst
+  öffentliche Seite (`app/oeffentlich`). Die internen Präfixe sind von außen 404.
+- **API-Proxy** (`next.config.ts`): Auf `app.*` wird `/api/v1/*` intern an `http://api:8000`
+  weitergeleitet, damit das Session-Cookie host-only bleibt (Regel 11). Auf `luibui.com` sind nur die
+  Schnellscan-Routen durchgelassen. Next.js puffert standardmäßig nur 10 MB; mit
+  `middlewareClientMaxBodySize: "61mb"` kommen Uploads bis zum API-Limit durch (19 MB getestet, 70 MB
+  → 413).
+- **Entwicklerbereich (S2-8, S2-9):** Anmelden (mit TOTP), Registrieren, Übersicht mit letzter Ampel je
+  Projekt, Projekt anlegen, Upload (Datei, Dateien, Ordner mit relativen Pfaden, ZIP, Text, Git),
+  Prüfungsliste, Bericht mit Ampeln, Note, Befunden nach Schwere, Belegen und kopierbarem Fix-Prompt,
+  Aktualisierung alle 2 s, solange die Prüfung läuft, und Konto mit API-Tokens und Abmelden. Neu in der
+  API dafür: `GET /api/v1/projects/{id}/scans` und `letzte_pruefung` in der Projektliste.
+- **Öffentliche Seite (S2-11, Teil von S2-13):** Startseite mit Schnellscan, Ergebnisseite mit
+  „ohne Gewähr“, „So prüfen wir“. Links zum Anmelden und Registrieren gehen auf `app.<host>`.
+- **Gestaltung:** Tokens aus `docs/design` im Tailwind-Theme, Schriften lokal (Fontsource, OFL),
+  Ampel immer mit Wort und Form, Fokusring, Skip-Link, `prefers-reduced-motion`.
+- **Sicherheit:** Paketinhalt nur als Text (React escaped). Geprüft mit `<img onerror>` und
+  `<script>` im Beleg: im HTML nur escaped, in den Next-Daten als `<`. CSP in Produktion
+  (`script-src 'self' 'unsafe-inline'`, Nonces später). Cookie `luibui_session` ohne `__Host-` nur
+  lokal über http, weil Browser `__Host-` ohne `Secure` verwerfen.
+
+**Geprüft:** lokal im kompletten Compose-Stack 13 Schritte von Ende zu Ende (Registrieren über
+den Proxy, Upload, Worker, Berichtsseite mit „Gesperrt“, CSRF-Sperre, Schnellscan). In Produktion:
+beide Hosts, Weiche, Proxy, Sperre der API-Routen auf `luibui.com`, CSP, keine Google-Verweise,
+Weiterleitungen. Die Client-IP kommt auch über den Proxy richtig an: Next.js reicht
+`X-Forwarded-For` durch, der Web-Container liegt im vertrauenswürdigen Netz.
+
+**Offen:**
+- **Impressum und Datenschutzerklärung fehlen.** Für eine öffentliche deutsche Seite sind sie Pflicht,
+  der Inhalt kommt von Len.
+- Die Annahme ist weiter zu (Len).
+- Aus Sprint 2 fehlen noch: Einzelprüfungen per Drag & Drop auf der Übersicht, 2FA-Einrichtung in der
+  Oberfläche, Speicherverbrauch, Datenexport und Konto löschen (S2-10), Downloads CSV/JSON/SARIF
+  (S2-12), Schnellscan per Datei (S2-13), die Analyzer C, E, G (S2-1 bis S2-5).

@@ -27,6 +27,14 @@ export function Impressum() {
         <p>Eine Telefonnummer wird nicht vorgehalten. Anfragen beantworten wir schriftlich, in der Regel innerhalb von zwei Werktagen.</p>
       </section>
       <section>
+        <h2>Vertretungsberechtigte Person</h2>
+        <p>Len Messerschmidt (Einzelunternehmen, keine Eintragung im Handelsregister).</p>
+      </section>
+      <section>
+        <h2>Umsatzsteuer</h2>
+        <p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>
+      </section>
+      <section>
         <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
         <p>Len Messerschmidt, Anschrift wie oben.</p>
       </section>
@@ -40,7 +48,7 @@ export function Impressum() {
       <section>
         <h2>Haftung für Prüfergebnisse</h2>
         <p>
-          luibui ist eine nicht-kommerzielle, automatisierte Prüfstelle. Die Prüfung liest die übergebenen Dateien und
+          luibui ist eine automatisierte Prüfstelle. Die Prüfung liest die übergebenen Dateien und
           wertet sie nach festen Regeln aus. Die Ergebnisse sind technische Hinweise. Eine grüne Ampel heißt „keine
           bekannten Befunde“, nicht „sicher“. Die Prüfung ersetzt weder eine manuelle Sicherheitsprüfung noch eine
           Rechtsberatung. Für Entscheidungen, die allein auf einem Bericht beruhen, wird keine Haftung übernommen.

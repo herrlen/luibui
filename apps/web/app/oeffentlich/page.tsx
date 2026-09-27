@@ -32,7 +32,7 @@ const AMPELN: [string, string][] = [
   ["gesperrt", "Ein kritischer Befund aus der Sperrliste, etwa versteckte Anweisungen oder echte Zugangsdaten."],
 ];
 
-const CHIPS = ["Nicht-kommerziell", "Kostenlos", "Gehostet in Deutschland"];
+const CHIPS = ["Schnellscan kostenlos", "Gratis starten", "Gehostet in Deutschland"];
 
 const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[40px]";
 
@@ -174,6 +174,9 @@ export default async function Startseite() {
           <p className="text-base leading-[1.6] text-petrol-hell">
             Im Entwicklerbereich prüfst du Dateien, Ordner, ZIP- oder tar-Archive, eingefügten Text oder Git-Repositories.
             Projekte, Berichte und Verlauf liegen in deinem privaten Bereich und sind nur für dich sichtbar.
+          </p>
+          <p className="text-base leading-[1.6] text-petrol-hell">
+            Gratis: ein Projekt und drei Prüfungen. Danach Guthaben ab 4,90 € für 10 Prüfungen, kein Abo.
           </p>
           <div className="mt-auto flex flex-wrap gap-3">
             <a

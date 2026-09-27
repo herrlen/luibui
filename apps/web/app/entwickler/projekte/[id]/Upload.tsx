@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Ablage, type Eintrag, istArchiv } from "@/components/app/Ablage";
+import { zahlungNoetig } from "@/components/app/Aufladen";
 import { Knopf, Meldung } from "@/components/app/Formular";
 import { senden } from "@/lib/client-api";
 
@@ -56,6 +57,7 @@ export function Upload({ projektId }: { projektId: string }) {
     setFehler(null);
     const r = await senden<{ id: string }>(`/projects/${projektId}/scans`, "POST", daten);
     setLaeuft(false);
+    if (zahlungNoetig(r)) return;
     if (!r.ok) return setFehler(r.fehler.pfad ? `${r.fehler.text} (${r.fehler.pfad})` : r.fehler.text);
     router.push(`/pruefungen/${r.data.id}`);
   }

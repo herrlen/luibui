@@ -1019,3 +1019,35 @@ Formulare haben jetzt `method="post"`, ein Test hält das fest.
 
 **Geprüft:** 1.030 Python-Tests (5 neue für Einzelprüfungen, inkl. Nutzer-B-Isolation), Web-Tests,
 im lokalen Stack per Browser von Ende zu Ende. Ausgerollt `68f3b90`.
+
+## 2026-09-27 – S3-15: E-Mail-Bestätigung, Guthaben und PayPal
+
+**Was (Entscheidung Len):** Schnellscan bleibt kostenlos. Nach bestätigter E-Mail sind 1 Projekt
+und 3 Prüfungen gratis, jede weitere Prüfung kostet 1 Guthaben, ein zweites Projekt braucht einen
+Kauf. Pakete 10 Prüfungen 4,90 €, 25 Prüfungen 9,90 €, Kleinunternehmer nach § 19 UStG wie
+websecureaudit. Bei 402 öffnet die Oberfläche ein Aufladen-Fenster mit beiden Paketen und den zwei
+Erklärungen nach § 356 Abs. 5 BGB; nach der Zahlung bestätigt die Rückkehrseite die Bestellung auf
+dem Server und lädt die Ausgangsseite neu.
+
+**Wie:** Bestätigungslink per Mail (SHA-256, 24 h, einmalig, 3 Mails pro Stunde). Guthaben als
+Buchungsliste (`credit_entries`), Abbuchung unter Zeilensperre im selben Commit wie die Prüfung;
+abgelehnte Eingaben kosten nichts, im Worker gescheiterte Prüfungen werden genau einmal
+zurückgebucht. PayPal Orders v2 nur serverseitig (kein PayPal-Skript im Browser), Erfassung wird
+gegen Betrag und Währung geprüft und genau einmal gutgeschrieben, Belegnummer aus einer Sequenz,
+Webhook nur mit Signaturprüfung. Ohne PayPal-Zugangsdaten sind die Grenzen aus. Rechtstexte nach
+den Vorlagen von websecureaudit: Nutzungsbedingungen, Widerrufsbelehrung, Datenschutz (PayPal,
+Bestätigungslink, 10 Jahre Belege), Impressum (Einzelunternehmen, § 19 UStG). „Nicht-kommerziell“
+ist von der Seite und aus CLAUDE.md/Konzept entfernt.
+
+**Geprüft:** 1.045 Python-Tests (15 neu, u. a. Nutzer B kommt nicht an Käufe von A, falscher Betrag
+schreibt nichts gut, doppelte Bestätigung schreibt einmal gut, Rücksprung nur auf app-Pfade,
+Webhook ohne Signatur wirkungslos). Im lokalen Stack per Browser: Fenster erscheint bei der ersten
+Prüfung ohne Guthaben, Kauf ohne echte Zugangsdaten scheitert mit Meldung.
+
+**Offen (Len):**
+- PayPal-Zugangsdaten der websecureaudit-App in `~/.config/luibui/paypal.env` ablegen
+  (`PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODUS=live`), optional Webhook
+  `https://api.luibui.com/api/v1/paypal/webhook` in der App anlegen und `PAYPAL_WEBHOOK_ID` ergänzen.
+- **MalwareBazaar-Lizenz:** abuse.ch erlaubt die kostenlose Nutzung nur nicht-kommerziell. Vor dem
+  Einschalten der Zahlungen klären, ob luibui dafür eine kommerzielle Lizenz braucht.
+- Bestehende Konten müssen ihre E-Mail einmal bestätigen (Knopf auf der Übersicht).

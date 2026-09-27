@@ -1,7 +1,7 @@
 # CLAUDE.md – luibui
 
 ## Was wir bauen
-luibui ist eine nicht-kommerzielle **Prüfstelle und Register für KI-Skills, Plugins, Tools und MCP-Server**.
+luibui ist eine **Prüfstelle und Register für KI-Skills, Plugins, Tools und MCP-Server**.
 Nutzer laden eine einzelne Datei, mehrere Dateien, einen Ordner, ein ZIP oder eingefügten Text hoch, verbinden ein
 Git-Repository oder prüfen lokal mit `luibui scan`. Sie bekommen
 einen Bericht mit zwei Ampeln (Sicherheit, DSGVO), einer Gesamtbewertung und einer Note von 0 bis 100.
@@ -9,6 +9,7 @@ Jeder Entwickler hat auf **app.luibui.com** einen eigenen, privaten Bereich mit 
 Prüfberichten, Verlauf und Befund-Status. **luibui.com** ist die Marketingseite und der Einstieg (Anmelden,
 Kostenlos registrieren, „So prüfen wir“, Doku, Spenden, ab Sprint 4 Register und öffentliche Berichte, Schnellscan ohne
 Anmeldung mit eingeschränktem Umfang und ausdrücklich ohne Gewähr; der Intensivscan läuft im Entwicklerbereich). Die Anmelde- und Registrierungsformulare liegen auf app.luibui.com im selben Design.
+Kosten (Len, 27.09.2026): Schnellscan kostenlos; nach bestätigter E-Mail 1 Projekt und 3 Prüfungen gratis, danach Guthaben per PayPal (10 Prüfungen 4,90 €, 25 für 9,90 €), Kleinunternehmer nach § 19 UStG. Logik nur in `apps/api/luibui_api/guthaben.py`.
 Geprüfte Pakete können im Register veröffentlicht und in Claude, ChatGPT, Gemini, Mistral, Open WebUI und MCP-Clients installiert werden.
 
 Wie gearbeitet wird (Begriffe, Produktregeln, Gates, Checkliste vor dem Commit): `ENTWICKLERREGELN.md`.

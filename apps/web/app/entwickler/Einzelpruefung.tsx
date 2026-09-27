@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Ablage, type Eintrag, istArchiv } from "@/components/app/Ablage";
+import { zahlungNoetig } from "@/components/app/Aufladen";
 import { Meldung } from "@/components/app/Formular";
 import { senden } from "@/lib/client-api";
 
@@ -34,6 +35,7 @@ export function Einzelpruefung() {
     setFehler(null);
     const r = await senden<{ id: string }>("/scans", "POST", daten);
     setLaeuft(false);
+    if (zahlungNoetig(r)) return setAuswahl([]);
     if (!r.ok) return setFehler(r.fehler.pfad ? `${r.fehler.text} (${r.fehler.pfad})` : r.fehler.text);
     router.push(`/pruefungen/${r.data.id}`);
   }

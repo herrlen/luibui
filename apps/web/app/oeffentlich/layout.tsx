@@ -45,7 +45,7 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
             <div className="flex flex-col gap-2.5">
               <span className="font-display text-[22px] font-bold tracking-[-0.02em]">luibui</span>
               <span className="leading-[1.55] text-muted">
-                Nicht-kommerzielle Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server.
+                Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server.
               </span>
             </div>
             <div className="flex flex-col gap-2.5">
@@ -67,6 +67,12 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
               </Link>
               <Link href="/datenschutz" className="text-ink-2 hover:text-petrol">
                 Datenschutz
+              </Link>
+              <Link href="/nutzungsbedingungen" className="text-ink-2 hover:text-petrol">
+                Nutzungsbedingungen
+              </Link>
+              <Link href="/widerruf" className="text-ink-2 hover:text-petrol">
+                Widerruf
               </Link>
               <Link href="/kontakt" className="text-ink-2 hover:text-petrol">
                 Kontakt

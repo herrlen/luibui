@@ -71,7 +71,7 @@ export type Projekt = {
   letzte_pruefung: Pruefungskurz | null;
 };
 
-export type Ich = { id: string; email: string; totp_aktiv: boolean };
+export type Ich = { id: string; email: string; totp_aktiv: boolean; email_bestaetigt: boolean };
 
 export type Fehler = { code: string; text: string; pfad?: string | null; felder?: string[] };
 
@@ -83,4 +83,22 @@ export type Einzel = {
   ampel_gesamt: AmpelSicherheit | null;
   note: number | null;
   created_at: string;
+};
+
+export type Guthaben = {
+  aktiv: boolean;
+  stand: number;
+  email_bestaetigt: boolean;
+  pakete: { id: string; pruefungen: number; preis_cent: number; preis_text: string }[];
+  kaeufe: { id: string; belegnummer: number | null; pruefungen: number; betrag_cent: number; status: string; bezahlt_am: string | null }[];
+};
+
+export type Beleg = {
+  belegnummer: number;
+  datum: string;
+  kaeufer_email: string | null;
+  beschreibung: string;
+  betrag_cent: number;
+  waehrung: string;
+  paypal_transaktion: string | null;
 };

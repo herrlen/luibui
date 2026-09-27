@@ -92,6 +92,17 @@ MK="$(env_of api MASTER_KEY)"
 [[ -n "$PG" && -n "$MK" ]] || fehler "Secrets aus dem laufenden Stack nicht lesbar"
 ANNAHME="${ANNAHME_OFFEN:-$(env_of api ANNAHME_OFFEN)}"
 SMTP="${SMTP_PASSWORD:-$(env_of api SMTP_PASSWORD)}"
+# PayPal: ~/.config/luibui/paypal.env (never in the repo) wins over the deployed values.
+PAYPAL_DATEI="${HOME}/.config/luibui/paypal.env"
+if [[ -f "$PAYPAL_DATEI" ]]; then
+  # shellcheck disable=SC1090
+  set -a; source "$PAYPAL_DATEI"; set +a
+fi
+PP_ID="${PAYPAL_CLIENT_ID:-$(env_of api PAYPAL_CLIENT_ID)}"
+PP_SECRET="${PAYPAL_SECRET:-$(env_of api PAYPAL_SECRET)}"
+PP_MODUS="${PAYPAL_MODUS:-$(env_of api PAYPAL_MODUS)}"
+PP_WEBHOOK="${PAYPAL_WEBHOOK_ID:-$(env_of api PAYPAL_WEBHOOK_ID)}"
+[[ -n "$PP_ID" && -n "$PP_SECRET" ]] && echo "PayPal: eingerichtet (${PP_MODUS:-live})" || echo "Hinweis: PayPal nicht eingerichtet, Guthaben-Grenzen sind aus"
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt, das Kontaktformular antwortet mit 503"
 {
   printf 'POSTGRES_PASSWORD=%s\n' "$PG"
@@ -100,8 +111,12 @@ SMTP="${SMTP_PASSWORD:-$(env_of api SMTP_PASSWORD)}"
   printf 'LUIBUI_ACCESS_LOG=0\n'
   printf 'ANNAHME_OFFEN=%s\n' "${ANNAHME:-false}"
   printf 'SMTP_PASSWORD=%s\n' "$SMTP"
+  printf 'PAYPAL_CLIENT_ID=%s\n' "$PP_ID"
+  printf 'PAYPAL_SECRET=%s\n' "$PP_SECRET"
+  printf 'PAYPAL_MODUS=%s\n' "${PP_MODUS:-live}"
+  printf 'PAYPAL_WEBHOOK_ID=%s\n' "$PP_WEBHOOK"
 } >"$ENVFILE"
-unset STATE PG MK SMTP
+unset STATE PG MK SMTP PP_ID PP_SECRET PP_WEBHOOK
 echo "Annahme offen: ${ANNAHME:-false}"
 mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" 2>&1 | grep -E "SUCCESS|rror" || true
 

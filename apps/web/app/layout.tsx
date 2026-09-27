@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "luibui – Prüfstelle für KI-Skills und MCP-Server",
   description:
-    "Offene, nicht-kommerzielle Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server. Bericht mit Ampeln für Sicherheit und DSGVO.",
+    "Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server. Bericht mit Ampeln für Sicherheit und DSGVO.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

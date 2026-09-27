@@ -52,6 +52,11 @@ services:
       ANNAHME_OFFEN: ${ANNAHME_OFFEN}
       # Contact form: sender mailbox noreply@luibui.com at mittwald, messages go to hallo@luibui.com.
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+      # Credits through PayPal (same REST app as websecureaudit). Empty: no limits, no purchase.
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_SECRET: ${PAYPAL_SECRET}
+      PAYPAL_MODUS: ${PAYPAL_MODUS}
+      PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID}
     volumes:
       - luibui-projects:/projects
       - luibui-scratch:/scratch

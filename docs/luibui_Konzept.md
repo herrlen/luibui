@@ -1,7 +1,7 @@
 # luibui – Konzept v2: Prüfstelle und Register für KI-Skills, Plugins und MCP-Server
 
 > Stand: 26.09.2026 · Owner: Len · Domain: **luibui.com** · Lizenz: **proprietär** (seit 27.09.2026, vorher AGPL-3.0)
-> Hosting: mittwald, Projekt `p-yw5cv5` · Ausrichtung wie lensuh.de: offen, kostenlos, nicht-kommerziell, spendenfinanziert
+> Hosting: mittwald, Projekt `p-yw5cv5` · Ausrichtung: Schnellscan kostenlos, Entwicklerbereich mit Gratis-Kontingent und Guthaben per PayPal (Entscheidung Len, 27.09.2026; vorher: kostenlos, spendenfinanziert)
 > Gehört zusammen mit: `luibui_Sprintplanung.md`, `luibui_Pruefkatalog.md`, `CLAUDE.md`
 
 ---

@@ -39,6 +39,11 @@ services:
       dockerfile: apps/api/Dockerfile
     image: ${IMAGE_PREFIX:-luibui}/api:${IMAGE_TAG:-local}
     environment:
+      EMAIL_BESTAETIGUNG_PFLICHT: "false"
+      # Empty locally: no credit limits. Set both to see the top-up dialog (purchase then fails).
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_SECRET: ${PAYPAL_SECRET:-}
+      PAYPAL_MODUS: ${PAYPAL_MODUS:-sandbox}
       LUIBUI_ENV: ${LUIBUI_ENV:-dev}
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
       MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in infra/.env (openssl rand -base64 32)}

@@ -87,12 +87,20 @@ export function Datenschutz() {
         <h2>5. Konto im Entwicklerbereich</h2>
         <p>
           Mit der Registrierung entsteht ein Konto. Grundlage ist die Erfüllung des Nutzungsverhältnisses (Art. 6 Abs.
-          1 lit. b DSGVO), soweit unten nichts anderes steht. Wir verschicken keine E-Mails, weder Werbung noch
-          Newsletter.
+          1 lit. b DSGVO), soweit unten nichts anderes steht. Wir verschicken nur die Mail mit dem Bestätigungslink,
+          keine Werbung und keine Newsletter.
         </p>
         <Zeilen
           zeilen={[
             ["E-Mail-Adresse", "Dein Kennzeichen für die Anmeldung."],
+            [
+              "Bestätigungslink",
+              "Nach der Registrierung schicken wir einen Link an deine E-Mail-Adresse. Gespeichert wird nur ein Prüfwert (SHA-256) des Links; er gilt 24 Stunden und nur einmal. Erneut anfordern kannst du ihn höchstens dreimal pro Stunde.",
+            ],
+            [
+              "Guthaben",
+              "Jede Gutschrift und Abbuchung (Startguthaben, Kauf, Prüfung, Erstattung) mit Zeitpunkt, damit du und wir den Stand nachvollziehen können. Bis du dein Konto löschen lässt.",
+            ],
             [
               "Passwort",
               "Wir speichern nicht dein Passwort, sondern nur einen Prüfwert daraus (Argon2id mit Zufallssalz). Daraus lässt sich das Passwort nicht zurückrechnen, auch wir können es nicht einsehen.",
@@ -112,6 +120,27 @@ export function Datenschutz() {
             ],
           ]}
         />
+      </section>
+
+      <section>
+        <h2>5a. Kauf von Guthaben über PayPal</h2>
+        <p>Kaufst du Guthaben, wickelt PayPal die Zahlung ab. Deine Zahlungsdaten gibst du nur bei PayPal ein; Konto- oder Kartendaten erreichen uns nie.</p>
+        <Zeilen
+          zeilen={[
+            ["An PayPal übermittelt", "Betrag, Währung und die Beschreibung des Pakets (z. B. „luibui: 10 Prüfungen“) sowie eine interne Kennung deines Kontos als Referenz."],
+            [
+              "Bei uns gespeichert",
+              "Bestellnummer und Transaktionsnummer von PayPal, Paket, Betrag, Zahlungsstatus, Zeitpunkt, Belegnummer und die E-Mail-Adresse deines Kontos zum Zeitpunkt des Kaufs, für den Beleg.",
+            ],
+            ["Grundlage", "Erfüllung des Kaufvertrags (Art. 6 Abs. 1 lit. b DSGVO) und handels- sowie steuerrechtliche Aufbewahrungspflichten (Art. 6 Abs. 1 lit. c DSGVO)."],
+            ["Speicherdauer", "Zahlungsbelege 10 Jahre nach § 147 AO und § 257 HGB. Diese Frist geht der Löschung auf Verlangen vor; wird dein Konto gelöscht, bleibt der Beleg ohne Verknüpfung zum Konto erhalten."],
+            [
+              "Drittland",
+              "PayPal (Europe) S.à r.l. et Cie, S.C.A., Luxemburg, hat Konzernverbindungen in die USA. Die Übermittlung stützt sich auf Art. 49 Abs. 1 lit. b DSGVO: Sie ist für die Erfüllung des Vertrags erforderlich, den du mit uns schließt. Es gelten zusätzlich die Datenschutzhinweise von PayPal.",
+            ],
+          ]}
+        />
+        <p>Wer nichts kauft, für den entsteht keiner dieser Datensätze, und es wird nichts an PayPal übermittelt.</p>
       </section>
 
       <section>
@@ -152,6 +181,8 @@ export function Datenschutz() {
         <Zeilen
           zeilen={[
             ["Konto", "Bis du es löschen lässt."],
+            ["Zahlungsbelege", "10 Jahre (§ 147 AO, § 257 HGB), auch nach Löschung des Kontos."],
+            ["Bestätigungslink", "24 Stunden gültig, der Prüfwert wird mit dem Konto gelöscht."],
             ["Projekte, Dateien, Berichte", "Bis du das Projekt löschst; höchstens die letzten 10 Versionen."],
             ["Bericht einer Einzelprüfung", "Bis du ihn löschst. Die geprüften Dateien werden nicht gespeichert."],
             ["Bericht eines Schnellscans", "7 Tage."],
@@ -188,14 +219,18 @@ export function Datenschutz() {
           Königsberger Straße 4–6, 32339 Espelkamp, betrieben. Das Unternehmen ist als Auftragsverarbeiter nach Art. 28
           DSGVO tätig; ein entsprechender Vertrag besteht. Die Server stehen in Deutschland.
         </p>
-        <p>Eine Weitergabe deiner Daten an weitere Dritte findet nicht statt. Wir verkaufen keine Daten.</p>
+        <p>
+          Kaufst du Guthaben, erhält PayPal die in Abschnitt 5a genannten Angaben. Eine Weitergabe deiner Daten an weitere
+          Dritte findet nicht statt. Wir verkaufen keine Daten.
+        </p>
       </section>
 
       <section>
         <h2>10. Drittlandübermittlung</h2>
         <p>
-          Personenbezogene Daten über dich werden nicht in ein Land außerhalb der EU beziehungsweise des EWR
-          übermittelt. Drei Berührungspunkte nennen wir der Vollständigkeit halber:
+          Außer beim Kauf von Guthaben (PayPal, siehe Abschnitt 5a) werden personenbezogene Daten über dich nicht in ein
+          Land außerhalb der EU beziehungsweise des EWR übermittelt. Drei weitere Berührungspunkte nennen wir der
+          Vollständigkeit halber:
         </p>
         <ul>
           <li>

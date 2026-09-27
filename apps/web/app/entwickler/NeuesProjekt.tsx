@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Feld, Knopf, Meldung } from "@/components/app/Formular";
+import { zahlungNoetig } from "@/components/app/Aufladen";
 import { senden } from "@/lib/client-api";
 
 const TYPEN = [
@@ -29,6 +30,7 @@ export function NeuesProjekt() {
           typ: f.get("typ"),
           nach_pruefung_loeschen: f.get("loeschen") === "on",
         });
+        if (zahlungNoetig(r)) return;
         if (!r.ok) return setFehler(r.fehler.text);
         router.push(`/projekte/${r.data.id}`);
       }}

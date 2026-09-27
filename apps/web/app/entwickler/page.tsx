@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { Ampel } from "@/components/Ampel";
 import { datumZeit, STATUS_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
-import type { Einzel, Ich, Projekt } from "@/lib/types";
+import { AufladenKnopf, BestaetigungSenden } from "@/components/app/KontoKnoepfe";
+import type { Einzel, Guthaben, Ich, Projekt } from "@/lib/types";
 
 import { EinzelLoeschen } from "./EinzelLoeschen";
 import { Einzelpruefung } from "./Einzelpruefung";
@@ -20,12 +21,33 @@ export default async function Uebersicht() {
   const liste = projekte.ok ? projekte.data : [];
   const einzel = await apiGet<Einzel[]>("/api/v1/scans");
   const einzelListe = einzel.ok ? einzel.data : [];
+  const guthaben = await apiGet<Guthaben>("/api/v1/guthaben");
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-3xl font-bold">Übersicht</h1>
         <p className="mt-1 text-sm text-muted">Angemeldet als {ich.data.email}</p>
       </div>
+      {!ich.data.email_bestaetigt ? (
+        <div role="status" className="flex flex-col gap-2 rounded-[14px] border border-gelb bg-gelb-bg p-5 text-gelb">
+          <p className="font-semibold">Bitte bestätige deine E-Mail-Adresse.</p>
+          <p className="text-sm">
+            Wir haben dir einen Link an {ich.data.email} geschickt. Erst danach kannst du Dateien prüfen; der Schnellscan auf
+            luibui.com geht auch ohne.
+          </p>
+          <BestaetigungSenden />
+        </div>
+      ) : null}
+      {guthaben.ok && guthaben.data.aktiv && ich.data.email_bestaetigt ? (
+        <div className="flex flex-wrap items-center gap-4 rounded-[14px] border border-linie bg-surface p-4">
+          <p className="text-[15px]">
+            Guthaben: <strong>{guthaben.data.stand} Prüfungen</strong>
+          </p>
+          <span className="ml-auto">
+            <AufladenKnopf />
+          </span>
+        </div>
+      ) : null}
       <Einzelpruefung />
       {einzelListe.length ? (
         <section aria-labelledby="einzelliste" className="flex flex-col gap-3">

@@ -343,6 +343,57 @@ def _notebook(ctx: ScanContext, entry: InventoryEntry, ext: str) -> Iterator[Fin
         return
 
 
+# --- G07 personal data in data files -------------------------------------------------------
+
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]{1,64}@([A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,24}(?![\w-])")
+_IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){3,7}(?: ?[A-Z0-9]{1,3})?\b")
+_EXAMPLE_DOMAIN = re.compile(r"@(.+\.)?(example|invalid|test|localhost)(\.[a-z]+)?$", re.I)
+_DATA_EXT = frozenset({".csv", ".tsv", ".jsonl", ".ndjson"})
+MIN_EMAILS = 5
+
+
+def _iban_ok(raw: str) -> bool:
+    iban = raw.replace(" ", "")
+    if not 15 <= len(iban) <= 34:
+        return False
+    digits = "".join(str(int(c, 36)) for c in iban[4:] + iban[:4])
+    return int(digits) % 97 == 1
+
+
+def _g07(ctx: ScanContext, entry: InventoryEntry, ext: str) -> Iterator[Finding]:
+    if entry.kind != "text" or ext not in _DATA_EXT:
+        return
+    text = read_text(ctx, entry, MAX_DOC)
+    emails = {
+        m.group(0).lower() for m in _EMAIL.finditer(text) if not _EXAMPLE_DOMAIN.search(m.group(0))
+    }
+    ibans = {m.group(0).replace(" ", "") for m in _IBAN.finditer(text) if _iban_ok(m.group(0))}
+    if len(emails) < MIN_EMAILS and not ibans:
+        return
+    arten = []
+    if len(emails) >= MIN_EMAILS:
+        arten.append(f"{len(emails)} E-Mail-Adressen")
+    if ibans:
+        arten.append(f"{len(ibans)} gültige IBAN")
+    yield finding(
+        rule_id="LB-G07-personenbezogene-daten",
+        ebene=Ebene.G,
+        schwere=Schwere.M,
+        achse=Achse.DSGVO,
+        titel="Datei enthält personenbezogene Daten",
+        erklaerung=(
+            f"Die Datendatei enthält {' und '.join(arten)}. Echte Kundendaten gehören nicht in ein "
+            "veröffentlichtes Paket, auch nicht als Beispiel."
+        ),
+        datei=entry.path,
+        zeile=None,
+        beleg=", ".join(arten) + " (Werte nicht angezeigt)",
+        fix="Die Daten durch erfundene Beispiele ersetzen (z. B. Adressen unter example.org).",
+        fix_prompt=f"Ersetze in {entry.path} alle echten Personendaten durch erfundene Werte.",
+        normbezug=("DSGVO-Art-5",),
+    )
+
+
 def _dokumente(ctx: ScanContext) -> Iterator[Finding]:
     for entry in ctx.inventory:
         if entry.size > MAX_DOC:
@@ -355,3 +406,4 @@ def _dokumente(ctx: ScanContext) -> Iterator[Finding]:
         yield from _g08(ctx, entry)
         yield from _a20(ctx, entry, ext)
         yield from _notebook(ctx, entry, ext)
+        yield from _g07(ctx, entry, ext)

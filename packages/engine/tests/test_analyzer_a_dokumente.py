@@ -209,3 +209,24 @@ def test_notebook_downloading_and_running(tmp_path: Path) -> None:
 def test_notebook_with_pip(tmp_path: Path) -> None:
     nb = notebook("!pip install pandas==2.2", "%%bash\necho fertig")
     assert by_rule(analyze(tmp_path, {"demo.ipynb": nb}), "LB-A03-installationsskript") is None
+
+
+# --- DAT-01 personal data --------------------------------------------------------------------
+
+
+def test_many_emails_in_data(tmp_path: Path) -> None:
+    rows = "\n".join(f"Person {i},person{i}@firma-{i}.de" for i in range(6))
+    f = by_rule(
+        analyze(tmp_path, {"kunden.csv": "name,mail\n" + rows}), "LB-G07-personenbezogene-daten"
+    )
+    assert f is not None and f.achse is Achse.DSGVO and "person0" not in (f.beleg or "")
+
+
+def test_valid_iban_in_data(tmp_path: Path) -> None:
+    line = '{"name": "A", "iban": "DE89 3704 0044 0532 0130 00"}\n'
+    assert by_rule(analyze(tmp_path, {"zahlungen.jsonl": line}), "LB-G07-personenbezogene-daten")
+
+
+def test_example_addresses_and_invalid_iban(tmp_path: Path) -> None:
+    rows = "\n".join(f"p{i}@example.org,DE00 1234 5678 9012 3456 78" for i in range(10))
+    assert by_rule(analyze(tmp_path, {"demo.csv": rows}), "LB-G07-personenbezogene-daten") is None

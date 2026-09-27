@@ -4,7 +4,14 @@ import re
 from collections.abc import Iterator
 from typing import Any
 
-from luibui_scan.analyzers._common import file_name, finding, read_json, read_text, visible
+from luibui_scan.analyzers._common import (
+    file_name,
+    finding,
+    read_bytes,
+    read_json,
+    read_text,
+    visible,
+)
 from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.models import Ebene, Finding, Schwere
 
@@ -12,10 +19,21 @@ _DANGEROUS_COMMAND = re.compile(
     r"(curl|wget|invoke-webrequest|iwr|irm)\b[^\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b"
     r"|\b(curl|wget)\b[^\n]*(-o|--output|>)\s*\S+[^\n]*(&&|;)\s*(sh|bash|chmod|\./)"
     r"|base64\s+(-d|--decode)|\beval\b|\bnc\s+-e\b|/dev/tcp/|python[0-9.]*\s+-c\b"
-    r"|node\s+-e\b|powershell[^\n]*-enc",
+    r"|node\s+-e\b|powershell[^\n]*-enc"
+    # Deleting the home or root folder, reading credentials, sending files away, persistence.
+    r"|\brm\s+-[a-z]*r[a-z]*f?[a-z]*\s+(~|\$home|/)(\s|/?$|/\*)"
+    r"|(~|\$home|%userprofile%)[/\\]\.(ssh|aws|gnupg|kube|docker/config)"
+    r"|\.config/gcloud|library/application support/(google/chrome|firefox)|\.mozilla/firefox"
+    r"|\bcurl\b[^\n]*\s(-d|--data[a-z-]*|-F|--form|-T|--upload-file)\s+\S*@"
+    r"|\b(crontab\s+-|launchctl\s+load|systemctl\s+(--user\s+)?enable)\b"
+    r"|>>\s*~/\.(bashrc|zshrc|profile|bash_profile)"
+    r"|iex\s*\(|invoke-expression|new-object\s+net\.webclient",
     re.IGNORECASE,
 )
 _INSTALL_HOOKS = ("preinstall", "install", "postinstall")
+_DEV_HOOKS = ("prepare",)
+"""``prepare`` runs on ``npm install`` from Git and in a local checkout, not for registry installs.
+It is reported only when the command itself is dangerous (husky and builds are the common case)."""
 
 # --- A02 autostart ---------------------------------------------------------------------------
 
@@ -35,13 +53,46 @@ def _commands(obj: Any) -> Iterator[str]:
             yield from _commands(item)
 
 
+def _flatten(value: Any) -> list[str]:
+    """devcontainer commands: a string, a list of arguments or an object of named commands."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [" ".join(str(v) for v in value)]
+    if isinstance(value, dict):
+        return [c for v in value.values() for c in _flatten(v)]
+    return []
+
+
+_DEVCONTAINER_KEYS = (
+    "initializeCommand",
+    "onCreateCommand",
+    "updateContentCommand",
+    "postCreateCommand",
+    "postStartCommand",
+    "postAttachCommand",
+)
+_PYTHON_RISK = re.compile(
+    r"\b(subprocess|os\.system|os\.popen|os\.exec|urllib|urlopen|requests\.|socket\.|"
+    r"exec\s*\(|eval\s*\(|compile\s*\(|base64|marshal|__import__|ctypes)"
+)
+
+
 def _autostart(
-    entry: InventoryEntry, art: str, commands: list[str], erklaerung: str
+    entry: InventoryEntry,
+    art: str,
+    commands: list[str],
+    erklaerung: str,
+    risk: re.Pattern[str] = _DANGEROUS_COMMAND,
 ) -> Finding | None:
     if not commands:
         return None
-    dangerous = [c for c in commands if _DANGEROUS_COMMAND.search(c)]
+    dangerous = [c for c in commands if risk.search(c) or _DANGEROUS_COMMAND.search(c)]
     shown = dangerous[0] if dangerous else commands[0]
+    m = risk.search(shown) or _DANGEROUS_COMMAND.search(shown)
+    if m and len(shown) > 300:
+        line_start = shown.rfind("\n", 0, m.start()) + 1
+        shown = shown[line_start : line_start + 300]
     return finding(
         rule_id=f"LB-A02-{art}",
         ebene=Ebene.A,
@@ -107,6 +158,11 @@ def _a02(ctx: ScanContext) -> Iterator[Finding]:
             scripts = data.get("scripts", {}) if isinstance(data, dict) else {}
             if isinstance(scripts, dict):
                 cmds = [str(scripts[h]) for h in _INSTALL_HOOKS if isinstance(scripts.get(h), str)]
+                cmds += [
+                    str(scripts[h])
+                    for h in _DEV_HOOKS
+                    if isinstance(scripts.get(h), str) and _DANGEROUS_COMMAND.search(scripts[h])
+                ]
                 f = _autostart(
                     entry,
                     "npm-install-skript",
@@ -121,6 +177,62 @@ def _a02(ctx: ScanContext) -> Iterator[Finding]:
                     "git-hook",
                     [read_text(ctx, entry, 4096)],
                     "Git-Hooks laufen bei Git-Befehlen automatisch.",
+                )
+        elif name in ("devcontainer.json", ".devcontainer.json"):
+            data = read_json(ctx, entry)
+            cmds = []
+            if isinstance(data, dict):
+                for key in _DEVCONTAINER_KEYS:
+                    cmds.extend(_flatten(data.get(key)))
+            f = _autostart(
+                entry,
+                "devcontainer",
+                cmds,
+                "Dev Container führen diese Befehle beim Öffnen aus, `initializeCommand` sogar "
+                "direkt auf dem Rechner des Nutzers.",
+            )
+        elif path.endswith(".vscode/settings.json"):
+            data = read_json(ctx, entry)
+            if isinstance(data, dict) and data.get("task.allowAutomaticTasks") == "on":
+                f = _autostart(
+                    entry,
+                    "vscode-automatische-aufgaben",
+                    ['"task.allowAutomaticTasks": "on"'],
+                    "Die Einstellung erlaubt VS Code, Aufgaben beim Öffnen ohne Rückfrage zu "
+                    "starten.",
+                )
+        elif name.endswith(".pth") and entry.kind == "text":
+            lines = [
+                line
+                for line in read_text(ctx, entry, 64 * 1024).splitlines()
+                if line.startswith(("import ", "import\t"))
+            ]
+            f = _autostart(
+                entry,
+                "python-pth",
+                lines,
+                "Python führt `import`-Zeilen in `.pth`-Dateien bei jedem Start des Interpreters "
+                "aus, sobald das Paket installiert ist.",
+                risk=_PYTHON_RISK,
+            )
+        elif name in ("sitecustomize.py", "usercustomize.py"):
+            f = _autostart(
+                entry,
+                "python-sitecustomize",
+                [read_text(ctx, entry, 64 * 1024)],
+                f"`{name}` läuft bei jedem Start von Python automatisch, wenn es im Suchpfad "
+                "liegt.",
+                risk=_PYTHON_RISK,
+            )
+        elif name == "setup.py":
+            text = read_text(ctx, entry)
+            m = _DANGEROUS_COMMAND.search(text)
+            if m:
+                f = _autostart(
+                    entry,
+                    "setup-py",
+                    [m.group(0)],
+                    "`setup.py` läuft bei `pip install` aus dem Quellcode automatisch.",
                 )
         elif name == ".envrc":
             f = _autostart(
@@ -144,6 +256,27 @@ _SETUP_PY_RISK = re.compile(
 )
 
 
+_SCRIPT_EXT = (".sh", ".bash", ".zsh", ".ps1", ".psm1", ".bat", ".cmd")
+_SHELL_SHEBANG = re.compile(rb"^#![^\n]*\b(sh|bash|zsh|dash|ksh|pwsh|powershell)\b")
+_SCRIPT_RISK = re.compile(
+    r"(curl|wget|invoke-webrequest|iwr|irm)\b[^\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b"
+    r"|\b(curl|wget)\b[^\n]*(-o|--output|>)\s*\S+[^\n]*(&&|;)\s*(sh|bash|chmod|\./)"
+    r"|base64\s+(-d|--decode)[^\n]*\|\s*(ba|z)?sh\b|\bnc\s+-e\b"
+    r"|/dev/tcp/[^\n]*(0>&1|<&)|\bsh\s+-i\s*>&"
+    r"|iex\s*\(|invoke-expression|new-object\s+net\.webclient|powershell[^\n]*-enc",
+    re.IGNORECASE,
+)
+_NETWORK = re.compile(r"\b(urllib\.request|urlopen|requests\.(get|post)|httpx\.|socket\.)")
+_LOCAL_BACKEND = re.compile(r"^\s*backend-path\s*=\s*\[[^\]]*\]", re.MULTILINE)
+
+
+def _is_script(ctx: ScanContext, entry: InventoryEntry) -> bool:
+    """Shell and PowerShell scripts; code in Python, JavaScript & Co. belongs to Ebene C."""
+    if entry.path.lower().endswith(_SCRIPT_EXT):
+        return True
+    return entry.kind == "script" and bool(_SHELL_SHEBANG.match(read_bytes(ctx, entry, 128)))
+
+
 def _a03(ctx: ScanContext) -> Iterator[Finding]:
     for entry in ctx.inventory:
         name = file_name(entry).lower()
@@ -153,18 +286,28 @@ def _a03(ctx: ScanContext) -> Iterator[Finding]:
         if name == "setup.py":
             m = _SETUP_PY_RISK.search(read_text(ctx, entry))
             hit = m.group(0) if m else None
-        elif _INSTALL_NAMES.match(name) or name == "makefile":
+        elif _INSTALL_NAMES.match(name) or name in ("makefile", "justfile"):
             m = _DANGEROUS_COMMAND.search(read_text(ctx, entry))
+            hit = m.group(0) if m else None
+        elif name == "conftest.py":
+            m = _NETWORK.search(read_text(ctx, entry))
+            hit = m.group(0) if m else None
+        elif name == "pyproject.toml":
+            m = _LOCAL_BACKEND.search(read_text(ctx, entry))
+            hit = m.group(0) if m else None
+        elif _is_script(ctx, entry):
+            m = _SCRIPT_RISK.search(read_text(ctx, entry))
             hit = m.group(0) if m else None
         if hit:
             yield finding(
                 rule_id="LB-A03-installationsskript",
                 ebene=Ebene.A,
                 schwere=Schwere.H,
-                titel="Installationsskript lädt nach oder startet Prozesse",
+                titel="Skript lädt nach, startet Prozesse oder greift auf Zugangsdaten zu",
                 erklaerung=(
-                    "Das Skript läuft bei der Installation und lädt Code aus dem Netz oder startet "
-                    "Prozesse. Was es nachlädt, ist nicht Teil der Prüfung."
+                    "Das Skript läuft bei Installation, Tests, Build oder auf Aufruf und lädt Code "
+                    "aus dem Netz, startet Prozesse oder liest Zugangsdaten. Was es nachlädt, ist "
+                    "nicht Teil der Prüfung."
                 ),
                 datei=entry.path,
                 zeile=None,

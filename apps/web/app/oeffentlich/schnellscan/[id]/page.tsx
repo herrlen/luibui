@@ -12,7 +12,7 @@ export default async function SchnellscanErgebnis({ params }: { params: Promise<
   const scan = await apiGet<ScanStatus>(`/api/v1/quickscans/${encodeURIComponent(id)}`, false);
   if (!scan.ok) notFound();
   return (
-    <div className="flex flex-col gap-4 pt-6">
+    <div className="flex max-w-5xl flex-col gap-4 pt-10">
       <h1 className="font-display text-3xl font-bold">Schnellscan</h1>
       <p className="text-sm text-muted">
         Dieser Bericht ist 7 Tage unter diesem Link abrufbar. Wer den Link hat, kann ihn sehen.

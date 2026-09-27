@@ -9,15 +9,10 @@ const SCHRITTE = [
   ["Beheben", "Jeder Befund mit Datei, Zeile, Beleg und einem fertigen Prompt für deinen Coding-Agent."],
 ];
 
-const ZAHLEN: [string, string, string][] = [
-  ["36,8 %", "der untersuchten Skills mit mindestens einer Sicherheitslücke", "1"],
-  ["13,4 %", "mit einer kritischen Lücke – mehr als jeder achte", "1"],
-  ["82 %", "der untersuchten MCP-Server mit Dateizugriffen, die für Zugriff außerhalb des erlaubten Bereichs anfällig sind", "2"],
-];
-
-const QUELLEN: [string, string, string][] = [
-  ["1", "Snyk, „ToxicSkills“, Februar 2026: 3.984 Skills aus ClawHub und skills.sh.", "https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/"],
-  ["2", "Endor Labs, 2026: 2.614 MCP-Implementierungen, Path Traversal (CWE-22).", "https://www.endorlabs.com/learn/classic-vulnerabilities-meet-ai-infrastructure-why-mcp-needs-appsec"],
+const ZAHLEN: [string, string][] = [
+  ["36,8 %", "der untersuchten Skills mit mindestens einer Sicherheitslücke"],
+  ["13,4 %", "mit einer kritischen Lücke – mehr als jeder achte"],
+  ["82 %", "der untersuchten MCP-Server mit Dateizugriffen, die für Zugriff außerhalb des erlaubten Bereichs anfällig sind"],
 ];
 
 const KIS = ["Claude", "ChatGPT", "Gemini", "Mistral", "Open WebUI", "MCP-Clients"];
@@ -36,23 +31,37 @@ const AMPELN: [string, string][] = [
   ["gesperrt", "Ein kritischer Befund aus der Sperrliste, etwa versteckte Anweisungen oder echte Zugangsdaten."],
 ];
 
+const CHIPS = ["Offen", "Kostenlos", "Gehostet in Deutschland"];
+
+const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[40px]";
+
 export default async function Startseite() {
+  const anmelden = await appUrl("/anmelden");
   const registrieren = await appUrl("/registrieren");
   return (
-    <div className="flex flex-col gap-16">
-      <section className="grid gap-10 pt-10 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-        <div>
-          <p className="text-sm font-semibold text-petrol">Offen · Kostenlos · Gehostet in Deutschland</p>
-          <h1 className="mt-3 font-display text-5xl font-bold leading-tight sm:text-6xl">
-            Prüfen, bevor man installiert.
+    <div className="flex flex-col gap-20 lg:gap-24">
+      <section className="grid items-center gap-12 pt-12 lg:grid-cols-2 lg:gap-[72px] lg:pb-20 lg:pt-[88px]">
+        <div className="flex flex-col gap-7">
+          <ul className="flex flex-wrap gap-2" aria-label="Kurz gesagt">
+            {CHIPS.map((c) => (
+              <li
+                key={c}
+                className="rounded-full border border-linie-stark px-3 py-1.5 text-[13px] font-medium text-chip-text"
+              >
+                {c}
+              </li>
+            ))}
+          </ul>
+          <h1 className="font-display text-[44px] font-bold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[72px]">
+            Prüfen, bevor man <span className="text-petrol">installiert.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-ink-2">
+          <p className="max-w-[580px] text-[17px] leading-[1.6] text-ink-2 sm:text-[19px]">
             luibui prüft KI-Skills, Plugins, Tools und MCP-Server auf Sicherheit und Datenschutz. Du bekommst einen
             Bericht mit zwei Ampeln, einer Note und konkreten Hinweisen zum Beheben.
           </p>
           <a
             href={registrieren}
-            className="mt-6 inline-block rounded-[10px] bg-petrol px-5 py-3 font-semibold text-white hover:bg-petrol-dunkel"
+            className="inline-flex min-h-15 items-center self-start rounded-xl bg-petrol px-[26px] py-3 text-base font-semibold text-white hover:bg-petrol-dunkel"
           >
             Kostenlos registrieren und gründlich prüfen
           </a>
@@ -60,49 +69,46 @@ export default async function Startseite() {
         <Schnellscan />
       </section>
 
-      <section aria-labelledby="lage" className="rounded-[14px] bg-ink p-8 text-white sm:p-10">
-        <h2 id="lage" className="max-w-3xl font-display text-3xl font-bold sm:text-4xl">
+      <section aria-labelledby="lage" className="rounded-[18px] bg-band p-6 sm:p-10 lg:p-14">
+        <h2 id="lage" className={`max-w-3xl ${H2}`}>
           Mehr als jeder dritte KI-Skill hat eine Sicherheitslücke.
         </h2>
-        <dl className="mt-8 grid gap-6 md:grid-cols-3">
-          {ZAHLEN.map(([zahl, text, quelle]) => (
-            <div key={zahl}>
-              <dt className="font-display text-5xl font-bold">
+        <dl className="mt-9 grid gap-5 md:grid-cols-3">
+          {ZAHLEN.map(([zahl, text]) => (
+            <div key={zahl} className="flex flex-col gap-3 rounded-[14px] bg-surface p-7">
+              <dt className="font-display text-[56px] font-bold leading-none tracking-[-0.035em] text-petrol lg:text-[64px]">
                 {zahl}
-                <sup className="ml-1 text-lg font-normal">{quelle}</sup>
               </dt>
-              <dd className="mt-2 text-sm text-white/80">{text}</dd>
+              <dd className="text-[15px] leading-[1.55] text-ink-2">{text}</dd>
             </div>
           ))}
         </dl>
-        <p className="mt-8 max-w-3xl text-lg">
+        <p className="mt-9 max-w-3xl text-[17px] leading-[1.6] text-ink-2">
           Skills und Plugins sehen harmlos aus und laufen mit Zugriff auf deine Chats, Dateien und Zugangsdaten. luibui
           prüft sie, bevor du sie installierst.
         </p>
-        <ol className="mt-6 flex flex-col gap-1 text-xs text-white/70">
-          {QUELLEN.map(([nr, text, url]) => (
-            <li key={nr}>
-              {nr} {text}{" "}
-              <a href={url} className="underline hover:text-white" rel="noopener noreferrer">
-                Quelle
-              </a>
-            </li>
-          ))}
-        </ol>
       </section>
 
-      <section aria-labelledby="umfang">
-        <h2 id="umfang" className="font-display text-3xl font-bold">
+      <section aria-labelledby="umfang" className="flex flex-col gap-7">
+        <h2 id="umfang" className={H2}>
           Was luibui prüft
         </h2>
-        <p className="mt-3 max-w-3xl text-ink-2">
-          Erweiterungen für {KIS.slice(0, -1).join(", ")} und {KIS[KIS.length - 1]}. Einige Beispiele:
-        </p>
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-col gap-4">
+          <p className="max-w-3xl text-[17px] text-ink-2">Erweiterungen für diese KI-Anwendungen:</p>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {KIS.map((ki) => (
+              <li key={ki} className="rounded-xl border border-linie bg-flaeche-2 px-[18px] py-4 text-base font-semibold">
+                {ki}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="max-w-3xl text-[17px] text-ink-2">Einige Beispiele:</p>
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {ARTEN.map(([art, beispiele]) => (
-            <li key={art} className="rounded-[14px] border border-linie bg-surface p-6">
-              <h3 className="text-lg font-semibold">{art}</h3>
-              <ul className="mt-3 flex list-disc flex-col gap-1 pl-5 text-sm text-ink-2">
+            <li key={art} className="flex flex-col gap-3.5 rounded-[14px] border border-linie bg-surface p-6">
+              <h3 className="self-start rounded-md bg-tag px-[9px] py-[3px] text-[13px] font-medium">{art}</h3>
+              <ul className="flex flex-col gap-2 text-[15px] leading-[1.55] text-ink-2">
                 {beispiele.map((b) => (
                   <li key={b}>{b}</li>
                 ))}
@@ -112,35 +118,76 @@ export default async function Startseite() {
         </ul>
       </section>
 
-      <section aria-labelledby="ablauf">
-        <h2 id="ablauf" className="font-display text-3xl font-bold">
+      <section aria-labelledby="ablauf" className="flex flex-col gap-7">
+        <h2 id="ablauf" className={H2}>
           In drei Schritten
         </h2>
-        <ol className="mt-6 grid gap-4 md:grid-cols-3">
+        <ol className="grid gap-5 md:grid-cols-3">
           {SCHRITTE.map(([titel, text], i) => (
-            <li key={titel} className="rounded-[14px] border border-linie bg-surface p-6">
-              <p className="font-mono text-sm text-petrol">0{i + 1}</p>
-              <h3 className="mt-2 text-lg font-semibold">{titel}</h3>
-              <p className="mt-2 text-sm text-ink-2">{text}</p>
+            <li key={titel} className="flex flex-col gap-3.5 rounded-[14px] border border-linie bg-surface p-7">
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-petrol font-semibold text-white"
+                >
+                  {i + 1}
+                </span>
+                <h3 className="text-xl font-semibold">{titel}</h3>
+              </div>
+              <p className="text-[15px] leading-[1.6] text-ink-2">{text}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <section aria-labelledby="ampel">
-        <h2 id="ampel" className="font-display text-3xl font-bold">
-          Was die Ampel bedeutet
-        </h2>
-        <ul className="mt-6 grid gap-4 md:grid-cols-2">
-          {AMPELN.map(([wert, text]) => (
-            <li key={wert} className="flex items-start gap-4 rounded-[14px] border border-linie bg-surface p-5">
-              <Ampel wert={wert} />
-              <p className="text-sm text-ink-2">{text}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 text-sm text-muted">Die Ampel ist ein automatischer Hinweis, keine Zertifizierung.</p>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section
+          aria-labelledby="ampel"
+          className="flex flex-col gap-5 rounded-[18px] border border-linie bg-surface p-7 sm:p-9"
+        >
+          <h2 id="ampel" className="font-display text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">
+            Was die Ampel bedeutet
+          </h2>
+          <ul className="flex flex-col gap-3.5">
+            {AMPELN.map(([wert, text]) => (
+              <li key={wert} className="flex items-start gap-3.5">
+                <span className="w-[104px] shrink-0">
+                  <Ampel wert={wert} />
+                </span>
+                <p className="text-[15px] leading-[1.55] text-ink-2">{text}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[13px] text-muted">Die Ampel ist ein automatischer Hinweis, keine Zertifizierung.</p>
+        </section>
+
+        <section
+          aria-labelledby="gruendlich"
+          className="flex flex-col gap-5 rounded-[18px] bg-petrol p-7 text-grund sm:p-9"
+        >
+          <h2 id="gruendlich" className="font-display text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">
+            Gründlich prüfen im Entwicklerbereich
+          </h2>
+          <p className="text-base leading-[1.6] text-petrol-hell">
+            Im Entwicklerbereich prüfst du Dateien, Ordner, ZIP-Archive, eingefügten Text oder Git-Repositories.
+            Projekte, Berichte und Verlauf liegen in deinem privaten Bereich und sind nur für dich sichtbar.
+          </p>
+          <div className="mt-auto flex flex-wrap gap-3">
+            <a
+              href={registrieren}
+              className="inline-flex h-12 items-center rounded-[10px] bg-grund px-[22px] text-[15px] font-semibold text-petrol hover:bg-surface focus-visible:outline-grund"
+            >
+              Kostenlos registrieren
+            </a>
+            <a
+              href={anmelden}
+              className="inline-flex h-12 items-center rounded-[10px] border border-grund/50 px-[22px] text-[15px] font-semibold text-grund hover:border-grund focus-visible:outline-grund"
+            >
+              Anmelden
+            </a>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

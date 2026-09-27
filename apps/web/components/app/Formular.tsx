@@ -7,7 +7,7 @@ export function Feld({ label, ...props }: { label: string } & InputHTMLAttribute
       <span className="font-semibold">{label}</span>
       <input
         {...props}
-        className="rounded-lg border border-linie bg-surface px-3 py-2 text-base focus:border-petrol"
+        className="h-12 rounded-xl border border-linie-stark bg-surface px-4 text-base focus:border-petrol"
       />
     </label>
   );
@@ -18,7 +18,7 @@ export function Knopf({ children, disabled }: { children: ReactNode; disabled?: 
     <button
       type="submit"
       disabled={disabled}
-      className="rounded-[10px] bg-petrol px-4 py-2 font-semibold text-white hover:bg-petrol-dunkel disabled:opacity-60"
+      className="inline-flex h-12 items-center justify-center rounded-[10px] bg-petrol px-[22px] text-[15px] font-semibold text-white hover:bg-petrol-dunkel disabled:opacity-60"
     >
       {children}
     </button>

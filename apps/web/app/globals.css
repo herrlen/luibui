@@ -9,6 +9,12 @@
   --color-grund: #f5f3ec;
   --color-surface: #ffffff;
   --color-linie: #e2ded3;
+  --color-linie-stark: #cfcabc;
+  --color-flaeche-2: #faf9f5;
+  --color-tag: #efede6;
+  --color-band: #edeae1;
+  --color-chip-text: #4a4f59;
+  --color-petrol-hell: #dcebe8;
   --color-petrol: #0e5e5b;
   --color-petrol-dunkel: #0a4644;
   --color-gruen: #17613c;
@@ -30,9 +36,12 @@ body {
   font-family: var(--font-sans);
 }
 
-:focus-visible {
-  outline: 3px solid var(--color-petrol);
-  outline-offset: 2px;
+/* In the base layer so utilities (e.g. a light ring on petrol surfaces) can override it. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-petrol);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

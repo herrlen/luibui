@@ -36,7 +36,8 @@ _KEY_NAMES = re.compile(
 
 def key_files(ctx: ScanContext) -> list[Finding]:
     """Key and credential files by name. gitleaks reads text only, so binary key stores
-    (.p12, .pfx, .jks, .kdbx) would otherwise pass unnoticed."""
+    (.p12, .pfx, .jks, .kdbx) would otherwise pass unnoticed. Runs in analyzer A, so it works
+    even when gitleaks is unavailable."""
     findings = []
     for entry in ctx.inventory:
         if not _KEY_NAMES.search(entry.path) or entry.size == 0:
@@ -72,7 +73,7 @@ class SecretsAnalyzer:
     info = AnalyzerInfo(name="secrets", titel="B20 – Secrets", ebenen=frozenset({Ebene.B}))
 
     def analyze(self, ctx: ScanContext) -> list[Finding]:
-        findings = key_files(ctx)
+        findings = []
         for leak in gitleaks.scan(ctx.root, rules_dir()):
             sample = bool(_SAMPLE_PATH.search(leak.datei))
             rule = _RULE_ID.sub("-", leak.rule_id.lower()).strip("-") or "unbekannt"

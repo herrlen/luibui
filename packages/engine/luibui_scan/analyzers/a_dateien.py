@@ -17,6 +17,7 @@ from luibui_scan.analyzers._a_modelle import _a16_pickle, _a18_safetensors, _a19
 from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
+from luibui_scan.analyzers.secrets import key_files
 from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.inventory import EXECUTABLE_KINDS
 from luibui_scan.models import Ebene, Finding, Schwere
@@ -382,6 +383,7 @@ class DateienAnalyzer:
             _a18_safetensors,
             _a19_config,
             _dokumente,
+            key_files,
         ):
             findings.extend(check(ctx))
         return findings

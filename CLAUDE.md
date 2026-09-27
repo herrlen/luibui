@@ -11,6 +11,9 @@ Kostenlos registrieren, „So prüfen wir“, Doku, Spenden, ab Sprint 4 Registe
 Anmeldung mit eingeschränktem Umfang und ausdrücklich ohne Gewähr; der Intensivscan läuft im Entwicklerbereich). Die Anmelde- und Registrierungsformulare liegen auf app.luibui.com im selben Design.
 Geprüfte Pakete können im Register veröffentlicht und in Claude, ChatGPT, Gemini, Mistral, Open WebUI und MCP-Clients installiert werden.
 
+Wie gearbeitet wird (Begriffe, Produktregeln, Gates, Checkliste vor dem Commit): `ENTWICKLERREGELN.md`.
+Bei Widerspruch gilt diese Datei, und `ENTWICKLERREGELN.md` wird angepasst.
+
 Maßgebliche Dokumente, vor jeder Architekturentscheidung lesen:
 - `docs/luibui_Konzept.md` – Produkt, Pipeline, Bewertung, Architektur
 - `docs/luibui_Sprintplanung.md` – Tasks mit IDs (S1-5 usw.) und Definition of Done

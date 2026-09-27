@@ -639,3 +639,22 @@ ins luibui-Repo geraten und ist wieder entfernt (`813072d`); die Datei liegt wei
 Platte. Commits nennen ab jetzt ihre Dateien ausdrücklich. Eine gitleaks-Prüfung der ganzen
 Git-Historie fand keine echten Secrets, nur zwei Platzhalter (leeres `POSTGRES_PASSWORD` in
 `.env.example`, erfundener Test-Schlüssel).
+
+## 2026-09-27 — Entwicklerregeln für luibui
+
+Len hat das Regelwerk von wanalyse als `ENTWICKLERREGELN.md` in den luibui-Ordner gelegt, zum Anpassen.
+Die Datei ist jetzt die luibui-Fassung. Die Struktur ist geblieben (Teil A–G, Anhang), der Inhalt auf
+luibui übertragen:
+- **Rangfolge:** Sicherheitsregeln aus CLAUDE.md vor dieser Datei, diese vor dem Chat. Len kann im Chat
+  alles außer den Sicherheitsregeln ändern, die Änderung wird dann nachgetragen.
+- Aus „Crawler“ wird **Teil D Engine und Regeln**, aus dem Schätzmodell **Teil E Ehrlichkeit der
+  Bewertung** (kein Grün bei Unvollständigkeit, Kalibrierung, keine Schwelle senken).
+- **Design-Tokens** aus `docs/design/`, alle Kontraste gerechnet. `#9EA3AD` (2,3:1) ist als Textfarbe
+  ausgeschlossen.
+- **Arbeitsweise aus den Erfahrungen dieser Woche:** Praxistest an echten Repos, Dateien einzeln
+  committen, alle Prüfungen vor dem Commit, Werkzeugoptionen im Quellcode belegen.
+- Am Ende steht ein **Umsetzungsstand**: was schon so läuft und was nicht (Client-IP, ADRs, Git-Hook,
+  Fehlerformat, `/api/v1`, Drittdienste-Verzeichnis, Modulgröße, CI).
+
+CLAUDE.md verweist jetzt auf die Datei. Die frühere wanalyse-Fassung steht weiter in der Git-Historie
+(`ddc35de`).

@@ -25,6 +25,13 @@ export function Registrieren() {
       <Feld label="E-Mail" name="email" type="email" autoComplete="email" required />
       <Feld label="Passwort (mindestens 12 Zeichen)" name="passwort" type="password" autoComplete="new-password" minLength={12} required />
       <Meldung text={fehler} />
+      <p className="text-sm text-muted">
+        Mit dem Anlegen des Kontos gilt unsere{" "}
+        <Link href="/datenschutz" className="text-petrol underline">
+          Datenschutzerklärung
+        </Link>
+        .
+      </p>
       <Knopf disabled={laeuft}>Konto anlegen</Knopf>
       <p className="text-sm">
         Schon registriert? <Link href="/anmelden" className="text-petrol underline">Anmelden</Link>

@@ -60,6 +60,15 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
                 Kostenlos registrieren
               </a>
             </div>
+            <div className="flex flex-col gap-2.5">
+              <span className="font-semibold">Rechtliches</span>
+              <Link href="/impressum" className="text-ink-2 hover:text-petrol">
+                Impressum
+              </Link>
+              <Link href="/datenschutz" className="text-ink-2 hover:text-petrol">
+                Datenschutz
+              </Link>
+            </div>
           </div>
           <p className="text-[13px] text-muted">Gehostet in Deutschland</p>
         </div>

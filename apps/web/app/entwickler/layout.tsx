@@ -23,6 +23,16 @@ export default function EntwicklerLayout({ children }: { children: ReactNode }) 
       <main id="inhalt" className="mx-auto max-w-5xl px-4 py-8">
         {children}
       </main>
+      <footer className="border-t border-linie">
+        <nav aria-label="Rechtliches" className="mx-auto flex max-w-5xl gap-6 px-4 py-6 text-sm text-muted">
+          <Link href="/impressum" className="hover:text-petrol">
+            Impressum
+          </Link>
+          <Link href="/datenschutz" className="hover:text-petrol">
+            Datenschutz
+          </Link>
+        </nav>
+      </footer>
     </>
   );
 }

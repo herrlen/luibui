@@ -992,3 +992,15 @@ Datenschutzerklärung nennt den Vertrag jetzt ausdrücklich.
 
 **Beobachtung:** Nach jedem Ausrollen antworten luibui.com und app.luibui.com einige Sekunden
 bis Minuten mit 503/504 von nginx, weil mittwald die Container ohne Überlappung austauscht.
+
+## 2026-09-27 – Upload mit Ablagefläche (Rückmeldung Len)
+
+**Was:** Das Dateifeld im Projekt sah wie normaler Text aus, Drag & Drop fehlte. Neue Komponente
+`components/app/Ablage.tsx`: Ablagefläche für Dateien, Ordner (mit relativen Pfaden) und Archive,
+sichtbarer Auswahlknopf, Liste der Auswahl mit Anzahl und Größe, „Auswahl leeren“. Ein einzelnes
+Archiv wird immer entpackt geprüft, auch unter „Datei(en)“.
+
+**Geprüft:** Im lokalen Compose-Stack per Browser von Ende zu Ende (Registrieren, Projekt, Datei
+per Knopf, ZIP per Drag & Drop, Bericht). Ausgerollt `999b0b3`.
+
+**Offen:** Drag & Drop direkt auf der Übersicht für Einzelprüfungen (DoD Sprint 2).

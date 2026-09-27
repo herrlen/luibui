@@ -54,6 +54,12 @@ bereit war (mittwald kennt kein `depends_on`), danach `worker … ready`.
 | web | 87 MiB | 87 MiB | 366 MiB |
 | **Summe** | **266 MiB** | | **3050 MiB** |
 
+**Nach dem Ausrollen von `ca71338` (2026-09-27, 07:22, Annahme geschlossen, keine Prüfung aktiv):**
+api 72 MiB, worker 60 MiB, web 136 MiB, postgres 55 MiB, zusammen 323 MiB. Das Web wächst mit der
+Next.js-Laufzeit, die API trotz Anmeldung und Verschlüsselung nicht. Migration `0002` ist auf dem
+Server gelaufen (`alembic_version` = 0002). Die API sieht als Client nur Ingress-Adressen aus
+`100.121.0.0/16`; ohne `X-Forwarded-For` greift keine Begrenzung je IP.
+
 mittwald liest `768m` als 768 **Megabyte** (10⁶), nicht Mebibyte; die wirksamen Limits sind
 deshalb rund 5 % kleiner als lokal. Aussagekräftig wird die Messung erst mit echten Prüfungen und
 Scannern (S1-12).
@@ -98,7 +104,25 @@ rm -f "$E"
 
 ⚠ `mw stack deploy` ersetzt die gesamte Stack-Definition. Das Postgres-Passwort muss dasselbe
 bleiben, sonst kommt die API nicht mehr an die bestehende Datenbank. Es steht in der
-Stack-Konfiguration (`mw container get c-s7jsux -o json`, Feld `environment`), nirgends sonst.
+Stack-Konfiguration, nirgends sonst. `mw container get` gibt es nicht (CLI 1.21); die Werte stehen in
+`mw stack list -p p-yw5cv5 -o json` unter `.[0].services[].deployedState.envs`. **Nie anzeigen**,
+sondern direkt per `jq` in die Env-Datei schreiben:
+
+```sh
+E=$(mktemp) && chmod 600 "$E"
+{
+  S=$(mw stack list -p p-yw5cv5 -o json)
+  printf 'POSTGRES_PASSWORD=%s\n' "$(echo "$S" | jq -r '.[0].services[] | select(.serviceName=="postgres") | .deployedState.envs.POSTGRES_PASSWORD')"
+  printf 'MASTER_KEY=%s\n' "$(echo "$S" | jq -r '.[0].services[] | select(.serviceName=="api") | .deployedState.envs.MASTER_KEY')"
+  printf 'IMAGE_TAG=sha-%s\n' "$(git rev-parse HEAD)"
+} > "$E"
+awk -F= '{ print $1 " (" length(substr($0, index($0,"=")+1)) " Zeichen)" }' "$E"   # nur Längen
+mw stack deploy -s b8d0a6a8-83ef-4aba-b785-0b450c0ac551 -c infra/mittwald-stack.yml --env-file "$E"
+rm -f "$E"
+```
+
+`MASTER_KEY` wurde am 2026-09-27 beim ersten Ausrollen erzeugt und steht seitdem nur in der
+Stack-Konfiguration des API-Containers.
 
 ⚠ Dasselbe gilt ab S2-7 für `MASTER_KEY` (API-Container): Er verschlüsselt die Schlüssel aller
 Projekt-Dateien. Wird er beim Ausrollen weggelassen oder ersetzt, sind alle gespeicherten Dateien

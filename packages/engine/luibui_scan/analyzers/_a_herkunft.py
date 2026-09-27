@@ -72,6 +72,7 @@ _NPM_REGISTRY = re.compile(r"^\s*(@[\w.-]+:)?registry\s*=\s*(\S+)", re.M)
 _TOML_INDEX = re.compile(
     r"\[\[?tool\.(uv\.index|poetry\.source|pdm\.source)\]?\][^\[]*?url\s*=\s*\"([^\"]+)\"", re.S
 )
+_UV_TOML = re.compile(r"^\s*(url|index-url|extra-index-url|find-links)\s*=\s*\"([^\"]+)\"", re.M)
 _OFFICIAL = re.compile(
     r"^https://(pypi\.org|files\.pythonhosted\.org|registry\.npmjs\.org|registry\.yarnpkg\.com)(/|$)"
 )
@@ -91,6 +92,8 @@ def _a12(ctx: ScanContext) -> Iterator[Finding]:
             patterns = [_NPM_REGISTRY]
         elif name == "pyproject.toml":
             patterns = [_TOML_INDEX]
+        elif name == "uv.toml":
+            patterns = [_UV_TOML]
         if not patterns:
             continue
         text = read_text(ctx, entry)

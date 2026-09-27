@@ -26,12 +26,53 @@ def _mask(match: str) -> str:
     return visible(masked, 200)
 
 
+_KEY_NAMES = re.compile(
+    r"(^|/)(id_(rsa|dsa|ecdsa|ed25519)|\.pgpass|\.netrc|_netrc|\.git-credentials)$"
+    r"|(^|/)\.aws/credentials$|(^|/)\.docker/config\.json$"
+    r"|\.(p12|pfx|jks|keystore|kdbx|ppk|asc\.key|pem\.key)$",
+    re.IGNORECASE,
+)
+
+
+def key_files(ctx: ScanContext) -> list[Finding]:
+    """Key and credential files by name. gitleaks reads text only, so binary key stores
+    (.p12, .pfx, .jks, .kdbx) would otherwise pass unnoticed."""
+    findings = []
+    for entry in ctx.inventory:
+        if not _KEY_NAMES.search(entry.path) or entry.size == 0:
+            continue
+        sample = bool(_SAMPLE_PATH.search(entry.path))
+        findings.append(
+            finding(
+                rule_id="LB-B20-schluesseldatei",
+                ebene=Ebene.B,
+                schwere=Schwere.M if sample else Schwere.K,
+                titel="Schlüssel- oder Zugangsdatei im Paket",
+                erklaerung=(
+                    "Der Dateiname steht für einen privaten Schlüssel, einen Schlüsselspeicher "
+                    "oder gespeicherte Zugangsdaten. Wer das Paket bekommt, bekommt diesen Zugang."
+                    + (" Die Datei liegt in einem Beispiel- oder Testbereich." if sample else "")
+                ),
+                datei=entry.path,
+                zeile=None,
+                beleg=f"{visible(entry.path, 150)}, {entry.size} Byte (Inhalt nicht angezeigt)",
+                fix=(
+                    "Die Datei entfernen, den Schlüssel widerrufen und neu erzeugen. Zugangsdaten "
+                    "nur über Umgebungsvariablen oder einen Schlüsselspeicher des Nutzers lesen."
+                ),
+                fix_prompt=f"Entferne {entry.path} aus dem Paket und aus der Git-Historie.",
+                normbezug=("OWASP-LLM02", "DSGVO-Art-32"),
+            )
+        )
+    return findings
+
+
 @register
 class SecretsAnalyzer:
     info = AnalyzerInfo(name="secrets", titel="B20 – Secrets", ebenen=frozenset({Ebene.B}))
 
     def analyze(self, ctx: ScanContext) -> list[Finding]:
-        findings = []
+        findings = key_files(ctx)
         for leak in gitleaks.scan(ctx.root, rules_dir()):
             sample = bool(_SAMPLE_PATH.search(leak.datei))
             rule = _RULE_ID.sub("-", leak.rule_id.lower()).strip("-") or "unbekannt"

@@ -6,6 +6,7 @@ Two analyzers, so a missing OSV database does not hide the other checks:
 - ``d_osv``: known malicious packages (D01) and vulnerabilities (D02) via OSV-Scanner offline.
 """
 
+import configparser
 import json
 import re
 import tomllib
@@ -101,6 +102,55 @@ def _package_json(ctx: ScanContext, entry: InventoryEntry) -> Iterator[Dep]:
                 yield Dep(str(name).lower(), str(spec), "npm", entry.path, None)
 
 
+def _setup_cfg(ctx: ScanContext, entry: InventoryEntry) -> Iterator[Dep]:
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        parser.read_string(_text(ctx, entry))
+    except configparser.Error:
+        return
+    specs = parser.get("options", "install_requires", fallback="").splitlines()
+    if parser.has_section("options.extras_require"):
+        for _, value in parser.items("options.extras_require"):
+            specs += value.splitlines()
+    for spec in specs:
+        m = _REQ_NAME.match(spec)
+        if m:
+            yield Dep(_norm_py(m.group(1)), spec[m.end() :].strip(), "pypi", entry.path, None)
+
+
+def _pipfile(ctx: ScanContext, entry: InventoryEntry) -> Iterator[Dep]:
+    try:
+        data = tomllib.loads(_text(ctx, entry))
+    except tomllib.TOMLDecodeError:
+        return
+    for section in ("packages", "dev-packages"):
+        for name, value in (data.get(section) or {}).items():
+            spec = value if isinstance(value, str) else json.dumps(value)
+            spec = "" if spec == "*" else spec
+            yield Dep(_norm_py(name), spec, "pypi", entry.path, None)
+
+
+_FRONTMATTER = re.compile(r'^\s*(?:"""|\'\'\')(.*?)(?:"""|\'\'\')', re.S)
+_FM_REQUIREMENTS = re.compile(r"^\s*requirements\s*:\s*(.+)$", re.M)
+
+
+def _open_webui(ctx: ScanContext, entry: InventoryEntry) -> Iterator[Dep]:
+    """Open WebUI tools and functions name their pip packages in the module docstring."""
+    text = _text(ctx, entry)[: 16 * 1024]
+    doc = _FRONTMATTER.match(text)
+    if doc is None:
+        return
+    m = _FM_REQUIREMENTS.search(doc.group(1))
+    if m is None:
+        return
+    zeile = text.count("\n", 0, doc.start(1) + m.start()) + 1
+    for spec in m.group(1).split(","):
+        n = _REQ_NAME.match(spec.strip())
+        if n:
+            rest = spec.strip()[n.end() :].strip()
+            yield Dep(_norm_py(n.group(1)), rest, "pypi", entry.path, zeile)
+
+
 def dependencies(ctx: ScanContext) -> list[Dep]:
     deps: list[Dep] = []
     for entry in ctx.inventory:
@@ -113,6 +163,12 @@ def dependencies(ctx: ScanContext) -> list[Dep]:
             deps += _pyproject(ctx, entry)
         elif name == "package.json" and "node_modules/" not in entry.path:
             deps += _package_json(ctx, entry)
+        elif name == "setup.cfg":
+            deps += _setup_cfg(ctx, entry)
+        elif name == "pipfile":
+            deps += _pipfile(ctx, entry)
+        elif name.endswith(".py") and entry.size <= 1024 * 1024:
+            deps += _open_webui(ctx, entry)
     return deps
 
 
@@ -243,6 +299,8 @@ def _unsafe(dep: Dep) -> str | None:
         return "direkter Download statt Paketverzeichnis"
     if "http://" in spec:
         return "unverschlüsselte Adresse"
+    if re.search(r"@\s*https://", spec) and not re.search(r"#(sha256|sha384|sha512)=|--hash", spec):
+        return "direkter Download ohne Prüfsumme"
     if "git+" in spec:
         return None if _SHA.search(spec) else "Git-Quelle ohne festen Commit"
     if re.search(r"@\s*(file:|\.\./)", spec):

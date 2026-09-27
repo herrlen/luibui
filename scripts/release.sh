@@ -14,6 +14,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Docker Desktop's credential helper lives inside the app bundle.
+export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
 cd "$ROOT"
 DEPLOY=1
 [[ "${1:-}" == "--ohne-deploy" ]] && DEPLOY=0
@@ -39,7 +41,8 @@ echo "Commit $(git log --oneline -1)"
 
 # --- 1. Prüfungen wie in der CI -------------------------------------------------------------
 schritt "Prüfungen"
-if ! "${DOCKER[@]}" ps --format '{{.Names}}' | grep -qx "$TESTDB"; then
+# A test database may already listen there (e.g. from Colima); otherwise start one in Desktop.
+if ! nc -z 127.0.0.1 55432 2>/dev/null; then
   "${DOCKER[@]}" start "$TESTDB" >/dev/null 2>&1 \
     || "${DOCKER[@]}" run -d --name "$TESTDB" -e POSTGRES_PASSWORD=ci -p 127.0.0.1:55432:5432 postgres:17 >/dev/null
   for _ in $(seq 1 30); do

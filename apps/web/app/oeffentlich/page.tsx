@@ -4,7 +4,7 @@ import { appUrl } from "@/lib/hosts";
 import { Schnellscan } from "./Schnellscan";
 
 const SCHRITTE = [
-  ["Hochladen", "Datei, Ordner, ZIP, Text oder ein Git-Repository. Jede Eingabe gilt als feindlich und wird nur gelesen."],
+  ["Hochladen", "Datei, Ordner, ZIP- oder tar-Archiv, Text oder ein Git-Repository. Jede Eingabe gilt als feindlich und wird nur gelesen."],
   ["Prüfen", "Versteckte Anweisungen, automatisch startende Befehle, Secrets, Abhängigkeiten mit bekannten Lücken und mehr."],
   ["Beheben", "Jeder Befund mit Datei, Zeile, Beleg und einem fertigen Prompt für deinen Coding-Agent."],
 ];
@@ -18,10 +18,10 @@ const ZAHLEN: [string, string][] = [
 const KIS = ["Claude", "ChatGPT", "Gemini", "Mistral", "Open WebUI", "MCP-Clients"];
 
 const ARTEN: [string, string[]][] = [
-  ["Skills", ["Versteckte Anweisungen an das Sprachmodell", "Unsichtbare Unicode-Zeichen", "Links, über die Daten abfließen"]],
-  ["Plugins", ["Hooks, die Befehle automatisch starten", "Installationsskripte", "Programmdateien ohne Quellcode"]],
-  ["Tools", ["Zugangsdaten im Code", "Abhängigkeiten mit bekannten Lücken", "Pakete aus fremden Quellen"]],
-  ["MCP-Server", ["Unsichtbare Zeichen in Tool-Beschreibungen", "Namensverwechslungen bei Paketen", "Fehlende Lockfiles"]],
+  ["Skills", ["Versteckte Anweisungen, auch kodiert", "Unsichtbare Unicode-Zeichen", "Links, über die Daten abfließen"]],
+  ["Plugins", ["Hooks, die Befehle automatisch starten", "Zu weit gefasste Werkzeugrechte", "Programmdateien ohne Quellcode"]],
+  ["Tools", ["Zugangsdaten und Schlüsseldateien", "Abhängigkeiten mit bekannten Lücken", "Modelldateien, die beim Laden Code ausführen"]],
+  ["MCP-Server", ["Startbefehle, die ungeprüft Pakete nachladen", "Unsichtbare Zeichen in Tool-Beschreibungen", "Namensverwechslungen bei Paketen"]],
 ];
 
 const AMPELN: [string, string][] = [
@@ -169,7 +169,7 @@ export default async function Startseite() {
             Gründlich prüfen im Entwicklerbereich
           </h2>
           <p className="text-base leading-[1.6] text-petrol-hell">
-            Im Entwicklerbereich prüfst du Dateien, Ordner, ZIP-Archive, eingefügten Text oder Git-Repositories.
+            Im Entwicklerbereich prüfst du Dateien, Ordner, ZIP- oder tar-Archive, eingefügten Text oder Git-Repositories.
             Projekte, Berichte und Verlauf liegen in deinem privaten Bereich und sind nur für dich sichtbar.
           </p>
           <div className="mt-auto flex flex-wrap gap-3">

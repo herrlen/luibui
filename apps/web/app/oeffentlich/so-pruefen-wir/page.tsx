@@ -1,11 +1,12 @@
 export const metadata = { title: "So prüfen wir – luibui" };
 
 const EBENEN: [string, string][] = [
-  ["A – Dateien", "Automatisch startende Befehle, Installationsskripte, Programmdateien, getarnte Dateitypen, fremde Paketquellen, bekannte Schadsoftware."],
-  ["B – Inhalte", "Unsichtbare Unicode-Zeichen, versteckter Text, kodierte Blöcke, Anweisungen an das Sprachmodell wie Datenabfluss oder Geheimhaltung vor dem Nutzer."],
-  ["Secrets", "Echte Zugangsdaten im Paket, gefunden mit gitleaks. Im Bericht nie im Klartext."],
-  ["D – Abhängigkeiten", "Bekannte Schwachstellen und Schadpakete (OSV-Datenbank, offline), Namensverwechslungen, fehlende Lockfiles."],
-  ["C, E, G", "Code-Analyse, MCP-Prüfungen und DSGVO-Abgleich mit dem Manifest folgen. Bis dahin ist eine gründliche Prüfung höchstens Gelb."],
+  ["A – Dateien", "Automatisch startende Befehle (Hooks, Installationsskripte, Python-Startdateien, Dev Container), Programmdateien, getarnte Dateitypen, Modelldateien, die beim Laden Code ausführen, aktive Inhalte in PDF- und Office-Dateien, fremde Paketquellen."],
+  ["B – Inhalte", "Unsichtbare Unicode-Zeichen, versteckter und kodierter Text, Anweisungen an das Sprachmodell wie Datenabfluss oder Geheimhaltung vor dem Nutzer, auch wenn sie kodiert versteckt sind."],
+  ["Secrets", "Echte Zugangsdaten und Schlüsseldateien im Paket. Im Bericht nie im Klartext."],
+  ["D – Abhängigkeiten", "Bekannte Schwachstellen und Schadpakete (OSV-Datenbank, offline), Namensverwechslungen, fehlende Lockfiles, Downloads ohne Prüfsumme."],
+  ["E – MCP-Konfiguration", "Startbefehle, die ungeprüft Pakete nachladen, unverschlüsselte Verbindungen und zu weit gefasste Werkzeugrechte."],
+  ["C, E, G – folgen", "Die vollständige Code-Analyse, die Prüfung von MCP-Servern im Code und der DSGVO-Abgleich mit dem Manifest folgen. Bis dahin ist eine gründliche Prüfung höchstens Gelb. Personenbezogene Daten und Standortdaten in Dateien werden schon jetzt gemeldet."],
 ];
 
 export default function SoPruefenWir() {

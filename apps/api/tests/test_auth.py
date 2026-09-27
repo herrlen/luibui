@@ -315,3 +315,16 @@ def test_error_format_is_uniform_and_never_echoes_input(api: Api) -> None:
     assert "kurz-geheim" not in invalid.text
     assert c.get("/api/v1/auth/ich").json()["detail"]["code"] == "nicht_angemeldet"
     assert c.get("/api/auth/ich").status_code == 404  # only /api/v1 exists
+
+
+def test_local_http_cookie_has_no_host_prefix(api: Api, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Browsers drop __Host- cookies without Secure; local http uses a plain name instead."""
+    monkeypatch.setenv("SESSION_COOKIE_SECURE", "false")
+    from luibui_api.settings import get_settings
+
+    get_settings.cache_clear()
+    c = api.client("http://app.localhost:3000")
+    r = c.post("/api/v1/auth/registrieren", json={"email": "lokal@example.org", "passwort": PW})
+    cookie = r.headers["set-cookie"]
+    assert cookie.startswith("luibui_session=") and "Secure" not in cookie
+    assert c.get("/api/v1/auth/ich").status_code == 200

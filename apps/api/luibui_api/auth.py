@@ -24,6 +24,14 @@ from luibui_api.settings import get_settings
 
 COOKIE = "__Host-luibui_session"
 """The __Host- prefix makes browsers refuse a Domain attribute: the cookie stays host-only."""
+DEV_COOKIE = "luibui_session"
+"""Only without ``Secure`` (local http): browsers reject __Host- cookies that are not Secure."""
+
+
+def cookie_name() -> str:
+    return COOKIE if get_settings().session_cookie_secure else DEV_COOKIE
+
+
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 _TOUCH_AFTER = timedelta(minutes=5)
 
@@ -54,7 +62,7 @@ def start_session(db: Session, response: Response, user: User) -> None:
     expires = _now() + timedelta(days=settings.session_days)
     db.add(UserSession(owner_id=user.id, secret_hash=sha256_hex(secret), expires_at=expires))
     response.set_cookie(
-        COOKIE,
+        cookie_name(),
         secret,
         max_age=settings.session_days * 86400,
         path="/",
@@ -67,7 +75,7 @@ def start_session(db: Session, response: Response, user: User) -> None:
 def end_session(db: Session, response: Response, caller: Caller) -> None:
     if caller.session_id is not None:
         db.execute(delete(UserSession).where(UserSession.id == caller.session_id))
-    response.delete_cookie(COOKIE, path="/", secure=get_settings().session_cookie_secure)
+    response.delete_cookie(cookie_name(), path="/", secure=get_settings().session_cookie_secure)
 
 
 def _host(request: Request) -> str:
@@ -130,7 +138,7 @@ def get_caller(request: Request, db: DbSession) -> Caller:
         return caller
     if _host(request) in get_settings().bearer_only_hosts:
         raise _unauthorized()
-    secret = request.cookies.get(COOKIE)
+    secret = request.cookies.get(cookie_name())
     caller = _from_cookie(db, secret) if secret else None
     if caller is None:
         raise _unauthorized()

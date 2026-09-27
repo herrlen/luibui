@@ -1,7 +1,11 @@
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource-variable/bricolage-grotesque";
+import "./globals.css";
+
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-
-import "./globals.css";
 
 export const metadata: Metadata = {
   title: "luibui – Prüfstelle für KI-Skills und MCP-Server",
@@ -12,7 +16,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body className="min-h-screen antialiased">
+        <a
+          href="#inhalt"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-surface focus:p-2"
+        >
+          Zum Inhalt
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,13 +1,43 @@
 @import "tailwindcss";
 
-/* Design tokens from Konzept/Prompts; fonts are served locally from Sprint 2 on (no Google Fonts). */
+/* Design tokens (ENTWICKLERREGELN A5). Values from docs/design; contrasts are computed there.
+   Fonts are bundled locally from Fontsource (OFL), never loaded from a CDN (A6). */
 @theme {
+  --color-ink: #15171c;
+  --color-ink-2: #3f434c;
+  --color-muted: #5a5f6a;
   --color-grund: #f5f3ec;
+  --color-surface: #ffffff;
+  --color-linie: #e2ded3;
   --color-petrol: #0e5e5b;
+  --color-petrol-dunkel: #0a4644;
+  --color-gruen: #17613c;
+  --color-gruen-bg: #e3f1e8;
+  --color-gelb: #7a5200;
+  --color-gelb-bg: #fbf0d5;
+  --color-rot: #a3261b;
+  --color-rot-bg: #fbe4e1;
+  --color-gesperrt: #5c1a13;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "Bricolage Grotesque Variable", "IBM Plex Sans", sans-serif;
 }
 
 body {
   background: var(--color-grund);
-  color: #1c1c1a;
-  font-family: system-ui, sans-serif;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-petrol);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -496,3 +496,43 @@ strenger als die Regel.
 
 **Probe an echten Repos:** `anthropics/skills` und `modelcontextprotocol/servers` ohne
 Secrets-Befund.
+
+## 2026-09-27 — S1-7 Analyzer B – Anweisungsmuster (B08–B17)
+
+**Eigene Regeln:** elf YAML-Regeln unter `rules/b-muster/`, mindestens eine für jede
+Prüfung B08–B17, auf Deutsch und Englisch. Jede Regel hat mindestens zwei positive und zwei
+negative Testfälle in der Datei; die CI prüft sie und die Namenskonvention.
+**ATR:** 157 Regeln aus `v4.0.0` (Commit `464548b`), übernommen mit `scripts/vendor_atr.py`.
+Engine: `luibui_scan/textrules.py`, Analyzer `analyzers/b_muster.py`. 191 neue Tests.
+
+**Entscheidungen:**
+- **Nur eigene Regeln sperren.** ATR-Treffer werden höchstens H (Rot). Viele ATR-Regeln sind
+  maschinell erzeugt, deshalb darf eine fremde Regel allein kein Paket sperren. Die ATR-Kategorie
+  ergibt die Prüfkatalog-ID (Zuordnung in `textrules.ATR_KATALOG`).
+- **ATR-Auswahl in drei Stufen:**
+  1. Nur Reifegrad `stable`/`experimental`, nur Regex auf Textfeldern (615 von 785 fallen hier
+     weg).
+  2. Die mitgelieferten Testfälle müssen mit unserer Engine bestehen (8 fallen weg).
+  3. **Kein einziger Treffer im gutartigen Vergleichsbestand**: `anthropics/skills`,
+     `modelcontextprotocol/servers`, `modelcontextprotocol/python-sdk`, zusammen alle
+     Textdateien (5 fallen weg).
+
+  Ohne Stufe 3 bekam `anthropics/skills` Rot mit Dutzenden Treffern von `ATR-2026-00061`. Alle
+  Ausschlüsse stehen mit Grund in `rules/external/atr/QUELLE.md`.
+- **Zitate werden herabgestuft:** Steht ein Treffer in Inline-Code, einem Code-Block oder in
+  Anführungszeichen, wird K/H zu M, mit Hinweis „als Beispiel zitiert“. Doku über Angriffe wird so
+  nicht gesperrt, aber zur Prüfung vorgelegt.
+- **Geprüft werden nur Anweisungstexte:** Markdown, Text, Prompt-Dateien, YAML, JSON, TOML und
+  Dateien ohne Endung. Code ist Ebene C. Lockfiles sind Daten für Ebene D.
+- **ReDoS:** Jede Regex läuft über das Modul `regex` mit 0,5 s Timeout. Große Texte werden in
+  überlappenden Blöcken zu 256 KB durchsucht. **Ein Timeout ist kein stilles „kein Treffer“**:
+  Der Analyzer schlägt fehl, und das Ergebnis wird nie grün (Test).
+- Neue Abhängigkeiten: `pyyaml` (MIT) und `regex` (Apache-2.0), dazu Typ-Stubs für die
+  Entwicklung. `THIRD_PARTY_NOTICES.md` nennt ATR und gitleaks.
+
+**Probe an echten Repos:** `anthropics/skills` ist Gelb mit zwei berechtigten M-Hinweisen (ein
+zitiertes „disregard the previous instruction“ in einer Migrationsanleitung, ein Archiv im
+Paket). `modelcontextprotocol/servers` ist ohne Befund.
+
+**Grenze der Kalibrierung:** Der Vergleichsbestand umfasst drei Repos. S3-6 (Benchmark) erweitert
+ihn und misst Erkennungs- und Fehlalarmrate.

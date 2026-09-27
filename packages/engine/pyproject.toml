@@ -6,7 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 # TODO: switch to MIT once Len approves (Konzept §13)
 license = "AGPL-3.0-only"
-dependencies = ["pydantic>=2.9,<3"]
+dependencies = [
+    "pydantic>=2.9,<3",
+    "pyyaml>=6.0.3",
+    "regex>=2026.9.10",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]

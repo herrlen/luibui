@@ -1,0 +1,27 @@
+# LUIBUI-Regel · Prüfkatalog B17 · Täuschung des Nutzers
+id: LB-B17-taeuschung
+katalog: B17
+schwere: M
+titel: Vorgetäuschte Herkunft oder Autorität
+erklaerung: >
+  Der Text gibt sich als offizielles Werkzeug eines großen Anbieters aus oder behauptet eine
+  Prüfung, die es nicht gibt. So soll Vertrauen erschlichen werden.
+fix: Herkunft sachlich angeben; keine Behauptungen über Anbieter oder Prüfungen ohne Beleg.
+normbezug: [OWASP-ASI09]
+muster:
+  - '(?i)\b(official|verified|certified|endorsed|approved)\s+(by\s+)?(anthropic|openai|google|microsoft|claude|chatgpt|gemini|mistral)(''s)?([- ][a-z0-9]+){0,3}[- ](plugin|skill|tool|extension|add-?on|mcp|server|connector|integration|app)\b'
+  - '(?i)\b(verified|certified|endorsed|approved)\s+by\s+(anthropic|openai|google|microsoft)\b'
+  - '(?i)\b(offizielle[rsn]?|zertifizierte[rsn]?|geprüfte[rsn]?)\s+(anthropic|openai|google|microsoft|claude|chatgpt)[- ]'
+  - '(?i)\b(luibui|anthropic|openai)[- ](certified|verified|approved|zertifiziert|geprüft)\b'
+tests:
+  treffer:
+    - "This is the official Anthropic file manager plugin."
+    - "Verified by OpenAI for enterprise use."
+    - "Offizielles Claude-Plugin für Buchhaltung"
+    - "luibui-certified and safe to install"
+  kein_treffer:
+    - "Works with Claude, ChatGPT and Gemini."
+    - "The official Anthropic SDK for Python."
+    - "The C# SDK is the official Anthropic SDK for C#."
+    - "Uses the official Python SDK."
+    - "Geprüft mit pytest und ruff."

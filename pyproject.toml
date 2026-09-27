@@ -27,6 +27,8 @@ dev = [
   "mypy>=1.11",
   "types-jsonschema",
   "httpx2",
+  "types-pyyaml>=6.0.12.20260906",
+  "types-regex>=2026.9.10.20260911",
 ]
 
 [tool.pytest.ini_options]

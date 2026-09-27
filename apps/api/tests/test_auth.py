@@ -276,3 +276,25 @@ def test_audit_log_has_no_secrets(api: Api, _migrated: str) -> None:
     assert {"konto.registriert", "token.erstellt"} <= actions
     dump = repr(rows)
     assert tok["token"] not in dump and PW not in dump
+
+
+def test_intake_is_closed_by_default(api: Api, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Until the worker is isolated, nothing new may come in — but existing accounts work."""
+    c = api.user("anna@example.org")
+    pid = c.post("/api/projects", json={"name": "p", "typ": "skill"}).json()["id"]
+    monkeypatch.delenv("ANNAHME_OFFEN")
+    from luibui_api.settings import get_settings
+
+    get_settings.cache_clear()
+    new = api.client().post(
+        "/api/auth/registrieren", json={"email": "neu@example.org", "passwort": PW}
+    )
+    assert new.status_code == 503
+    upload = c.post(
+        f"/api/projects/{pid}/scans", data={"art": "text", "text": "x"}, files={"x": ("", b"")}
+    )
+    assert upload.status_code == 503
+    quick = api.client().post("/api/quickscans", json={"git_url": "https://github.com/a/b"})
+    assert quick.status_code == 503
+    assert login(api, "anna@example.org")[1].status_code == 200
+    assert c.get("/api/auth/ich").status_code == 200

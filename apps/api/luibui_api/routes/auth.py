@@ -12,7 +12,14 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from luibui_api.audit import audit
-from luibui_api.auth import CurrentCaller, DbSession, SessionCaller, end_session, start_session
+from luibui_api.auth import (
+    AnnahmeOffen,
+    CurrentCaller,
+    DbSession,
+    SessionCaller,
+    end_session,
+    start_session,
+)
 from luibui_api.models import User
 from luibui_api.ratelimit import RateLimiter
 from luibui_api.security import (
@@ -70,7 +77,7 @@ def _ich(user: User) -> Ich:
     return Ich(id=user.id, email=user.email, totp_aktiv=user.totp_confirmed_at is not None)
 
 
-@router.post("/registrieren", status_code=status.HTTP_201_CREATED)
+@router.post("/registrieren", status_code=status.HTTP_201_CREATED, dependencies=[AnnahmeOffen])
 def registrieren(body: Registrierung, response: Response, db: DbSession) -> Ich:
     user = User(email=body.email, password_hash=hash_password(body.passwort))
     db.add(user)

@@ -140,6 +140,16 @@ def get_session_caller(caller: Annotated[Caller, Depends(get_caller)]) -> Caller
     return caller
 
 
+def require_annahme_offen() -> None:
+    """Gate for everything that brings new accounts or package content into the system."""
+    if not get_settings().annahme_offen:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "luibui ist noch nicht freigeschaltet. Bitte später erneut versuchen.",
+        )
+
+
+AnnahmeOffen = Depends(require_annahme_offen)
 CurrentCaller = Annotated[Caller, Depends(get_caller)]
 SessionCaller = Annotated[Caller, Depends(get_session_caller)]
 

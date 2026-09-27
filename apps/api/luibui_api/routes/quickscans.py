@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from starlette.concurrency import run_in_threadpool
 
-from luibui_api.auth import DbSession
+from luibui_api.auth import AnnahmeOffen, DbSession
 from luibui_api.models import Job, Scan
 from luibui_api.ratelimit import RateLimiter
 from luibui_api.routes.scans import ScanStatus, scan_status_of
@@ -38,7 +38,7 @@ def _unprocessable(grund: str, text: str) -> HTTPException:
     )
 
 
-@router.post("", status_code=status.HTTP_202_ACCEPTED)
+@router.post("", status_code=status.HTTP_202_ACCEPTED, dependencies=[AnnahmeOffen])
 async def starten(body: SchnellscanNeu, request: Request, db: DbSession) -> ScanStatus:
     try:
         url = canonical_url(body.git_url)

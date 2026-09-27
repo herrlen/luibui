@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     quickscan_queue_max: int = 20
     """Waiting quick scans; beyond that new ones get 503 instead of piling up (threat model T20)."""
 
+    annahme_offen: bool = False
+    """Registration, uploads and quick scans. Stays off in production until the worker has no
+    internet access and client IPs behind the proxy are trusted (docs/log.md, 2026-09-27)."""
     app_origin: str = "https://app.luibui.com"
     """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""
     bearer_only_hosts: frozenset[str] = frozenset({"api.luibui.com"})

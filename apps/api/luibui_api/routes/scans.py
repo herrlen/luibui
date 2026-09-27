@@ -10,7 +10,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
 from luibui_api.audit import audit
-from luibui_api.auth import CurrentCaller, DbSession, get_owned
+from luibui_api.auth import AnnahmeOffen, CurrentCaller, DbSession, get_owned
 from luibui_api.models import Project, Scan
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, create_scan
@@ -75,6 +75,7 @@ def _check_size(request: Request) -> None:
 @router.post(
     "/api/projects/{project_id}/scans",
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[AnnahmeOffen],
     openapi_extra={
         "requestBody": {
             "content": {

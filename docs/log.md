@@ -360,3 +360,12 @@ GitHub wurde lokal und im gehärteten API-Image geprüft (Nutzer 10001, `read_on
 - Abgelaufene Schnellscans werden noch nicht gelöscht; dafür braucht es einen Cronjob.
 - Die IP-Begrenzung hängt wie bei der Anmeldung an `X-Forwarded-For` hinter dem Proxy.
 - Der Schnellscan per Einzeldatei (bis 2 MB) und die reduzierte Pipeline folgen mit S2-13.
+
+## 2026-09-27 — S0-12 Nachtrag: Schalter `ANNAHME_OFFEN` vor dem Ausrollen
+
+Len will den Stand von Sprint 1 ausrollen, bevor zwei Lücken geschlossen sind: Der Worker hat auf
+mittwald Internet, und die API sieht hinter dem Proxy nur dessen IP. Deshalb gibt es jetzt den
+Schalter `ANNAHME_OFFEN` (Standard: aus). Solange er aus ist, antworten Registrierung, Upload
+und Schnellscan mit 503 „noch nicht freigeschaltet“. Health, Anmeldung bestehender Konten,
+Tokens und das Lesen von Berichten laufen weiter (Test). Eingeschaltet wird er erst, wenn beide
+Lücken zu sind.

@@ -20,10 +20,13 @@ RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui
  && mkdir -p /projects /scratch && chown 10001:10001 /projects /scratch \
  && chmod 700 /projects /scratch
 COPY --from=build /app/.venv /app/.venv
+# Hand-kept malware hashes (A08); the MalwareBazaar list comes from the worker via /rules.
+COPY rules/data/schadsoftware-sha256.txt /app/rules/data/schadsoftware-sha256.txt
 COPY apps/api/alembic.ini /app/api/alembic.ini
 COPY apps/api/alembic /app/api/alembic
 COPY --chmod=755 apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
-ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    LUIBUI_RULES_DIR=/app/rules LUIBUI_MALWARE_DB=/rules/malware/sha256.bin
 USER 10001
 WORKDIR /app
 EXPOSE 8000

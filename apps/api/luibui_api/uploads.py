@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 from luibui_api.models import Job, Project, ProjectVersion, Scan, StoredFile
 from luibui_api.settings import get_settings
 from luibui_api.storage import blob_store, new_storage_key, project_data_key
-from luibui_scan.analyzers.a_dateien import known_malware
 from luibui_scan.intake import (
     IntakeRejectedError,
     accept_file,
@@ -32,6 +31,7 @@ from luibui_scan.intake import (
 )
 from luibui_scan.intake.safe_git import GitError, clone_into
 from luibui_scan.inventory import Inventory, build_inventory
+from luibui_scan.malware import known_malware
 from luibui_scan.models import ScanArt
 from luibui_scan.scan import Eingabe, pruefumfang_for
 

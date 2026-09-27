@@ -1,7 +1,7 @@
 """Analyzer A – Dateien (Prüfkatalog A02–A12, S1-5).
 
 Looks at what lies in the package: files that run by themselves, install scripts, binaries,
-disguised file types, archives, known malware, hidden files, symlinks and submodules from Git, and
+disguised file types, archives, hidden files, symlinks and submodules from Git, and
 settings that redirect package sources. Content is only read and matched, never interpreted.
 """
 
@@ -22,7 +22,7 @@ from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.inventory import EXECUTABLE_KINDS
 from luibui_scan.models import Ebene, Finding, Schwere
 
-__all__ = ["MAX_PER_RULE", "DateienAnalyzer", "known_malware", "rules_dir"]
+__all__ = ["MAX_PER_RULE", "DateienAnalyzer", "rules_dir"]
 
 MAX_PER_RULE = 20
 """At most this many findings per rule; the rest is summed up in the last one."""
@@ -216,44 +216,6 @@ def _a06(entry: InventoryEntry, titel: str) -> Finding:
     )
 
 
-# --- A08 known malware ---------------------------------------------------------------------
-
-_HEX64 = re.compile(r"^[0-9a-f]{64}$")
-
-
-def known_malware() -> frozenset[str]:
-    path = rules_dir() / "data" / "schadsoftware-sha256.txt"
-    try:
-        lines = path.read_text("utf-8").splitlines()
-    except FileNotFoundError:
-        return frozenset()
-    return frozenset(
-        h for line in lines if _HEX64.match(h := line.split("#", 1)[0].strip().lower())
-    )
-
-
-def _a08(ctx: ScanContext) -> Iterator[Finding]:
-    bad = known_malware()
-    for entry in ctx.inventory:
-        if entry.sha256 in bad:
-            yield finding(
-                rule_id="LB-A08-bekannte-schadsoftware",
-                ebene=Ebene.A,
-                schwere=Schwere.K,
-                titel="Bekannte Schadsoftware",
-                erklaerung=(
-                    "Der Hash der Datei steht auf der Liste bekannter Schadsoftware. Die Datei "
-                    "wird nicht gespeichert."
-                ),
-                datei=entry.path,
-                zeile=None,
-                beleg=f"SHA-256 {entry.sha256}",
-                fix="Die Datei entfernen und die Herkunft des Pakets prüfen.",
-                fix_prompt=f"Entferne {entry.path}; sie ist als Schadsoftware bekannt.",
-                normbezug=("OWASP-ASI04", "OWASP-LLM03"),
-            )
-
-
 # --- A09 hidden files ----------------------------------------------------------------------
 
 _USUAL_DOT = frozenset(
@@ -371,7 +333,6 @@ class DateienAnalyzer:
             _a03,
             _a04_to_a07,
             _installer,
-            _a08,
             _a09,
             _a10,
             _a11,

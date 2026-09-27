@@ -24,6 +24,9 @@ class WorkerSettings(BaseSettings):
     osv_db: Path = Path("/rules/osv")
     osv_max_age_hours: float = 24.0
     osv_refresh: bool = True
+    malware_db: Path = Path("/rules/malware/sha256.bin")
+    malware_max_age_hours: float = 24.0
+    malware_refresh: bool = True
 
 
 @lru_cache

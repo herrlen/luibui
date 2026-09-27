@@ -8,6 +8,7 @@ __all__ = ["Analyzer", "AnalyzerInfo", "AnalyzerRegistry", "default_registry", "
 # Built-in analyzers register themselves on import.
 from luibui_scan.analyzers import (  # noqa: F401
     a_dateien,
+    a_schadsoftware,
     b_inhalte,
     b_muster,
     c_konfig,

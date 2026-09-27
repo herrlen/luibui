@@ -887,3 +887,35 @@ das lässt sich nicht zurücknehmen. Neue Stände sind proprietär.
   braucht je Lauf einige Minuten über mehrere Jobs; bei vielen Pushes pro Tag kann das Kontingent
   knapp werden. Nichts wird gebucht.
 - Nutzungsbedingungen für die CLI `luibui` (wird an Nutzer ausgeliefert) mit dem Anwalt klären.
+
+## 2026-09-27 – S4-10 (vorgezogen): Liste bekannter Schadsoftware (A08, MAL-01)
+
+**Was:** Die Hash-Liste ist gefüllt. Quelle ist der vollständige SHA-256-Export von MalwareBazaar
+(abuse.ch, Schweiz; 1.144.573 Hashes am 27.09.2026), freigegeben von Len. Der Elternprozess des Workers
+lädt ihn höchstens einmal am Tag (`luibui_worker/malwaredb.py`) und schreibt ihn als sortierte
+32-Byte-Hashes nach `/rules/malware/sha256.bin` (37 MB). Eine neue Datei ersetzt die alte nur, wenn sie
+vollständig ist und mindestens 100.000 Einträge hat. Die Handliste `rules/data/schadsoftware-sha256.txt`
+bleibt für Ergänzungen.
+
+**Nachschlagen:** `luibui_scan/malware.py` bildet die Datei per `mmap` ab und sucht binär. Gemessen:
+Laden 0,1 s, 10.000 Abfragen 0,04 s, rund 53 MB Prozessspeicher statt geschätzt über 150 MB für ein
+Python-Set. Umwandeln im Worker-Elternprozess: 3,3 s, Spitze 294 MB (zwischen zwei Jobs, Limit 1,5 GB).
+
+**A08 als eigener Analyzer** (`a_schadsoftware`, in allen Scan-Arten erwartet): Fehlt die Liste, ist sie
+beschädigt oder älter als 7 Tage, meldet der Bericht A08 als fehlgeschlagen, und das Paket wird nicht
+Grün. Die übrigen A-Prüfungen laufen weiter. Ohne `LUIBUI_MALWARE_DB` (lokale CLI) gilt nur die Handliste.
+
+**API:** Liest dieselbe Datei über das Volume `luibui-rules` (in Compose nur lesend) und legt Treffer nie
+ab (Regel 10). Bisher sah die API nicht einmal die Handliste, weil `rules/` nicht im Image lag; jetzt wird
+sie mitkopiert.
+
+**Tests:** Handliste und Datenbank je positiv und negativ, Austausch der Datei, fehlende, beschädigte,
+zu kurze und veraltete Liste, Update mit Kaputt-Download, zu großem Download und Export ohne Textdatei.
+Alle 1.005 Python-Tests grün mit Postgres. `test_timeout_kills_the_whole_process_group` scheitert in
+dieser Sandbox auch ohne die Änderung (Umgebung, nicht Code).
+
+**Offen:**
+- Deploy: Die Stack-Datei gibt der API das Volume `luibui-rules`. Erst nach dem Deploy (und dem ersten
+  Download des Workers) wirkt die Liste in Produktion.
+- Die CLI hat die große Liste nicht; ein `luibui update`-Befehl oder ein Download beim Scan folgt später.
+- ClamAV und YARA-X (Rest von S4-10) bleiben in Sprint 4.

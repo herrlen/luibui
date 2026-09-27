@@ -219,7 +219,7 @@
 | S4-6 | **Diff-Prüfung** (H1): neue Rechte/Endpunkte gegenüber Vorversion hervorheben | 4 |
 | S4-7 | Disclosure-Workflow: neuer K/H-Befund → Autor sofort, öffentlich „Befund offen“ für 14 Tage | 3 |
 | S4-8 | **app.luibui.com – Dateien:** Dateibaum der geprüften Version, Dateiansicht als escaped Text mit Befunden an der Zeile, Download als Anhang | 5 |
-| S4-10 | ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen; YARA-X mit eigenen Regeln und gefüllte Hash-Liste (Matrix MAL-01, BIN-01) | 2 |
+| S4-10 | ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen; YARA-X mit eigenen Regeln (Matrix BIN-01); gefüllte Hash-Liste (MAL-01) vorgezogen am 27.09.2026 | 2 |
 | S4-11 | Modelle, Teil 3 (Matrix MOD-02, MOD-03): Keras-Lambda, TF-Datei-Ops, ONNX `external_data` (A17), Werkzeug nach Lizenzprüfung | 3 |
 
 **DoD:** Ein geprüftes Paket ist aus dem Entwicklerbereich veröffentlicht und per `luibui install --target claude` nutzbar; ein Update mit neuem Endpunkt zeigt den Diff; die Dateiansicht markiert Befunde an der richtigen Zeile.

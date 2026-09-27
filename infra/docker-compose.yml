@@ -51,6 +51,8 @@ services:
       # Uploads are unpacked here for the worker (S1-1). The API keeps MASTER_KEY; the worker
       # never sees it.
       - luibui-scratch:/scratch
+      # Known-malware list (A08), kept current by the worker. Read only: never store malware.
+      - luibui-rules:/rules:ro
     tmpfs: [/tmp]
     networks: [frontend, backend]
     ports: ["127.0.0.1:8000:8000"]
@@ -72,9 +74,9 @@ services:
       LUIBUI_NETZ_ISOLIEREN: "0"
     volumes:
       - luibui-scratch:/scratch
-      # The parent process keeps the OSV database in /rules/osv up to date. Locally it has no
-      # internet (internal network), so D01/D02 stay "fehlgeschlagen" unless a database is placed
-      # there by hand.
+      # The parent process keeps the OSV database in /rules/osv and the malware list in
+      # /rules/malware up to date. Locally it has no internet (internal network), so D01/D02 and
+      # A08 stay "fehlgeschlagen" unless the files are placed there by hand.
       - luibui-rules:/rules
     tmpfs: [/tmp]
     networks: [backend]

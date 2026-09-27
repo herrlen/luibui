@@ -1,6 +1,5 @@
 """S1-5: files (Prüfkatalog A02–A12). Every rule has positive and negative cases."""
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -193,29 +192,6 @@ def test_findings_per_rule_are_capped(tmp_path: Path) -> None:
     found = [f for f in analyze(tmp_path, files) if f.rule_id == "LB-A04-programmdatei"]
     assert len(found) == a_dateien.MAX_PER_RULE
     assert "10 weitere" in found[-1].erklaerung  # 19 single + 1 standing for itself and 10 more
-
-
-# --- A08 -------------------------------------------------------------------------------------
-
-
-def test_a08_known_malware(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    payload = b"LUIBUI-TESTFIXTURE: entschaerft, nicht ausfuehren\n"
-    rules_dir = tmp_path / "rules"
-    (rules_dir / "data").mkdir(parents=True)
-    (rules_dir / "data" / "schadsoftware-sha256.txt").write_text(
-        f"# Test\n{hashlib.sha256(payload).hexdigest()}  # Testeintrag\nkein-hash\n"
-    )
-    monkeypatch.setenv("LUIBUI_RULES_DIR", str(rules_dir))
-    f = by_rule(analyze(tmp_path / "pkg", {"x.bin": payload}), "LB-A08-bekannte-schadsoftware")
-    assert f.schwere.value == "K"
-    assert "LB-A08-bekannte-schadsoftware" not in rules(
-        analyze(tmp_path / "pkg2", {"x.bin": b"anders"})
-    )
-
-
-def test_a08_repository_list_is_valid() -> None:
-    assert isinstance(a_dateien.known_malware(), frozenset)
-    assert a_dateien.rules_dir().name == "rules"
 
 
 # --- A09 -------------------------------------------------------------------------------------

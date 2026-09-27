@@ -14,7 +14,7 @@ from types import FrameType
 
 from sqlalchemy import Engine, create_engine
 
-from luibui_worker import maintenance, osvdb, queue, results
+from luibui_worker import maintenance, malwaredb, osvdb, queue, results
 from luibui_worker.handlers import DEFAULT_HANDLERS
 from luibui_worker.runner import Outcome, run_in_child
 from luibui_worker.scratch import create_scratch, remove_scratch, scratch_path, sweep_orphans
@@ -135,10 +135,12 @@ class Worker:
         log.info("job %s (%s): %s", job.id, job.kind, outcome)
         return True
 
-    def refresh_osv(self) -> None:
+    def refresh_databases(self) -> None:
         """Between jobs only: the parent has network, the scanning child never does."""
         if self.settings.osv_refresh:
             osvdb.refresh(self.settings.osv_db, self.settings.osv_max_age_hours * 3600)
+        if self.settings.malware_refresh:
+            malwaredb.refresh(self.settings.malware_db, self.settings.malware_max_age_hours * 3600)
 
     def housekeeping(self) -> None:
         if not self._housekeeping.due():
@@ -150,10 +152,10 @@ class Worker:
 
     def run_forever(self) -> None:
         self.recover()
-        self.refresh_osv()
+        self.refresh_databases()
         log.info("worker %s ready", self.settings.worker_id)
         while not self._stop.is_set():
-            self.refresh_osv()
+            self.refresh_databases()
             try:
                 self.housekeeping()
             except Exception:

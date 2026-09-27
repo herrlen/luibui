@@ -66,7 +66,7 @@ Was im Paket liegt, unabhängig vom Inhalt der Dateien. Sprint 1 (A01 mit S1-2, 
 | A05 | **Endung passt nicht zum Typ:** z. B. `bild.png` ist ein ELF, `notes.md` ist ein ZIP | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
 | A06 | **Kompilierter Code ohne Quelle:** `.pyc`, `.so`, `.node`, minifizierte `.js` ohne Quelldatei | M | – | ✓ ✓ ✓ ✓ | Inventar, Cisco skill-scanner (Bytecode) | ASI04 |
 | A07 | **Archive im Archiv:** verschachtelte ZIP/tar/7z/RAR bleiben gepackt und ungeprüft. Ausnahme: Paketformate `.whl`, `.egg`, `.dxt`, `.mcpb`, `.vsix`, `.xpi`, `.nupkg` werden eine Ebene tief nach `<name>.inhalt/` entpackt und mitgeprüft (Limits des ganzen Pakets) | M | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
-| A08 | **Bekannte Schadsoftware:** Hash-Liste und Signaturen (ab Sprint 4 ClamAV). Treffer: Dateien sofort löschen, nur Hash behalten (Konzept §3) | K | ● | ✓ ✓ ✓ ✓ | Hash-Liste, ClamAV | ASI04, LLM03 |
+| A08 | **Bekannte Schadsoftware:** Hash-Liste (MalwareBazaar, täglich, plus eigene Einträge in `rules/data/schadsoftware-sha256.txt`) und Signaturen (ab Sprint 4 ClamAV). Fehlt die Liste oder ist sie älter als 7 Tage, gilt die Prüfung als fehlgeschlagen. Treffer: Dateien sofort löschen, nur Hash behalten (Konzept §3) | K | ● | ✓ ✓ ✓ ✓ | Hash-Liste, ClamAV | ASI04, LLM03 |
 | A09 | **Versteckte Dateien und Ordner** außerhalb bekannter Muster (`.github/`, `.gitignore`, `.claude-plugin/`, …) | N | – | ✓ ✓ – ✓ | eigene Regeln | – |
 | A10 | **Symlinks im Git-Repository:** als Textdatei ausgecheckt (`core.symlinks=false`); Ziel außerhalb des Pakets oder absolut | M | – | ✓ – – ✓ | `safe_git` | ASI04 |
 | A11 | **Submodule:** `.gitmodules` vorhanden, die Quellen werden nicht geprüft | M | – | ✓ – – ✓ | `safe_git` | ASI04, LLM03 |

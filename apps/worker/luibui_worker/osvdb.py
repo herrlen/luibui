@@ -33,24 +33,31 @@ def is_fresh(path: Path, max_age: float) -> bool:
         return False
 
 
+def download_file(url: str, path: Path, max_bytes: int) -> None:
+    """Stream ``url`` into ``path`` (https only, at most ``max_bytes``). The caller cleans up."""
+    if not url.startswith("https://"):
+        raise ValueError("nur https")
+    written = 0
+    request = urllib.request.Request(url, headers={"User-Agent": "luibui-worker"})  # noqa: S310
+    with (
+        urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as resp,  # noqa: S310
+        path.open("wb") as out,
+    ):
+        while chunk := resp.read(_CHUNK):
+            written += len(chunk)
+            if written > max_bytes:
+                raise ValueError("Datenbank größer als erlaubt")
+            out.write(chunk)
+
+
 def download(url: str, dest: Path, max_bytes: int = MAX_BYTES) -> None:
     """Stream ``url`` to ``dest`` via a temporary file; replace only if it is a valid ZIP."""
     if not url.startswith("https://"):
         raise ValueError("nur https")
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".zip.part")
-    written = 0
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": "luibui-worker"})  # noqa: S310
-        with (
-            urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as resp,  # noqa: S310
-            tmp.open("wb") as out,
-        ):
-            while chunk := resp.read(_CHUNK):
-                written += len(chunk)
-                if written > max_bytes:
-                    raise ValueError("Datenbank größer als erlaubt")
-                out.write(chunk)
+        download_file(url, tmp, max_bytes)
         with zipfile.ZipFile(tmp) as zf:
             if not any(n.endswith(".json") for n in zf.namelist()):
                 raise ValueError("ZIP ohne Einträge")

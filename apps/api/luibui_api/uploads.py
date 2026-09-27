@@ -198,10 +198,12 @@ def create_scan(
     project: Project | None,
     scan_art: ScanArt = ScanArt.INTENSIV,
     name: str,
+    owner_id: uuid.UUID | None = None,
 ) -> Scan:
     """Intake, store and enqueue. Commits; on error nothing stays behind.
 
-    Without ``project`` it is a quick scan: no owner, nothing stored, report kept 7 days.
+    Without ``project`` nothing is stored. A quick scan has no owner and its report is kept
+    7 days; a single check from the overview has ``owner_id`` and stays until its owner deletes it.
     """
     settings = get_settings()
     job_id = uuid.uuid4()
@@ -209,7 +211,7 @@ def create_scan(
     root.mkdir(mode=0o700)
     written: list[str] = []
     stale_keys: list[str] = []
-    owner_id = project.owner_id if project else None
+    owner_id = project.owner_id if project else owner_id
     try:
         try:
             intake = _intake(upload, root, settings.scratch_root)

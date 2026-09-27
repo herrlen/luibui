@@ -74,3 +74,13 @@ export type Projekt = {
 export type Ich = { id: string; email: string; totp_aktiv: boolean };
 
 export type Fehler = { code: string; text: string; pfad?: string | null; felder?: string[] };
+
+export type Einzel = {
+  id: string;
+  name: string;
+  status: ScanStatus["status"];
+  pruefumfang: string;
+  ampel_gesamt: AmpelSicherheit | null;
+  note: number | null;
+  created_at: string;
+};

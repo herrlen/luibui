@@ -21,7 +21,11 @@ export default async function PruefungSeite({ params }: { params: Promise<{ id: 
         <Link href={`/projekte/${scan.data.project_id}`} className="text-sm text-petrol">
           ← Projekt
         </Link>
-      ) : null}
+      ) : (
+        <Link href="/" className="text-sm text-petrol">
+          ← Übersicht
+        </Link>
+      )}
       <h1 className="font-display text-3xl font-bold">Prüfbericht</h1>
       <Bericht scan={scan.data} />
     </div>

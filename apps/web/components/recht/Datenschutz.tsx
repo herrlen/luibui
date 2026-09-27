@@ -123,6 +123,10 @@ export function Datenschutz() {
               "Die Dateien, Ordner, Archive, Texte oder Repositorys, die du prüfen lässt. Sie liegen verschlüsselt (AES-256-GCM, ein eigener Schlüssel pro Projekt) auf dem Server, bis du das Projekt löschst. Gespeichert werden höchstens die letzten 10 Versionen und 500 MB pro Konto. Mit der Option „nach Prüfung löschen“ werden die Dateien direkt nach der Prüfung entfernt.",
             ],
             [
+              "Einzelprüfungen",
+              "Ziehst du Dateien direkt auf die Übersicht, werden sie geprüft, aber nicht gespeichert. Nur der Bericht bleibt, bis du ihn löschst.",
+            ],
+            [
               "Berichte",
               "Ampeln, Note, Befunde mit Datei, Zeile und kurzem Ausschnitt sowie der Status, den du Befunden gibst. Sie bleiben erhalten, bis du das Projekt löschst.",
             ],
@@ -149,6 +153,7 @@ export function Datenschutz() {
           zeilen={[
             ["Konto", "Bis du es löschen lässt."],
             ["Projekte, Dateien, Berichte", "Bis du das Projekt löschst; höchstens die letzten 10 Versionen."],
+            ["Bericht einer Einzelprüfung", "Bis du ihn löschst. Die geprüften Dateien werden nicht gespeichert."],
             ["Bericht eines Schnellscans", "7 Tage."],
             ["Sitzung", "14 Tage oder bis du dich abmeldest."],
             ["API-Token", "Bis du es widerrufst."],

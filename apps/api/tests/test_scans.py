@@ -325,3 +325,65 @@ def test_project_list_shows_latest_scan_and_scan_list(api: Api) -> None:
     assert ids == [second, first]
     assert b.get(f"/api/v1/projects/{pid}/scans").status_code == 404
     assert b.get("/api/v1/projects").json() == []
+
+
+# --- single checks from the overview (no project) ---------------------------------------------
+
+
+def einzel(c, name: str = "SKILL.md", inhalt: bytes = b"# LUIBUI-TESTFIXTURE\nHallo\n"):  # type: ignore[no-untyped-def]
+    return c.post("/api/v1/scans", data={"art": "datei"}, files={"dateien": (name, inhalt)})
+
+
+def test_single_check_without_project_stores_no_files(
+    api: Api, tmp_path: Path, _migrated: str
+) -> None:
+    a = api.user("a@luibui.example")
+    r = einzel(a)
+    assert r.status_code == 202, r.text
+    s = r.json()
+    assert s["project_id"] is None and s["pruefumfang"] == "einzeldatei"
+    assert blobs(tmp_path) == []
+    row = db_rows(_migrated, "SELECT owner_id IS NOT NULL, expires_at FROM scans")[0]
+    assert row == (True, None)
+    liste = a.get("/api/v1/scans").json()
+    assert [x["id"] for x in liste] == [s["id"]]
+    assert a.get(f"/api/v1/scans/{s['id']}").status_code == 200
+
+
+def test_single_check_kinds(api: Api) -> None:
+    a = api.user("a@luibui.example")
+    assert a.post("/api/v1/scans", data={"art": "text", "text": "Hallo Welt"}).status_code == 202
+    zip_ = ("paket.zip", zip_bytes(SKILL))
+    assert a.post("/api/v1/scans", data={"art": "zip"}, files={"dateien": zip_}).status_code == 202
+    git = {"art": "git", "git_url": "https://github.com/x/y"}
+    assert a.post("/api/v1/scans", data=git).status_code == 422
+
+
+def test_b_cannot_see_or_delete_single_checks_of_a(api: Api) -> None:
+    a, b = api.user("a@luibui.example"), api.user("b@luibui.example")
+    sid = einzel(a).json()["id"]
+    assert b.get("/api/v1/scans").json() == []
+    assert b.get(f"/api/v1/scans/{sid}").status_code == 404
+    assert b.delete(f"/api/v1/scans/{sid}").status_code == 404
+    assert a.get(f"/api/v1/scans/{sid}").status_code == 200
+
+
+def test_deleting_single_checks(api: Api, _migrated: str) -> None:
+    a = api.user("a@luibui.example")
+    sid = einzel(a).json()["id"]
+    assert a.delete(f"/api/v1/scans/{sid}").status_code == 409  # still queued
+    with create_engine(_migrated).begin() as conn:
+        conn.execute(text("UPDATE scans SET status = 'fertig'"))
+    assert a.delete(f"/api/v1/scans/{sid}").status_code == 204
+    assert a.get(f"/api/v1/scans/{sid}").status_code == 404
+    pid = project(a)
+    psid = upload_zip(a, pid).json()["id"]
+    with create_engine(_migrated).begin() as conn:
+        conn.execute(text("UPDATE scans SET status = 'fertig'"))
+    assert a.delete(f"/api/v1/scans/{psid}").status_code == 409  # belongs to a project
+    assert [x["id"] for x in a.get("/api/v1/scans").json()] == []
+
+
+def test_single_check_needs_login_and_open_intake(api: Api) -> None:
+    anon = api.client()
+    assert einzel(anon).status_code == 401

@@ -12,6 +12,7 @@ from pathlib import PurePosixPath
 from luibui_scan.analyzers._a_ausfuehrung import _a02, _a03
 from luibui_scan.analyzers._a_formate import _a13, _a14, _a15, _installer
 from luibui_scan.analyzers._a_herkunft import _a10, _a11, _a12
+from luibui_scan.analyzers._a_modelle import _a16_pickle, _a18_safetensors, _a19_config
 from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
@@ -84,7 +85,12 @@ _BINARY_EXT: dict[str, frozenset[str]] = {
     ".db": frozenset({"sqlite"}),
 }
 _ARCHIVE_KINDS = frozenset({"zip", "gzip", "bzip2", "xz", "7z", "rar", "tar"})
-_OFFICE_EXT = frozenset({".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp", ".epub"})
+_OFFICE_EXT = frozenset(
+    {".docx", ".xlsx", ".pptx", ".docm", ".xlsm", ".pptm", ".dotx", ".dotm", ".xltm", ".potm",
+     ".odt", ".ods", ".odp", ".epub",
+     # PyTorch checkpoints are ZIP files; A16/A18 read their pickle data.
+     ".pt", ".pth", ".ckpt", ".bin"}
+)  # fmt: skip
 _KIND_LABEL = {
     "elf": "Linux",
     "macho": "macOS",
@@ -371,6 +377,9 @@ class DateienAnalyzer:
             _a13,
             _a14,
             _a15,
+            _a16_pickle,
+            _a18_safetensors,
+            _a19_config,
         ):
             findings.extend(check(ctx))
         return findings

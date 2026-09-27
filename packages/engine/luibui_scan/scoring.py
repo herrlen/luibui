@@ -36,7 +36,7 @@ ABZUG: dict[Schwere, int] = {Schwere.K: 40, Schwere.H: 15, Schwere.M: 5, Schwere
 
 SPERRLISTE_KATALOG: frozenset[str] = frozenset(
     {
-        "A02", "A08",
+        "A02", "A08", "A16",
         "B01", "B07", "B08", "B09", "B10", "B11", "B12", "B13", "B16", "B20",
         "C03", "C04", "C05", "C07", "C08", "C09", "C10",
         "E01", "E02",

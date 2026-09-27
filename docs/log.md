@@ -1004,3 +1004,18 @@ Archiv wird immer entpackt geprüft, auch unter „Datei(en)“.
 per Knopf, ZIP per Drag & Drop, Bericht). Ausgerollt `999b0b3`.
 
 **Offen:** Drag & Drop direkt auf der Übersicht für Einzelprüfungen (DoD Sprint 2).
+
+## 2026-09-27 – Einzelprüfung per Drag & Drop auf der Übersicht, Formulare nur per POST
+
+**Was:** Auf der Übersicht von app.luibui.com startet eine hineingezogene Datei (oder Ordner,
+Archiv) sofort eine gründliche Prüfung ohne Projekt. `POST /api/v1/scans`: Eigentümer ist der
+Nutzer, die Dateien werden nicht gespeichert, der Bericht bleibt bis zum Löschen
+(`GET`/`DELETE /api/v1/scans`, fremde Prüfungen 404, laufende oder Projekt-Prüfungen 409). Der
+Bericht trägt „Einzeldatei-Prüfung“. Damit ist der DoD-Punkt aus Sprint 2 erfüllt.
+
+**Sicherheitsfund dabei:** Ein Formular, das abgeschickt wird, bevor React geladen ist, ging als
+GET raus und schrieb E-Mail und Passwort in die Adresszeile (Browserverlauf, Proxy-Logs). Alle
+Formulare haben jetzt `method="post"`, ein Test hält das fest.
+
+**Geprüft:** 1.030 Python-Tests (5 neue für Einzelprüfungen, inkl. Nutzer-B-Isolation), Web-Tests,
+im lokalen Stack per Browser von Ende zu Ende. Ausgerollt `68f3b90`.

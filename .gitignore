@@ -34,3 +34,4 @@ next-env.d.ts
 # written by corpus/generate.py
 corpus/malicious/*/
 corpus/generated-benign/
+.claude/worktrees/

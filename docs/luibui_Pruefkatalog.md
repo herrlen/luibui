@@ -1,6 +1,8 @@
 # luibui – Prüfkatalog
 
 > Stand: 27.09.2026 · Task S0-2 · Status: **freigegeben von Len am 27.09.2026** (Entwurf von Claude).
+> Ergänzt am 27.09.2026 um die Scanner-Matrix (Teil B): A13–A21, B21, C14, C15, E08, E09, G07,
+> G08, erweiterte A02/A03/A04/A07, Sperrliste um A16 und B20. Entscheidungen dazu in §13.
 > Grundlage: `luibui_Konzept.md` §4 und §5, `luibui_Sprintplanung.md`, `threat-model.md`,
 > `scanner-tools.md`. Wo diese Dokumente sich widersprechen oder schweigen, ist die Entscheidung
 > unten unter „Offene Fragen“ aufgeführt.
@@ -58,17 +60,27 @@ Was im Paket liegt, unabhängig vom Inhalt der Dateien. Sprint 1 (A01 mit S1-2, 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
 | A01 | **Annahme abgelehnt:** Pfad außerhalb, ungültiger oder zu langer Name, doppelter Name, zu tief, Verknüpfung, verschlüsselt, zu groß, zu viele Dateien, Kompressionsrate, defektes Archiv (Kurzname = Ablehnungsgrund, siehe §11) | H | – | ✓ ✓ ✓ ✓ | `intake/` | ASI04 |
-| A02 | **Autostart-Dateien mit Befehlen:** `.claude/settings.json`-Hooks, `.vscode/tasks.json` mit `runOn: folderOpen`, `.envrc`, `.git/hooks`, `package.json`-Skripte `preinstall`/`install`/`postinstall`/`prepare` | K | ● | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
-| A03 | **Install-Skripte:** `setup.py` mit Code außerhalb von `setup()`, `install.sh`/`install.ps1`, `Makefile`-Ziele, die herunterladen und ausführen | H | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
-| A04 | **Ausführbare Binärdateien:** ELF, Mach-O, PE, WASM, Java-Class im Paket (Inventar) | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04, LLM03 |
+| A02 | **Autostart-Dateien mit Befehlen:** `.claude/settings.json`- und `hooks.json`-Hooks, `.vscode/tasks.json` mit `runOn: folderOpen`, `task.allowAutomaticTasks`, `devcontainer.json`-Befehle, `.envrc`, `.git/hooks`, `package.json`-Skripte `preinstall`/`install`/`postinstall` (`prepare` nur mit gefährlichem Befehl), Python-`.pth` mit `import`, `sitecustomize.py`/`usercustomize.py`, `setup.py`, das herunterlädt und ausführt. K bei Nachladen, Verschleiern, Löschen des Home-Ordners, Lesen von Zugangsdaten, Hochladen von Dateien oder Persistenz, sonst H | K | ● | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
+| A03 | **Install- und Hilfsskripte:** `setup.py` mit Code außerhalb von `setup()`, `install.sh`/`install.ps1`, `Makefile`/`Justfile`-Ziele und alle Shell-/PowerShell-Skripte, die herunterladen und ausführen oder eine Reverse Shell öffnen, `conftest.py` mit Netzwerk, Build-Backend im Paket (`backend-path`), Notebook-Shell-Zellen, die nachladen | H | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
+| A04 | **Ausführbare Binärdateien:** ELF, Mach-O, PE, WASM, Java-Class, deb, rpm im Paket (Inventar); Installationspakete `.msi`, `.apk`, `.dmg`, `.pkg` | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04, LLM03 |
 | A05 | **Endung passt nicht zum Typ:** z. B. `bild.png` ist ein ELF, `notes.md` ist ein ZIP | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
 | A06 | **Kompilierter Code ohne Quelle:** `.pyc`, `.so`, `.node`, minifizierte `.js` ohne Quelldatei | M | – | ✓ ✓ ✓ ✓ | Inventar, Cisco skill-scanner (Bytecode) | ASI04 |
-| A07 | **Archive im Archiv:** verschachtelte ZIP/tar/7z/RAR bleiben gepackt und ungeprüft | M | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
+| A07 | **Archive im Archiv:** verschachtelte ZIP/tar/7z/RAR bleiben gepackt und ungeprüft. Ausnahme: Paketformate `.whl`, `.egg`, `.dxt`, `.mcpb`, `.vsix`, `.xpi`, `.nupkg` werden eine Ebene tief nach `<name>.inhalt/` entpackt und mitgeprüft (Limits des ganzen Pakets) | M | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
 | A08 | **Bekannte Schadsoftware:** Hash-Liste und Signaturen (ab Sprint 4 ClamAV). Treffer: Dateien sofort löschen, nur Hash behalten (Konzept §3) | K | ● | ✓ ✓ ✓ ✓ | Hash-Liste, ClamAV | ASI04, LLM03 |
 | A09 | **Versteckte Dateien und Ordner** außerhalb bekannter Muster (`.github/`, `.gitignore`, `.claude-plugin/`, …) | N | – | ✓ ✓ – ✓ | eigene Regeln | – |
 | A10 | **Symlinks im Git-Repository:** als Textdatei ausgecheckt (`core.symlinks=false`); Ziel außerhalb des Pakets oder absolut | M | – | ✓ – – ✓ | `safe_git` | ASI04 |
 | A11 | **Submodule:** `.gitmodules` vorhanden, die Quellen werden nicht geprüft | M | – | ✓ – – ✓ | `safe_git` | ASI04, LLM03 |
 | A12 | **Fremde Paketquellen:** `--index-url`/`--extra-index-url`, `.npmrc`-`registry`, `pip.conf`, Abhängigkeiten per Git-URL oder Tarball-Link | H | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI04, LLM03 |
+| A13 | **Git-Attribute und LFS:** eigene `filter=`/`diff=`/`merge=`-Treiber in `.gitattributes` (M); LFS-Zeiger ohne Inhalt als „nicht geprüft“ (I) | M | – | ✓ ✓ – ✓ | eigene Regeln | ASI04 |
+| A14 | **Täuschende Dateinamen:** Doppelendung (`rechnung.pdf.exe`), reservierte Windows-Namen (`CON`, `NUL`, `COM1`) | M | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI04 |
+| A15 | **Polyglot und angehängte Daten:** Bild oder PDF, das zugleich ein ZIP ist (H), oder mehr als 1 KB Daten nach dem Formatende (M) | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
+| A16 | **Code-Ausführung beim Laden eines Modells:** Pickle-Importe von `os`, `subprocess`, `eval` & Co. (auch in PyTorch-ZIPs, nur als Opcodes gelesen), Jinja-SSTI in `chat_template` | K | ● | ✓ ✓ ✓ ✓ | eigener Code (`pickletools.genops`) | ASI05, LLM03 |
+| A18 | **Modelldatei unklar:** Pickle mit unbekannten Importen oder nicht lesbar, ungültiger safetensors-Header | M | – | ✓ ✓ ✓ ✓ | eigener Code | LLM03 |
+| A19 | **`trust_remote_code`:** `auto_map` in `config.json` verweist auf Code im Paket | M | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
+| A20 | **Formeln in mitgelieferten Tabellen:** CSV/TSV-Zellen mit Formeln (N), mit `HYPERLINK`, `WEBSERVICE`, DDE oder `\|` (H) | H | – | ✓ ✓ ✓ ✓ | eigener Code | LLM05 |
+| A21 | **Aktive Inhalte in Dokumenten:** PDF mit JavaScript, `/Launch`, eingebetteten Dateien (H) oder Aktion beim Öffnen (M); Office mit Makros, externer Vorlage oder DDE | H | – | ✓ ✓ ✓ ✓ | eigener Code (nur Bytes, kein Parser) | ASI05 |
+
+A17 (Keras/TF/ONNX-Struktur) ist reserviert für Sprint 3/4 (modelscan).
 
 ---
 
@@ -110,7 +122,10 @@ B01–B07 mit S1-6, B08–B17 mit S1-7, B18–B19 mit S3-3 (LLM-Prüfer), B20 mi
 |---|---|---|---|---|---|---|
 | B18 | **Semantische Anweisungsprüfung:** Muster B08–B17, die die Regeln nicht erfassen (Umschreibungen, andere Sprachen) | wie B08–B17 | wie B08–B17 | ✓ ✓ ✓ – | LLM-Prüfer (L) | wie B08–B17 |
 | B19 | **Beschreibung ≠ Verhalten:** Die Beschreibung verspricht etwas anderes als Anweisungen und Code tun | H | – | ✓ ✓ ✓ – | LLM-Prüfer (L) | ASI09, LLM09 |
-| B20 | **Echte Secrets im Paket:** API-Schlüssel, Tokens, private Schlüssel; im Bericht maskiert (erste 4 Zeichen + …) | K | ● | ✓ ✓ ✓ ✓ | gitleaks (`gitleaks:…`) | LLM02, DSGVO-Art-32 |
+| B20 | **Echte Secrets im Paket:** API-Schlüssel, Tokens, private Schlüssel; im Bericht maskiert (erste 4 Zeichen + …). Dazu Schlüssel- und Zugangsdateien nach Namen (`id_rsa`, `.p12`, `.pfx`, `.jks`, `.kdbx`, `.aws/credentials`, …), auch binäre | K | ● | ✓ ✓ ✓ ✓ | gitleaks (`gitleaks:…`), `LB-B20-schluesseldatei` | LLM02, DSGVO-Art-32 |
+| B21 | **Aktive Inhalte in SVG und XML:** `<script>`, Ereignis-Attribute, `javascript:` in SVG; externe Entitäten (XXE) in XML | M | – | ✓ ✓ ✓ ✓ | eigene Regeln | LLM05 |
+
+B08–B17 lesen auch `.mdc`, `.cursorrules`, `.jsonl` und prüfen zusätzlich Text, der in Unicode-Tags oder in Base64/Hex/gzip-Blöcken (bis drei Ebenen) versteckt ist. B06 ist H, wenn der dekodierte Text einen Befehl oder eine Adresse enthält; B02 erkennt Folgen von Variation Selectors (Emoji Smuggling).
 
 **LLM-Regel (CLAUDE.md Regel 7):** B18 und B19 fügen nur Befunde hinzu. Sie entfernen keine, und
 ein LLM-Urteil allein führt nie zu Grün. **B18 sperrt nie allein:** Ein K aus B18 sperrt nur, wenn
@@ -138,6 +153,8 @@ eigenen Regeln** (`rules/opengrep/`), dazu Bandit für Python und der Cisco skil
 | C11 | **Unsichere Netzwerknutzung:** TLS-Prüfung abgeschaltet, `http://` für Daten, Server lauscht auf `0.0.0.0` ohne Auth | M | – | ✓ ✓ ✓ – | Opengrep, Bandit | ASI07 |
 | C12 | **Pfad- und Dateizugriffe ohne Grenze:** Tool-Parameter als Pfad ohne Normalisierung (Path Traversal), Löschen außerhalb eines Arbeitsordners | H | – | ✓ ✓ ✓ – | Opengrep | ASI02, LLM06 |
 | C13 | **Sonstige Code-Schwächen:** SQL-Injection, schwache Kryptografie, hartkodierte Temp-Pfade (Bandit mittel und niedrig) | N | – | ✓ ✓ ✓ – | Bandit, Opengrep | – |
+| C14 | **Container-Konfiguration:** Compose mit `privileged`, Docker-Socket, Host-Netz/-PID, `SYS_ADMIN`, Wurzel-Mount; Dockerfile, das Skripte herunterlädt und ausführt | H | – | ✓ ✓ ✓ ✓ | eigene Regeln (`c_konfig`) | ASI05 |
+| C15 | **CI-Workflows:** Script Injection über Issue-/PR-Texte in `run:`, `pull_request_target` mit Checkout des PR-Codes | H | – | ✓ ✓ ✓ ✓ | eigene Regeln (`c_konfig`) | ASI04 |
 
 ---
 
@@ -172,6 +189,8 @@ gestartet**, Tool-Listen werden aus dem Code abgeleitet.
 | E05 | **Unsicherer Transport:** `http://` statt `https://`, gebunden an `0.0.0.0`, CORS `*` | M | – | ✓ ✓ – – | eigene Regeln | ASI07 |
 | E06 | **Token-Weitergabe:** Server reicht Nutzer-Token an Dritte durch (Token Passthrough) oder speichert sie im Klartext | H | – | ✓ ✓ – – | eigene Regeln | ASI03, LLM02 |
 | E07 | **Entfernter MCP-Server:** Befunde der Außenprüfung einer Remote-MCP-URL (websecureaudit) | wie Quelle | – | ✓ – – – | websecureaudit (S5-6) | ASI07 |
+| E08 | **Zu weite Werkzeugrechte:** `allowed-tools`/`tools` mit `Bash(*)`, `Bash` ohne Einschränkung oder `*` in Befehlen, Agenten und Skills | M | – | ✓ ✓ ✓ ✓ | eigene Regeln (`e_konfig`) | ASI03, LLM06 |
+| E09 | **MCP-Startkonfiguration:** `.mcp.json` & Co. mit ungepinntem `npx`/`uvx`/`docker run` (H), nachladendem Startbefehl (K), `http://` (M), entferntem Server als „nicht geprüft“ (I); gepinnte Pakete als Hinweis (I) | H | – | ✓ ✓ ✓ ✓ | eigene Regeln (`e_konfig`) | ASI04, LLM03 |
 
 ---
 
@@ -206,6 +225,8 @@ bewertet“, nur G02 kann sie dann einfärben.
 | G04 | **Undeklarierte Rechte:** Shell, Dateisystem, Netzwerk, Umgebungsvariablen genutzt, aber nicht deklariert | H | – | ✓ – – – | Code gegen Manifest | DSGVO-Art-25, LLM06 |
 | G05 | **Datenkategorien unvollständig:** verarbeitete personenbezogene Daten nicht angegeben | M | – | ✓ – – – | Manifest, Code | DSGVO-Art-13, DSGVO-Art-30 |
 | G06 | **Selbstauskunft:** Angaben aus dem Manifest, die sich nicht prüfen lassen (Betreiber, Speicherort) | I | – | ✓ – – – | Manifest (M) | DSGVO-Art-13 |
+| G07 | **Personenbezogene Daten in Datendateien:** mindestens fünf echt wirkende E-Mail-Adressen oder eine IBAN mit gültiger Prüfziffer in CSV/TSV/JSONL; Werte werden nie angezeigt | M | – | ✓ ✓ ✓ ✓ | eigener Code | DSGVO-Art-5 |
+| G08 | **Standort in Fotos:** GPS-Koordinaten in den Exif-Daten von JPEG/PNG | M | – | ✓ ✓ ✓ ✓ | eigener Code | DSGVO-Art-5 |
 
 ---
 
@@ -230,7 +251,8 @@ gehören nach Freigabe in `SPERRLISTE_KATALOG` in `scoring.py`.
 | Kategorie (Konzept §5) | Prüfungen |
 |---|---|
 | bekannte Schadsoftware | A08 |
-| Autostart-Dateien mit Befehlen | A02 |
+| Autostart-Dateien mit Befehlen | A02 (auch `.pth`, `sitecustomize`, `setup.py`, Dev Container) |
+| Code-Ausführung beim Laden (Modelle, Vorlagen) | A16 |
 | unsichtbare Unicode-Anweisungen | B01, B07 |
 | Anweisungs-Übernahme | B08 |
 | Geheimhaltung vor dem Nutzer | B09 |
@@ -242,11 +264,11 @@ gehören nach Freigabe in `SPERRLISTE_KATALOG` in `scoring.py`.
 | verschleierter Code | C08 |
 | Zeitbomben | C09, F04 |
 | Schadmuster | C10 |
-| echte Secrets | B20 (`gitleaks:` in `SPERRLISTE_EXTERN`) |
+| echte Secrets | B20 (`gitleaks:` in `SPERRLISTE_EXTERN`, `LB-B20-…` im Katalog) |
 | bekannte Schadpakete | D01 (`osv:MAL-` in `SPERRLISTE_EXTERN`) |
 
-`SPERRLISTE_KATALOG = {A02, A08, B01, B07, B08, B09, B10, B11, B12, B13, B16, C03, C04, C05, C07,
-C08, C09, C10, E01, E02, F02, F04, F05}` — B18 bewusst nicht, siehe LLM-Regel in §3.
+`SPERRLISTE_KATALOG = {A02, A08, A16, B01, B07, B08, B09, B10, B11, B12, B13, B16, B20, C03, C04,
+C05, C07, C08, C09, C10, E01, E02, F02, F04, F05}` — B18 bewusst nicht, siehe LLM-Regel in §3.
 
 ---
 
@@ -290,3 +312,33 @@ Alle sieben Punkte sind so freigegeben, wie sie hier stehen.
    `docs/benchmark.md`.
 7. **Normbezug:** Die Zuordnung zu OWASP und DSGVO ist eine Orientierung von Claude und ersetzt
    keine rechtliche Prüfung. Der Bericht soll „Bezug“ sagen, nicht „erfüllt“ oder „verstößt“.
+
+---
+
+## 13. Entscheidungen zur Scanner-Matrix (Claude, 27.09.2026, von Len übertragen)
+
+Len hat die Konflikte aus `docs/scanner-abdeckung.md` zur Entscheidung übergeben („selbst logisch
+entscheiden, damit es funktioniert“). Entschieden wurde so:
+
+1. **Verschachtelte Archive:** Nur Paketformate, die so installiert werden, wie sie sind (`.whl`,
+   `.egg`, `.dxt`, `.mcpb`, `.vsix`, `.xpi`, `.nupkg`), werden **eine Ebene** tief entpackt, über
+   `extract_zip` mit dem Rest der Paket-Limits. Andere Archive im Paket bleiben gepackt (A07).
+   Tiefe 3 wie in der Matrix wäre ein Vielfaches an Angriffsfläche für wenig Gewinn.
+2. **Weitere Archivformate:** tar, tar.gz, tar.bz2 und tar.xz werden angenommen
+   (`intake/safe_tar.py`, Python-Standardbibliothek, dieselben Regeln wie ZIP). **7z und RAR
+   nicht:** dafür bräuchte es Bibliotheken mit unklarer (RAR: unfreier) Lizenz; sie werden als
+   „beschädigt oder nicht unterstützt“ abgelehnt.
+3. **Was sperrt:** Die Katalogregel bleibt: nur K aus Prüfungen mit ● sperrt. Neu mit ● ist A16
+   (Code beim Laden eines Modells); `.pth`, `sitecustomize`, `setup.py` mit Nachladen und Dev
+   Container gehören zu A02 und sperren damit. Office-Makros (A21) bleiben H, weil ein Makro allein
+   noch kein Angriff ist.
+4. **Entfernte MCP-Server (AGT-06):** Die Konfiguration wird statisch ausgewertet (E09), ohne Netz.
+   Die Prüfung laufender Remote-Server bleibt S5-6 (E07) außerhalb des Kindprozesses.
+5. **Schweregrade:** Wo Matrix und Katalog abweichen, gilt der Katalog; höher wird nur, was hier
+   geändert ist. Die Kalibrierung folgt mit dem Benchmark (S3-6).
+6. **DSGVO-Achse ohne Manifest:** G07 und G08 färben die DSGVO-Achse auch bei Einzeldatei und
+   Auswahl, weil personenbezogene Daten im Paket selbst ein Befund sind, unabhängig von
+   Selbstauskünften.
+7. **Keine neuen Werkzeuge:** Alle neuen Prüfungen sind eigener Code ohne neue Abhängigkeiten.
+   picklescan, oletools, pdfid, exiftool und python-magic werden nicht gebraucht; die
+   Byte-Prüfungen greifen keinen Parser an.

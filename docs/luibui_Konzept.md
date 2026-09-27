@@ -44,7 +44,7 @@ Jeder lädt ein Projekt hoch oder gibt eine Git-URL an. luibui prüft es auf Sic
 | **Einzelne Datei** (z. B. `SKILL.md`, `server.py`, `tools.json`, ein Skript) | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, gespeichert | 10 MB pro Datei |
 | **Mehrere Dateien oder ganzer Ordner** per Drag & Drop | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, gespeichert | 1.000 Dateien, 50 MB gesamt |
 | **Text einfügen** (z. B. eine Skill-Anweisung oder Tool-Beschreibung) | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, gespeichert | 200 KB |
-| **ZIP-Archiv** | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, gespeichert | 50 MB gepackt, 200 MB entpackt, 10.000 Dateien |
+| **Archiv** (ZIP, tar, tar.gz/bz2/xz) | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, gespeichert | 50 MB gepackt, 200 MB entpackt, 10.000 Dateien |
 | Git-Repository verbinden | angemeldete Entwickler auf **app.luibui.com** | eigener Bereich, Scan bei jedem Push/Tag | wie Upload |
 | **Schnellscan** per öffentlicher Git-URL oder einer einzelnen Datei | alle, ohne Anmeldung, auf luibui.com | nur Bericht (eingeschränkter Umfang, **ohne Gewähr**), nichts gespeichert, 7 Tage abrufbar | 3 Scans pro Tag und IP, Datei bis 2 MB |
 | `luibui scan` lokal | alle | läuft offline auf dem eigenen Rechner, kein Upload | – |
@@ -120,7 +120,7 @@ Den vollständigen Katalog mit rund 80 Prüfungen enthält `luibui_Pruefkatalog.
 
 | # | Schritt | Inhalt | Sprint |
 |---|---|---|---|
-| 1 | **Annahme** | Einzeldatei, Dateiauswahl, Ordner, Text, ZIP oder Git-Clone (flach, ohne Hooks, ohne Submodule); Dateinamen und Ordnerpfade werden wie ZIP-Einträge geprüft (kein `..`, keine absoluten Pfade); Größenlimits | 1 |
+| 1 | **Annahme** | Einzeldatei, Dateiauswahl, Ordner, Text, ZIP/tar oder Git-Clone (flach, ohne Hooks, ohne Submodule); Dateinamen und Ordnerpfade werden wie ZIP-Einträge geprüft (kein `..`, keine absoluten Pfade); Größenlimits. Paketformate im Paket (`.whl`, `.dxt`, `.vsix` …) werden eine Ebene tief mitgeprüft, andere Archive bleiben gepackt | 1 |
 | 2 | **Sicher entpacken** | Zip-Bomben, `../`-Pfade, Symlinks, verschlüsselte Archive erkennen und abbrechen | 1 |
 | 3 | **Inventar** | Dateiliste, echte Dateitypen (Magic Bytes), SHA-256, Sprachen, Pakettyp (Skill, MCP-Server, Plugin) | 1 |
 | 4 | **Ebene A – Dateien** | Autostart-Dateien, Install-Skripte, Binaries, versteckte Dateien, Paketquellen | 1 |
@@ -161,7 +161,7 @@ Bei Einzeldatei, Text oder Auswahl ohne Manifest steht die DSGVO-Achse auf **„
 | **DSGVO** | alles deklariert, Betrieb in der EU oder mit Angemessenheitsbeschluss | Angaben fehlen | Drittland ohne Grundlage, undeklarierte Endpunkte | – |
 | **Gesamt** | die schlechtere der beiden Achsen | | | |
 
-\* Sperrliste: bekannte Schadsoftware, Autostart-Dateien mit Befehlen, unsichtbare Unicode-Anweisungen, Anweisungs-Übernahme, Geheimhaltung vor dem Nutzer, Datenabfluss, Zugriff auf Zugangsdaten, Persistenz, Tool Poisoning, `curl | bash`, verschleierter Code, Zeitbomben, Schadmuster, echte Secrets, bekannte Schadpakete. Gesperrte Pakete können nicht veröffentlicht werden.
+\* Sperrliste: bekannte Schadsoftware, Autostart-Dateien mit Befehlen, unsichtbare Unicode-Anweisungen, Anweisungs-Übernahme, Geheimhaltung vor dem Nutzer, Datenabfluss, Zugriff auf Zugangsdaten, Persistenz, Tool Poisoning, `curl | bash`, verschleierter Code, Zeitbomben, Schadmuster, echte Secrets, bekannte Schadpakete, Code-Ausführung beim Laden eines Modells (Pickle, Chat-Vorlage). Gesperrte Pakete können nicht veröffentlicht werden.
 
 **Note 0–100:** 100 minus Abzüge (K 40, H 15, M 5, N 1), mindestens 0. Die Note zeigt Fortschritt, die Ampel entscheidet.
 

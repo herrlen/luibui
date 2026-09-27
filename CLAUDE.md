@@ -56,7 +56,7 @@ Jeder Upload ist potenziell feindlich. Die Prüfstelle darf nie selbst zum Angri
    kein `pip install` von Paketinhalten. Nur lesen und parsen. (Ausnahme: Sandbox ab Sprint 6, eigener Server.)
 2. **Jede Eingabe nur über `packages/engine/luibui_scan/intake/`** (Einzeldatei, Dateiauswahl/Ordner, Text, ZIP, Git).
    Relative Pfade aus Ordner-Uploads werden exakt wie ZIP-Einträge geprüft. Limits: Einzeldatei 10 MB, Auswahl
-   1.000 Dateien / 50 MB, Text 200 KB. Entpacken nur über `intake/safe_extract.py` mit Limits: 50 MB gepackt, 200 MB entpackt,
+   1.000 Dateien / 50 MB, Text 200 KB. Entpacken nur über `intake/safe_extract.py` (ZIP, Weiche auf `intake/safe_tar.py` für tar) mit Limits: 50 MB gepackt, 200 MB entpackt,
    10.000 Dateien, Tiefe 20, Kompressionsrate > 100 → Abbruch. Keine Symlinks, keine absoluten Pfade, kein `..`.
 3. **Git-Clone nur über `intake/safe_git.py`**: HTTPS-Allowlist (github.com, codeberg.org, gitlab.com), `--depth 1`,
    `--no-recurse-submodules`, `-c core.hooksPath=/dev/null`, `-c protocol.file.allow=never`, Größenlimit, Timeout.

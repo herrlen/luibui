@@ -823,3 +823,31 @@ Tool-Beschreibungen“ (B01/B02 laufen über alle Textdateien). Ausgerollt.
 
 **Offen (Len):** OK für Teil B; Entscheidungen zu verschachtelten Archiven, tar/7z/rar, „jedes K sperrt“
 in der Matrix gegen ● im Katalog, AGT-06 mit Netz gegen Worker ohne Netz.
+
+## 2026-09-27 – Scanner-Matrix Teil B
+
+**Was:** Lens Scanner-Matrix umgesetzt, soweit ihre Zeilen in Sprint 1/2 oder P1 liegen. Die
+Konflikte hat Len zur Entscheidung übergeben; sie stehen im Prüfkatalog §13.
+- Annahme: tar/tar.gz/bz2/xz über `intake/safe_tar.py` mit den ZIP-Regeln; 7z/RAR bleiben
+  abgelehnt (Lizenz). Paketformate im Paket (`.whl`, `.dxt`, `.mcpb`, `.vsix`, `.xpi`, `.egg`,
+  `.nupkg`) werden eine Ebene tief entpackt, mit dem Rest der Paket-Limits.
+- Inventar erkennt Pickle, safetensors, GGUF, HDF5, TFLite, deb, rpm und Python-Bytecode am Inhalt.
+- Neue Prüfungen: A13–A16, A18–A21, B21, C14, C15, E08, E09, G07, G08; A02/A03/A04/B06/B08–B17
+  erweitert. A16 und B20 sperren jetzt.
+- Neue Analyzer `e_konfig` (im Schnellscan erwartet) und `c_konfig`. `c_code`, `e_mcp`,
+  `g_dsgvo` bleiben für den Intensivscan erwartet, bis S2-1 bis S2-5 fertig sind.
+- Korpus: `corpus/generate.py` schreibt je Matrixzeile ein entschärftes Beispiel und ein gutartiges
+  Gegenstück; Pickle-Beispiele verweisen nur auf `corpus/_dummy.py`.
+
+**Warum so:** Keine neue Abhängigkeit (picklescan, oletools, pdfid, exiftool, python-magic): Alles
+liest nur Bytes oder Text, kein Dokument- oder Bildparser wird angegriffen. Pickle wird nur mit
+`pickletools.genops` gelesen, nie geladen.
+
+**Geprüft:** Engine-Tests grün (u. a. 58 Korpus-Fälle). Die neuen Regeln gegen anthropics/skills,
+modelcontextprotocol/servers und python-sdk: keine neuen K/H-Befunde; drei Fehlalarme in einem
+Zwischenstand (Skript-Muster zu weit, `conftest.py` mit `subprocess`) vor dem Commit behoben.
+
+**Offen:**
+- MAL-01: Hash-Liste ist leer, YARA/ClamAV erst S4-10.
+- `docs/scanner-abdeckung.md` und `docs/luibui_Scanner-Matrix.md` liegen nur lokal, weil das
+  Repository öffentlich ist und beide die Lücken der Prüfung genau benennen (Len).

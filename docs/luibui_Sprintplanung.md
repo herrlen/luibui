@@ -151,6 +151,7 @@
 | S2-11 | **luibui.com – Grundgerüst Marketingseite:** Startseite mit „Anmelden“ und „Kostenlos registrieren“ (führen zu app.luibui.com/anmelden bzw. /registrieren, im gleichen Design) | 2 |
 | S2-13 | **Schnellscan** auf luibui.com: öffentliche Git-URL oder eine Datei bis 2 MB, ohne Anmeldung, reduzierte Pipeline (A, B-Regeln, Secrets, D), unter 30 s, Hinweis „eingeschränkter Umfang, ohne Gewähr“, nichts gespeichert, Bericht 7 Tage, Rate-Limit, Button zum Intensivscan | 3 |
 | S2-12 | Download **CSV** (eine Zeile pro Befund, UTF-8 mit BOM, Semikolon, **gegen CSV-Injection abgesichert**), JSON und SARIF 2.1.0; Teilen eines Berichts per Link mit Zufalls-Token | 3 |
+| S2-14 | ✅ **Scanner-Matrix Teil B (27.09.2026):** tar-Annahme, Paketformate eine Ebene tief, Typ nach Inhalt, A13–A21, B21, C14, C15, E08, E09, G07, G08, erweiterte A02/A03/A04/B06/B08–B17, Korpus je Matrixzeile (`corpus/generate.py`). Stand je Zeile in `docs/scanner-abdeckung.md` | – |
 
 **Definition of Done**
 - [ ] luibui.com → Registrieren → Projekt anlegen → Ordner oder ZIP hochladen → Bericht in unter 2 Minuten für ein typisches Skill-Paket
@@ -180,8 +181,10 @@
 | S3-6 | Regeln kalibrieren bis Abnahmewerte erreicht | Claude + Len | 6 |
 | S3-7 | **Befund-Status** im Entwicklerbereich: offen, behoben (automatisch, wenn in neuer Version weg), akzeptiert (mit Begründung), bestritten (Einspruch); Moderationsansicht für Einsprüche | Claude | 5 |
 | S3-8 | Rechtstexte einbauen: Impressum, Datenschutz, Nutzungsbedingungen mit Haftungsausschluss, Disclosure-Richtlinie; DSA-Meldeformular | Claude (Texte: Anwalt) | 3 |
-| S3-9 | luibui.com fertigstellen: Marketingseite (Nutzen, Ablauf, Ampel erklärt, Beispielbericht, „Kostenlos registrieren“), „So prüfen wir“, Prüfkatalog, Doku-Einstieg, Transparenz- und Spendenseite, SEO-Grundlagen | Claude | 5 |
+| S3-9 | luibui.com fertigstellen: Marketingseite (Nutzen, Ablauf, Ampel erklärt, Beispielbericht, „Kostenlos registrieren“), „So prüfen wir“, Doku-Einstieg (kein öffentlicher vollständiger Prüfkatalog, Entscheidung Len 27.09.2026), Transparenz- und Spendenseite, SEO-Grundlagen | Claude | 5 |
 | S3-11 | **PDF-Bericht** für Schnell- und Intensivscan: Deckblatt (Ampeln, Note, Umfang, Scan-Art, Datum), Befunde mit Beleg und Fix, Haftungsausschluss auf jeder Seite, beim Schnellscan „ohne Gewähr“ im Kopf; serverseitig erzeugt ohne Nachladen externer Ressourcen | Claude | 4 |
+| S3-12 | Modelle, Teil 2 (Matrix MOD-04): GGUF-Header und eingebettetes `chat_template` (A16/A18) | Claude | 2 |
+| S3-13 | Personenbezogene Daten, Teil 2 (Matrix DAT-01, COD-02): Presidio nach RAM-Messung, Notebook-Ausgaben | Claude | 3 |
 | S3-10 | Produktion: Limits, Backups, verschlüsselter pg_dump, Restore-Test, Health-Cronjob mit Mail-Alarm | Claude | 4 |
 
 **Definition of Done**
@@ -216,7 +219,8 @@
 | S4-6 | **Diff-Prüfung** (H1): neue Rechte/Endpunkte gegenüber Vorversion hervorheben | 4 |
 | S4-7 | Disclosure-Workflow: neuer K/H-Befund → Autor sofort, öffentlich „Befund offen“ für 14 Tage | 3 |
 | S4-8 | **app.luibui.com – Dateien:** Dateibaum der geprüften Version, Dateiansicht als escaped Text mit Befunden an der Zeile, Download als Anhang | 5 |
-| S4-10 | ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen | 2 |
+| S4-10 | ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen; YARA-X mit eigenen Regeln und gefüllte Hash-Liste (Matrix MAL-01, BIN-01) | 2 |
+| S4-11 | Modelle, Teil 3 (Matrix MOD-02, MOD-03): Keras-Lambda, TF-Datei-Ops, ONNX `external_data` (A17), Werkzeug nach Lizenzprüfung | 3 |
 
 **DoD:** Ein geprüftes Paket ist aus dem Entwicklerbereich veröffentlicht und per `luibui install --target claude` nutzbar; ein Update mit neuem Endpunkt zeigt den Diff; die Dateiansicht markiert Befunde an der richtigen Zeile.
 

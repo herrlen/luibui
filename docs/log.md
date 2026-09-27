@@ -369,3 +369,18 @@ Schalter `ANNAHME_OFFEN` (Standard: aus). Solange er aus ist, antworten Registri
 und Schnellscan mit 503 „noch nicht freigeschaltet“. Health, Anmeldung bestehender Konten,
 Tokens und das Lesen von Berichten laufen weiter (Test). Eingeschaltet wird er erst, wenn beide
 Lücken zu sind.
+
+## 2026-09-27 — S0-2 Prüfkatalog: Entwurf von Claude
+
+Len hat entschieden, dass Claude den Prüfkatalog entwirft, weil die Datei nirgends vorlag.
+`docs/luibui_Pruefkatalog.md` enthält 73 Prüfungen: A01–A12, B01–B20, C01–C13, D01–D05,
+E01–E07, F01–F06, G01–G06, H01–H04. Für jede sind Schwere, Sperrliste, Umfang (Paket, Auswahl,
+Einzeldatei, Schnellscan), Quelle und Normbezug angegeben, dazu die Zuordnung der 15
+Sperrlisten-Kategorien und der Annahme-Codes. Er passt zu allen Verweisen in Konzept und
+Sprintplanung (A2–A12, B1–B7, B8–B17, B8–B19, C1–C13, G1/G3–G5, E7, F6, H1/H3/H4, B01 =
+Unicode-Tags und gesperrt).
+
+**Status: Entwurf.** Sieben offene Fragen stehen am Ende des Katalogs, darunter: Ebene I bleibt
+unbenutzt, die Annahme bekommt A01 statt A2/A3, Secrets werden B20. Erst nach Lens Freigabe kommen
+die IDs in `SPERRLISTE_KATALOG` (`scoring.py`) und in die Annahme-Befunde, und erst dann starten
+die Analyzer S1-5 bis S1-9.

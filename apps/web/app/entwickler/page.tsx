@@ -32,8 +32,8 @@ export default async function Uebersicht() {
         <div role="status" className="flex flex-col gap-2 rounded-[14px] border border-gelb bg-gelb-bg p-5 text-gelb">
           <p className="font-semibold">Bitte bestätige deine E-Mail-Adresse.</p>
           <p className="text-sm">
-            Wir haben dir einen Link an {ich.data.email} geschickt. Erst danach kannst du Dateien prüfen; der Schnellscan auf
-            luibui.com geht auch ohne.
+            Erst danach kannst du Dateien prüfen; der Schnellscan auf luibui.com geht auch ohne. Keine Mail bekommen? Lass
+            dir den Link an {ich.data.email} schicken.
           </p>
           <BestaetigungSenden />
         </div>

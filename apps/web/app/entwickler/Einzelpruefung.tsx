@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Ablage, type Eintrag, istArchiv } from "@/components/app/Ablage";
 import { zahlungNoetig } from "@/components/app/Aufladen";
 import { Meldung } from "@/components/app/Formular";
+import { BestaetigungSenden } from "@/components/app/KontoKnoepfe";
 import { senden } from "@/lib/client-api";
 
 // Drag and drop on the overview: the check starts right away, without a project. The files are
@@ -14,6 +15,7 @@ export function Einzelpruefung() {
   const router = useRouter();
   const [auswahl, setAuswahl] = useState<Eintrag[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [unbestaetigt, setUnbestaetigt] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
 
   async function starten(eintraege: Eintrag[]) {
@@ -33,9 +35,11 @@ export function Einzelpruefung() {
     }
     setLaeuft(true);
     setFehler(null);
+    setUnbestaetigt(false);
     const r = await senden<{ id: string }>("/scans", "POST", daten);
     setLaeuft(false);
     if (zahlungNoetig(r)) return setAuswahl([]);
+    if (!r.ok) setUnbestaetigt(r.fehler.code === "email_unbestaetigt");
     if (!r.ok) return setFehler(r.fehler.pfad ? `${r.fehler.text} (${r.fehler.pfad})` : r.fehler.text);
     router.push(`/pruefungen/${r.data.id}`);
   }
@@ -58,6 +62,7 @@ export function Einzelpruefung() {
         </p>
       ) : null}
       <Meldung text={fehler} />
+      {unbestaetigt ? <BestaetigungSenden /> : null}
     </section>
   );
 }

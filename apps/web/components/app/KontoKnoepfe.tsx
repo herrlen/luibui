@@ -34,7 +34,7 @@ export function BestaetigungSenden() {
         }}
         className="text-sm font-semibold text-petrol underline"
       >
-        Bestätigungsmail erneut senden
+        Bestätigungslink senden
       </button>
       {text ? (
         <span className="text-sm" aria-live="polite">

@@ -79,7 +79,8 @@ def email_pruefen(user: User) -> None:
         raise fehler(
             status.HTTP_403_FORBIDDEN,
             "email_unbestaetigt",
-            "Bitte bestätige zuerst deine E-Mail-Adresse. Den Link haben wir dir geschickt.",
+            "Bitte bestätige zuerst deine E-Mail-Adresse. "
+            "Den Link kannst du dir hier schicken lassen.",
         )
 
 

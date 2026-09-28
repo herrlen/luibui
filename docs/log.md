@@ -1118,3 +1118,14 @@ Bricolage-Abhängigkeit ist entfernt. Die enge Laufweite (bis −0,035 em) war a
 abgestimmt und ließ Plex zusammenkleben; bei `font-display` jetzt einheitlich −0,01 em.
 
 **Geprüft:** Web 20 Tests, eslint, tsc, `next build`, Startseite im lokalen Build per Screenshot.
+
+## 2026-09-28 – Bestätigungslink direkt beim Prüfen anfordern (Rückmeldung Len)
+
+**Was:** Konten von vor S3-15 haben nie eine Bestätigungsmail bekommen (sie geht nur bei der
+Registrierung raus). Beim Prüfen stand trotzdem „Den Link haben wir dir geschickt“, ohne Weg, ihn
+anzufordern; der Knopf lag nur auf der Übersicht. Jetzt erscheint bei `email_unbestaetigt` im
+Upload und in der Einzelprüfung der Knopf „Bestätigungslink senden“ direkt unter der Meldung, und
+die Texte in API und Übersicht behaupten keinen Versand mehr. SMTP-Anmeldung aus dem
+Produktions-Container geprüft: funktioniert.
+
+**Geprüft:** Web 20 Tests, eslint, tsc; API ruff, Tests ohne Datenbank.

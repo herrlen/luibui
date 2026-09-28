@@ -1,0 +1,29 @@
+import "server-only";
+
+import { dateiname, type Format, inhalt, TYP } from "./export";
+import { apiGet } from "./server-api";
+import type { ScanStatus } from "./types";
+
+/**
+ * Download of one report. The API checks the owner via the session cookie; a foreign, unknown or
+ * unfinished scan gives the same 404 as the report page.
+ */
+export async function berichtDownload(id: string, format: Format): Promise<Response> {
+  const scan = await apiGet<ScanStatus>(`/api/v1/scans/${encodeURIComponent(id)}`);
+  if (!scan.ok || !scan.data.bericht) {
+    const status = !scan.ok && scan.status === 401 ? 401 : 404;
+    return new Response(status === 401 ? "Nicht angemeldet" : "Nicht gefunden", {
+      status,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
+  const b = scan.data.bericht;
+  return new Response(inhalt(b, format), {
+    headers: {
+      "Content-Type": TYP[format],
+      "Content-Disposition": `attachment; filename="${dateiname(b, format)}"`,
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "private, no-store",
+    },
+  });
+}

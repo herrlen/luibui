@@ -4,7 +4,14 @@ import type { ScanStatus } from "@/lib/types";
 import { Aktualisieren } from "./Aktualisieren";
 import { ReportView } from "./report/ReportView";
 
-export function Bericht({ scan }: { scan: ScanStatus }) {
+const DOWNLOADS = [
+  { format: "csv", text: "CSV", titel: "Eine Zeile pro Befund, für Excel und LibreOffice" },
+  { format: "json", text: "JSON", titel: "Der vollständige Bericht, maschinenlesbar" },
+  { format: "sarif", text: "SARIF", titel: "Für GitHub Code Scanning und andere SARIF-Werkzeuge" },
+] as const;
+
+/** `downloads`: only in the developer area, where /pruefungen/<id>/bericht.* exists. */
+export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloads?: boolean }) {
   const laeuft = scan.status === "wartend" || scan.status === "laeuft";
   const b = scan.bericht;
   return (
@@ -30,6 +37,22 @@ export function Bericht({ scan }: { scan: ScanStatus }) {
           <p className="text-sm text-muted">
             {b.paket.dateien ?? "?"} Dateien · geprüft am {datumZeit(b.geprueft_am)} · Engine {b.engine_version}
           </p>
+          {downloads ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-muted">Herunterladen:</span>
+              {DOWNLOADS.map((d) => (
+                <a
+                  key={d.format}
+                  href={`/pruefungen/${encodeURIComponent(scan.id)}/bericht.${d.format}`}
+                  download
+                  title={d.titel}
+                  className="inline-flex h-10 items-center rounded-[10px] border border-linie-stark bg-surface px-4 text-[15px] font-medium text-ink hover:border-petrol"
+                >
+                  {d.text}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </>
       ) : null}
     </div>

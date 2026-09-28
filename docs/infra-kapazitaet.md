@@ -185,3 +185,8 @@ api 77 MiB, worker 122 MiB, web 119 MiB.
 Kurz nach dem Start, cgroup `memory.current`: api 80 MiB, worker 54 MiB, web 113 MiB. Logs ohne
 Fehler. Der Worker liegt unter dem Wert vom 27.09. (122 MiB), vermutlich weil er seit dem Start keine
 Prüfung mit geladener Schadsoftware-Liste gelaufen hat.
+
+## Nach Deploy `f9028be` (28.09.2026, Schrift für Logo und Überschriften)
+
+Nur `web` neu gestartet (api und worker unverändert seit `a438e87`). cgroup `memory.current`:
+api 86 MiB, worker 61 MiB, web 44 MiB. Logs ohne Fehler.

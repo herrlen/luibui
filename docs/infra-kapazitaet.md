@@ -194,3 +194,11 @@ api 86 MiB, worker 61 MiB, web 44 MiB. Logs ohne Fehler.
 ## Nach Deploy `823315f` (28.09.2026, Bestätigungslink beim Prüfen)
 
 cgroup `memory.current`: api 76 MiB, worker 49 MiB, web 106 MiB. Logs ohne Fehler.
+
+## Nach Deploy `b0d0f06` (28.09.2026, S2-1 Code-Analyse mit Opengrep und Bandit)
+
+cgroup nach einem Selbsttest im Worker (Mini-Paket mit Köder, alle 10 Prüfungen, keine
+fehlgeschlagen): api 69 MiB (Spitze 122), worker 96 MiB (Spitze 358), web 75 MiB. Im lokalen
+Container-Test mit dem marketing-skill-Paket (234 Dateien, 63 Python) lag die Spitze bei 375 MiB,
+Dauer 47 s bei 1,5 CPU. Opengrep läuft mit `--jobs 1` und `--max-memory 900`; das Worker-Limit
+von 1536 MiB reicht. Das Image ist um den Opengrep-Cache größer (ca. 290 MB).

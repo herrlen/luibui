@@ -11,7 +11,7 @@ export default function EntwicklerLayout({ children }: { children: ReactNode }) 
         <nav className="mx-auto flex min-h-[72px] max-w-5xl items-center gap-6 px-4 py-3" aria-label="Hauptnavigation">
           <Link href="/" className="flex items-center gap-2.5 text-ink">
             <LogoMarke />
-            <span className="font-display text-2xl font-bold tracking-[-0.02em]">luibui</span>
+            <span className="font-display text-2xl font-bold tracking-[-0.01em]">luibui</span>
           </Link>
           <Link href="/" className="text-sm hover:text-petrol">
             Übersicht

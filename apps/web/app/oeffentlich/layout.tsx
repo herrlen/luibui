@@ -18,7 +18,7 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
         >
           <Link href="/" className="flex items-center gap-2.5 text-ink">
             <LogoMarke />
-            <span className="font-display text-2xl font-bold tracking-[-0.02em]">luibui</span>
+            <span className="font-display text-2xl font-bold tracking-[-0.01em]">luibui</span>
           </Link>
           <Link href="/so-pruefen-wir" className="text-[15px] font-medium text-ink hover:text-petrol">
             So prüfen wir
@@ -43,7 +43,7 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
         <div className={`${BREITE} flex flex-col gap-10 pb-10 pt-14`}>
           <div className="grid gap-8 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex flex-col gap-2.5">
-              <span className="font-display text-[22px] font-bold tracking-[-0.02em]">luibui</span>
+              <span className="font-display text-[22px] font-bold tracking-[-0.01em]">luibui</span>
               <span className="leading-[1.55] text-muted">
                 Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server.
               </span>

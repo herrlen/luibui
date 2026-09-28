@@ -34,7 +34,7 @@ const AMPELN: [string, string][] = [
 
 const CHIPS = ["Schnellscan kostenlos", "Gratis starten", "Gehostet in Deutschland"];
 
-const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[40px]";
+const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.01em] sm:text-[40px]";
 
 export default async function Startseite() {
   const anmelden = await appUrl("/anmelden");
@@ -53,7 +53,7 @@ export default async function Startseite() {
               </li>
             ))}
           </ul>
-          <h1 className="font-display text-[44px] font-bold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[72px]">
+          <h1 className="font-display text-[44px] font-bold leading-[1.02] tracking-[-0.01em] sm:text-6xl lg:text-[72px]">
             Prüfen, bevor man <span className="text-petrol">installiert.</span>
           </h1>
           <p className="max-w-[580px] text-[17px] leading-[1.6] text-ink-2 sm:text-[19px]">
@@ -77,7 +77,7 @@ export default async function Startseite() {
         <dl className="mt-9 grid gap-5 md:grid-cols-3">
           {ZAHLEN.map(([zahl, text]) => (
             <div key={zahl} className="flex flex-col gap-3 rounded-[14px] bg-surface p-7">
-              <dt className="font-display text-[56px] font-bold leading-none tracking-[-0.035em] text-petrol lg:text-[64px]">
+              <dt className="font-display text-[56px] font-bold leading-none tracking-[-0.01em] text-petrol lg:text-[64px]">
                 {zahl}
               </dt>
               <dd className="text-[15px] leading-[1.55] text-ink-2">{text}</dd>
@@ -148,7 +148,7 @@ export default async function Startseite() {
           aria-labelledby="ampel"
           className="flex flex-col gap-5 rounded-[18px] border border-linie bg-surface p-7 sm:p-9"
         >
-          <h2 id="ampel" className="font-display text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">
+          <h2 id="ampel" className="font-display text-[28px] font-bold tracking-[-0.01em] sm:text-[32px]">
             Was die Ampel bedeutet
           </h2>
           <ul className="flex flex-col gap-3.5">
@@ -168,7 +168,7 @@ export default async function Startseite() {
           aria-labelledby="gruendlich"
           className="flex flex-col gap-5 rounded-[18px] bg-petrol p-7 text-grund sm:p-9"
         >
-          <h2 id="gruendlich" className="font-display text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">
+          <h2 id="gruendlich" className="font-display text-[28px] font-bold tracking-[-0.01em] sm:text-[32px]">
             Gründlich prüfen im Entwicklerbereich
           </h2>
           <p className="text-base leading-[1.6] text-petrol-hell">

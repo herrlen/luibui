@@ -1,7 +1,7 @@
 import { ReportView } from "@/components/report/ReportView";
 import { beispielbericht } from "@/content/beispiel";
 
-const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[40px]";
+const H2 = "font-display text-[32px] font-bold leading-[1.1] tracking-[-0.01em] sm:text-[40px]";
 
 // Landing page (S3-9): a static example report, security axis only. No scan, no fetch.
 export function Beispielbericht({ registrieren }: { registrieren: string }) {

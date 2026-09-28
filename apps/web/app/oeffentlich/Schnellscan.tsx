@@ -26,7 +26,7 @@ export function Schnellscan() {
       }}
     >
       <div className="flex flex-col gap-2">
-        <h2 id="schnellscan-titel" className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em]">
+        <h2 id="schnellscan-titel" className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em]">
           Schnellscan
         </h2>
         <label htmlFor="git_url" className="text-[15px] text-ink-2">

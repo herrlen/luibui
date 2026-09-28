@@ -1108,3 +1108,13 @@ Erklärung und Behebung. Weiter nur React-Text, kein Markdown, kein HTML; ein Te
 im Code-Teil escaped bleibt und ein einzelner Backtick unverändert stehen bleibt.
 
 **Geprüft:** Web 14 Tests, eslint, tsc.
+
+## 2026-09-28 – Logo und Überschriften in der Fließtextschrift (Wunsch Len)
+
+**Was:** Logo und Überschriften stehen nicht mehr in Bricolage Grotesque, sondern in IBM Plex Sans
+wie der Fließtext, auf beiden Oberflächen (der Kopf mit dem Logo ist gemeinsam). `--font-display`
+zeigt auf Plex Sans, Plex Sans 700 wird für die fetten Überschriften mitgeladen, die
+Bricolage-Abhängigkeit ist entfernt. Die enge Laufweite (bis −0,035 em) war auf Bricolage
+abgestimmt und ließ Plex zusammenkleben; bei `font-display` jetzt einheitlich −0,01 em.
+
+**Geprüft:** Web 20 Tests, eslint, tsc, `next build`, Startseite im lokalen Build per Screenshot.

@@ -84,7 +84,7 @@ export function AufladenDialog() {
         }}
       >
         <div>
-          <h2 id="aufladen-titel" className="font-display text-2xl font-bold tracking-[-0.02em]">
+          <h2 id="aufladen-titel" className="font-display text-2xl font-bold tracking-[-0.01em]">
             {TITEL[anlass?.code ?? ""] ?? "Guthaben aufladen"}
           </h2>
           <p className="mt-2 text-[15px] leading-[1.6] text-ink-2">

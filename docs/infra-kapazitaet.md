@@ -190,3 +190,7 @@ Prüfung mit geladener Schadsoftware-Liste gelaufen hat.
 
 Nur `web` neu gestartet (api und worker unverändert seit `a438e87`). cgroup `memory.current`:
 api 86 MiB, worker 61 MiB, web 44 MiB. Logs ohne Fehler.
+
+## Nach Deploy `823315f` (28.09.2026, Bestätigungslink beim Prüfen)
+
+cgroup `memory.current`: api 76 MiB, worker 49 MiB, web 106 MiB. Logs ohne Fehler.

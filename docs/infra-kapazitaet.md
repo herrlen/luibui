@@ -179,3 +179,9 @@ Messung unter Last folgt mit dem nächsten echten Intensivscan (Annahme ist noch
 
 Nach dem Start mit geladener MalwareBazaar-Liste (1.144.645 Hashes, 36,6 MB auf `luibui-rules`):
 api 77 MiB, worker 122 MiB, web 119 MiB.
+
+## Nach Deploy `a438e87` (28.09.2026, macOS-Metadaten, ATR-Kalibrierung, Berichts-Downloads)
+
+Kurz nach dem Start, cgroup `memory.current`: api 80 MiB, worker 54 MiB, web 113 MiB. Logs ohne
+Fehler. Der Worker liegt unter dem Wert vom 27.09. (122 MiB), vermutlich weil er seit dem Start keine
+Prüfung mit geladener Schadsoftware-Liste gelaufen hat.

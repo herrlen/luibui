@@ -1065,6 +1065,12 @@ Abzug) mit dem `zip`-Befehl ohne Begleitdateien. Passt nur eins von beiden (z. B
 
 **Geprüft:** 817 Engine-Tests (3 neu), ruff, mypy. Das ZIP von Len: vorher Rot/0, jetzt Gelb/94.
 
-**Offen:** Übrig bleibt `ATR-2026-00443` (Word-Fragment Concatenation, M) auf einer SEO-Zeile
-„`/seo-tips` not `/seo_tips`“ in `url-design-guide.md` – sehr wahrscheinlich Fehlalarm der
-externen Regel, getrennt ansehen.
+**Nachtrag, ATR-2026-00443:** Der übrige Gelb-Befund (Mittel) auf „Underscores join words.“ in
+einer SEO-Anleitung war ein Fehlalarm: Die dritte Bedingung der Regel (`join` + `words`) trifft
+normale Prosa. Nach der Regel aus S1-7 (Fehlalarm im gutartigen Bestand → nicht übernommen) ist sie
+entfernt. `scripts/vendor_atr.py` kalibriert jetzt zusätzlich gegen `corpus/benign/`, neues
+Korpuspaket `seo-skill` mit genau solchen Formulierungen, neuer Test: keine übernommene ATR-Regel
+schlägt im gutartigen Korpus an (vor dem Entfernen rot, danach grün). Das ZIP von Len: Note 100,
+Ampel Gelb nur wegen „Prüfung unvollständig“ (C, E, G noch nicht eingebaut).
+
+**Geprüft:** 819 Engine-Tests, ruff, mypy.

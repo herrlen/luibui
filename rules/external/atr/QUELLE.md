@@ -9,16 +9,17 @@ Erzeugt mit `scripts/vendor_atr.py`. Übernommen werden nur Regeln mit Reifegrad
 `stable` oder `experimental`, reinen Regex-Bedingungen auf Textfeldern und bestandenen
 eigenen Testfällen unter unserer Regex-Engine.
 
-- übernommen: 157
+- übernommen: 156
 - nicht geeignet (Reifegrad, Status, Felder, Operatoren): 615
 - eigene Testfälle nicht bestanden: 8
-- Fehlalarm im gutartigen Vergleichsbestand: 5
+- Fehlalarm im gutartigen Vergleichsbestand: 6
 
 ## Gutartiger Vergleichsbestand
 
 - `anthropics_skills` Commit `33375500bcea`
 - `modelcontextprotocol_servers` Commit `f46d9578190b`
 - `modelcontextprotocol_python-sdk` Commit `f1b658908853`
+- `corpus/benign/` (eigener Korpus, Stand dieses Repositorys)
 - zusammen 1009 Textdateien (Markdown, Text, YAML, JSON, TOML)
 
 ## Nicht übernommen wegen Testfällen
@@ -39,3 +40,4 @@ eigenen Testfällen unter unserer Regex-Engine.
 - ATR-2026-01901: schlägt an in `modelcontextprotocol_python-sdk/i18n/ru/instructions.md`
 - ATR-2026-00061: schlägt an in `anthropics_skills/THIRD_PARTY_NOTICES.md`
 - ATR-2026-00576: schlägt an in `anthropics_skills/skills/claude-api/curl/managed-agents.md`
+- ATR-2026-00443: schlägt an in `corpus/benign/seo-skill/SKILL.md` („Underscores join words“, nachgetragen 2026-09-28)

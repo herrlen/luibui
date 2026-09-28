@@ -4,8 +4,9 @@ Usage: uv run python scripts/vendor_atr.py <atr-checkout> <tag> <benign-repo> [<
 
 Takes only rules usable on static package text (maturity stable/experimental, not deprecated or
 draft, regex conditions on text fields), only those that pass their own test cases with our regex
-engine, and only those that stay silent on the instruction texts of trusted benign repositories
-(false-positive calibration, Prüfkatalog §1). Files are copied unchanged (MIT, see LICENSE).
+engine, and only those that stay silent on the instruction texts of trusted benign repositories and
+of our own benign corpus ``corpus/benign/`` (false-positive calibration, Prüfkatalog §1). Files are
+copied unchanged (MIT, see LICENSE).
 """
 
 import shutil
@@ -19,6 +20,7 @@ from luibui_scan.textrules import RuleTimeoutError, TextRule, atr_rule, failing_
 
 REPO = Path(__file__).resolve().parents[1]
 DEST = REPO / "rules" / "external" / "atr"
+OWN_BENIGN = REPO / "corpus" / "benign"
 
 
 TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".json", ".toml"}
@@ -56,7 +58,7 @@ def benign_hit(rule: TextRule, texts: list[tuple[str, str]]) -> str | None:
 
 def main(src: Path, tag: str, benign: list[Path]) -> None:
     commit = git_head(src)
-    texts = benign_texts(benign)
+    texts = benign_texts([*benign, OWN_BENIGN])
     if DEST.exists():
         shutil.rmtree(DEST)
     (DEST / "rules").mkdir(parents=True)
@@ -102,6 +104,7 @@ def main(src: Path, tag: str, benign: list[Path]) -> None:
         "## Gutartiger Vergleichsbestand",
         "",
         *[f"- `{r.name}` Commit `{git_head(r)[:12]}`" for r in benign],
+        "- `corpus/benign/` (eigener Korpus, Stand dieses Repositorys)",
         f"- zusammen {len(texts)} Textdateien (Markdown, Text, YAML, JSON, TOML)",
         "",
         "## Nicht übernommen wegen Testfällen",

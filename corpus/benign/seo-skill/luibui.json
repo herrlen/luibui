@@ -1,0 +1,20 @@
+{
+  "$schema": "https://luibui.com/spec/luibui.schema.json",
+  "schema_version": "1",
+  "name": "beispiel/seo-skill",
+  "version": "1.0.0",
+  "typ": "skill",
+  "beschreibung": "Gibt Hinweise für URL-Struktur und Seitentitel.",
+  "lizenz": "MIT",
+  "einstieg": "SKILL.md",
+  "rechte": {
+    "netzwerk": false,
+    "dateien": { "lesen": [], "schreiben": [] },
+    "shell": false,
+    "zugangsdaten": false,
+    "umgebungsvariablen": []
+  },
+  "endpunkte": [],
+  "datenkategorien": ["nutzereingaben"],
+  "speicherung": { "lokal": false, "dauer": "keine" }
+}

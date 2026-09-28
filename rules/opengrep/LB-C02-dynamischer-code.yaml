@@ -1,0 +1,19 @@
+# Prüfkatalog C02 (H): code executed from variable text (JavaScript/TypeScript; Python is
+# covered by Bandit B102/B307/B301/B506).
+rules:
+  - id: LB-C02-dynamischer-code-js
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Führt Text als Code aus.
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: new Function(..., $X)
+          - pattern: Function(..., $X)
+          - pattern: vm.runInNewContext($X, ...)
+          - pattern: vm.runInThisContext($X, ...)
+          - pattern: vm.runInContext($X, ...)
+          - pattern: new vm.Script($X, ...)
+      - pattern-not: eval("...")
+      - pattern-not: new Function("...")
+      - pattern-not: new Function(..., "...")

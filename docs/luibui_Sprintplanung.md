@@ -138,7 +138,7 @@
 
 | ID | Task | h |
 |---|---|---|
-| S2-1 | Analyzer **C – Code**: Opengrep mit eigenen Regeln (C1–C13), Bandit | 6 |
+| S2-1 | ✅ **(28.09.2026)** Analyzer **C – Code**: Opengrep mit eigenen Regeln (C01–C12, Python, JavaScript/TypeScript, Shell), Bandit (Python: C01, C02, C11, C13). Dazu im Bericht „Was geprüft wurde“ je Dateiart | 6 |
 | S2-2 | Cisco skill-scanner einbinden (nur Offline-Analyzer), Befunde auf luibui-Schema mappen, Duplikate zusammenführen | 4 |
 | S2-3 | Analyzer **E – MCP**: Cisco mcp-scanner offline, Tool-Beschreibungen, Auth/Transport-Konfiguration | 4 |
 | S2-4 | Analyzer **G – DSGVO und Rechte**: Endpunkte und Rechte aus Code extrahieren, gegen Manifest, Länderzuordnung (gepflegte Liste + Angemessenheitsbeschlüsse) | 5 |

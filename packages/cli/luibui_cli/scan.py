@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, TextIO
 
+from luibui_scan.abdeckung import abdeckung
 from luibui_scan.intake import (
     IntakeRejectedError,
     accept_directory,
@@ -183,6 +184,11 @@ def render_text(source: Path, result: ScanResult) -> str:
     ]
     lines += [f"  übersprungen: {s.titel} ({s.grund})" for s in pipe.skipped]
     lines += [f"  fehlgeschlagen: {f.titel} ({f.fehler})" for f in pipe.failed]
+    lines += ["", "Was geprüft wurde:"]
+    for a in abdeckung(result):
+        lines.append(f"  {a.dateiart} ({a.dateien}):")
+        lines += [f"    ✓ {g}" for g in a.geprueft]
+        lines += [f"    – {o}" for o in a.offen]
     lines.append("")
     if pipe.findings:
         lines.append(f"Befunde: {len(pipe.findings)}")

@@ -32,6 +32,8 @@ export type Bericht = {
   befunde: Befund[];
   nicht_geprueft: { pruefung: string; grund: string }[];
   hinweise: string[];
+  /** Missing in reports from before S2-1. */
+  abdeckung?: { dateiart: string; dateien: number; geprueft: string[]; offen: string[] }[];
 };
 
 export type ScanStatus = {

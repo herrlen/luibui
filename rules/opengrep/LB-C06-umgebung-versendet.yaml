@@ -1,0 +1,46 @@
+# Prüfkatalog C06 (H): the whole environment (all variables, usually with tokens) goes to the
+# network. Single variables (os.environ["API_KEY"]) and handing env to a subprocess are normal.
+rules:
+  - id: LB-C06-umgebung-versendet-py
+    languages: [python]
+    severity: ERROR
+    message: Schickt alle Umgebungsvariablen ins Netz.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: dict(os.environ)
+          - pattern: os.environ.copy()
+          - pattern: os.environ.items()
+          - pattern: '{**os.environ}'
+          - pattern: json.dumps(os.environ, ...)
+          - pattern: str(os.environ)
+          - pattern: repr(os.environ)
+          - pattern: dict(environ)
+          - pattern: environ.copy()
+    pattern-sinks:
+      - pattern-either:
+          - pattern: requests.$M(...)
+          - pattern: httpx.$M(...)
+          - pattern: urllib.request.urlopen(...)
+          - pattern: urllib.request.Request(...)
+          - pattern: $SESSION.post(...)
+          - pattern: $SOCK.send(...)
+          - pattern: $SOCK.sendall(...)
+  - id: LB-C06-umgebung-versendet-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Schickt alle Umgebungsvariablen ins Netz.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: JSON.stringify(process.env, ...)
+          - pattern: '{...process.env}'
+          - pattern: Object.entries(process.env)
+          - pattern: Object.assign({}, process.env)
+    pattern-sinks:
+      - pattern-either:
+          - pattern: fetch(...)
+          - pattern: axios.$M(...)
+          - pattern: axios(...)
+          - pattern: $REQ.write(...)
+          - pattern: got.$M(...)

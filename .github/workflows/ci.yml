@@ -50,6 +50,12 @@ jobs:
           echo "ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108  /tmp/osv-scanner" | sha256sum -c -
           sudo install -m 755 /tmp/osv-scanner /usr/local/bin/osv-scanner
           osv-scanner --version
+      - name: Install opengrep 1.30.0 (pinned, checksum from the official release)
+        run: |
+          curl -fsSLo /tmp/opengrep https://github.com/opengrep/opengrep/releases/download/v1.30.0/opengrep_manylinux_x86
+          echo "35779bdd72e92129c8df2a77f0c55e8c08356801ea92591ef32108d6b28d564c  /tmp/opengrep" | sha256sum -c -
+          sudo install -m 755 /tmp/opengrep /usr/local/bin/opengrep
+          opengrep --version
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .

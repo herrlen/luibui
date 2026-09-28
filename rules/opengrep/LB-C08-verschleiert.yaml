@@ -1,0 +1,64 @@
+# Prüfkatalog C08 (K, Sperrliste): code that is decoded at run time and then executed.
+rules:
+  - id: LB-C08-verschleiert-py
+    languages: [python]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - patterns:
+              - pattern: base64.$D(...)
+              - metavariable-regex:
+                  metavariable: $D
+                  regex: ^(b64decode|urlsafe_b64decode|standard_b64decode|b32decode|b16decode|b85decode|a85decode|decodebytes)$
+          - pattern: b64decode(...)
+          - pattern: zlib.decompress(...)
+          - pattern: gzip.decompress(...)
+          - pattern: lzma.decompress(...)
+          - pattern: bz2.decompress(...)
+          - pattern: marshal.loads(...)
+          - pattern: codecs.decode(...)
+          - pattern: bytes.fromhex(...)
+          - pattern: binascii.unhexlify(...)
+          - pattern: binascii.a2b_base64(...)
+          - pattern: '"".join(chr($C) for $C in $L)'
+          - pattern: '"".join(map(chr, $L))'
+          - pattern: $S[::-1]
+    pattern-sinks:
+      - pattern-either:
+          - pattern: exec(...)
+          - pattern: eval(...)
+          - pattern: compile(...)
+          - pattern: __import__(...)
+          - pattern: os.system(...)
+          - pattern: subprocess.$F(...)
+          - pattern: types.FunctionType(...)
+  - id: LB-C08-verschleiert-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: atob(...)
+          - pattern: Buffer.from($X, "base64")
+          - pattern: Buffer.from($X, "hex")
+          - pattern: String.fromCharCode(...)
+          - pattern: zlib.inflateSync(...)
+          - pattern: zlib.gunzipSync(...)
+          - pattern: $S.split("").reverse().join("")
+    pattern-sinks:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+          - pattern: vm.runInNewContext(...)
+          - pattern: vm.runInThisContext(...)
+          - pattern: new vm.Script(...)
+          - pattern: child_process.exec(...)
+          - pattern: child_process.execSync(...)
+  - id: LB-C08-verschleiert-sh
+    languages: [bash]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    pattern-regex: (?im)^(?!\s*#)[^\n]*?(\bbase64\s+(-d|--decode|-D)\b[^\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b|\beval\s+["']?\$\(\s*(echo|printf)\b[^\n]*\|\s*base64\s+(-d|--decode|-D)|\bxxd\s+-r\s+-p\b[^\n]*\|\s*(ba|z)?sh\b)

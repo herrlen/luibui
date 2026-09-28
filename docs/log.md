@@ -1129,3 +1129,52 @@ die Texte in API und Übersicht behaupten keinen Versand mehr. SMTP-Anmeldung au
 Produktions-Container geprüft: funktioniert.
 
 **Geprüft:** Web 20 Tests, eslint, tsc; API ruff, Tests ohne Datenbank.
+
+## 2026-09-28 – S2-1: Analyzer C – Code, und im Bericht „Was geprüft wurde“ (Rückmeldung Len)
+
+**Anlass:** Len fragte nach dem marketing-skill-ZIP (62 Python-Skripte, Note 100), ob wirklich
+jede Datei auf Gefahren im Code geprüft wurde. Antwort: nein, Ebene C fehlte, und der Bericht
+zeigte nicht, welche Prüfung welche Dateien erreicht.
+
+**Was:**
+- `analyzers/c_code.py`: Opengrep 1.30.0 nur mit eigenen Regeln (`rules/opengrep/`, C01–C12
+  für Python, JavaScript/TypeScript und Shell, 25 Regeln, jede mit positivem und negativem
+  Testfall, `opengrep scan --test`) und Bandit 1.9.4 für Python (C01, C02, C11, C13; Lärm wie
+  `assert`, `import subprocess`, `subprocess` ohne Shell ausgelassen, Schwere vom Katalog
+  gedeckelt). Nur Intensivscan und CLI, nicht im Schnellscan.
+- Härtung: `--disable-nosem`/`--ignore-nosec`, keine `.semgrepignore`/`.gitignore`/`.bandit`
+  aus dem Paket, Bandits Standard-Ausnahmen (`.git`, `.tox` …) aufgehoben, eigene leere
+  Konfiguration, leere Umgebung, eigenes temporäres HOME, eigene Prozessgruppe (Timeout beendet
+  auch `opengrep-core`), `--jobs 1`, `--max-memory 900`, Zeitlimits 150 s / 90 s (Job: 300 s).
+  Belege mit Token-Maskierung (`masked` in `_common`, auch für B20).
+- Sperrlisten-Regeln bewusst eng: C04 nur echte Geheimnis-Speicher (kein `.env`), C05 nur
+  Zugangsdaten/Zwischenablage/Bildschirm → Netz, C07 ohne PATH-Zeilen in `~/.bashrc` aus
+  Shell-Installern und ohne MCP-Einträge in Agent-Konfigurationen, `crontab -l` zählt nicht.
+- Worker-Image: Opengrep mit Prüfsumme, einmal beim Bauen nach `/opt/opengrep-cache` entpackt
+  (sonst 240 MB pro Job), `LUIBUI_OPENGREP`/`LUIBUI_OPENGREP_CACHE` an den Kindprozess.
+  CI installiert Opengrep. `THIRD_PARTY_NOTICES.md` ergänzt (auch osv-scanner fehlte).
+- Bericht: neues optionales Feld `abdeckung` (Schema), je Dateiart Anzahl, gelaufene und offene
+  Prüfungen mit Grund, abgeleitet aus tatsächlich gelaufenen Analyzern (fehlgeschlagen oder
+  übersprungen erscheint nie als geprüft). Einordnung nur nach Endung, weil die Werkzeuge so
+  auswählen. Anzeige „Was geprüft wurde“ im Web, in der CLI und im Beispielbericht.
+- Korpus: COD-01 (Python liest `~/.aws/credentials`) und COD-03 (JS `eval(atob(…))`).
+
+**Kalibrierung:** `claude-skills-main` (779 Code-Dateien): Opengrep 1 Treffer auf der Sperrliste
+(`skillopt-sleep` schreibt tatsächlich in die Crontab des Nutzers, offen dokumentiert; nach
+Katalog C07 korrekt), Bandit 69 Hinweise, davon 14 × C01 H (`shell=True` mit Variablen), Rest N.
+marketing-skill: 5 × N (`urlopen`, XML-Parser), Note 95. Mit Ködern (SSH-Schlüssel lesen und
+versenden) im Worker-Container ohne Netz: C04 + C05 K, gesperrt. Speicherspitze Container 375 MB,
+Dauer 47 s bei 1,5 CPU.
+
+**Geprüft:** alle Python-Tests mit Opengrep (u. a. Umgehungsversuche mit `nosem`, `.semgrepignore`,
+`node_modules/`, `.git/`, `.bandit`, Timeout räumt Prozessgruppe und HOME ab), Web-Tests, ruff,
+mypy, eslint.
+
+**Offen:**
+- Entscheidung Len: Soll offen dokumentierte Persistenz (Beispiel `skillopt-sleep`) weiter
+  sperren, oder reicht dafür Hoch? Der Katalog sagt K + Sperrliste.
+- Opengrep-Regeln für weitere Sprachen (Go, Rust, PowerShell …) und C12 für JavaScript-MCP-Server;
+  diese Dateien zeigt der Bericht jetzt als „für diese Programmiersprache noch nicht“.
+- Anweisungen an die KI in Kommentaren und Strings von Code-Dateien werden nur erkannt, wenn sie
+  kodiert oder unsichtbar sind.
+- S2-2 (Cisco skill-scanner) bleibt offen.

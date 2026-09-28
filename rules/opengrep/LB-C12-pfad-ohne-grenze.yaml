@@ -1,0 +1,47 @@
+# Prüfkatalog C12 (H): a tool parameter is used as a file path without normalising it first
+# (path traversal: "../../.ssh/id_rsa"). Python MCP servers (FastMCP and the official SDK).
+rules:
+  - id: LB-C12-pfad-ohne-grenze-py
+    languages: [python]
+    severity: WARNING
+    message: Nutzt einen Tool-Parameter ungeprüft als Dateipfad.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  @$APP.tool(...)
+                  def $F(..., $P, ...):
+                    ...
+              - pattern-inside: |
+                  @$APP.tool(...)
+                  async def $F(..., $P, ...):
+                    ...
+              - pattern-inside: |
+                  @$APP.tool
+                  def $F(..., $P, ...):
+                    ...
+              - pattern-inside: |
+                  @$APP.tool
+                  async def $F(..., $P, ...):
+                    ...
+          - pattern: $P
+    pattern-sanitizers:
+      - pattern-either:
+          - pattern: os.path.realpath(...)
+          - pattern: os.path.abspath(...)
+          - pattern: os.path.normpath(...)
+          - pattern: os.path.basename(...)
+          - pattern: $X.resolve(...)
+          - pattern: $X.name
+          - pattern: secure_filename(...)
+    pattern-sinks:
+      - pattern-either:
+          - pattern: open($S, ...)
+          - pattern: Path($S, ...)
+          - pattern: pathlib.Path($S, ...)
+          - pattern: os.remove($S)
+          - pattern: os.unlink($S)
+          - pattern: shutil.rmtree($S, ...)
+          - pattern: os.listdir($S)
+          - pattern: shutil.copy($S, ...)

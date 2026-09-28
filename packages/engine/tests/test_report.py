@@ -10,8 +10,9 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
+from luibui_scan.abdeckung import dateiart
 from luibui_scan.analyzers import AnalyzerInfo, AnalyzerRegistry
-from luibui_scan.context import ScanContext
+from luibui_scan.context import InventoryEntry, ScanContext
 from luibui_scan.models import Achse, Ebene, Finding, Nachweisgrad, ScanArt, Schwere
 from luibui_scan.report import OHNE_GEWAEHR, build_report
 from luibui_scan.scan import Eingabe, scan_prepared
@@ -160,3 +161,67 @@ def test_missing_expected_analyzers_block_green(tmp_path: Path) -> None:
     assert report["ampeln"]["gesamt"] == "gelb"
     assert {"pruefung": "C – Code", "grund": "noch nicht eingebaut"} in report["nicht_geprueft"]
     assert any("noch nicht eingebaut" in h for h in report["hinweise"])
+
+
+# --- abdeckung: what ran for which kind of file (S2-1) ------------------------------------------
+
+
+def _abdeckung(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {a["dateiart"]: a for a in report["abdeckung"]}
+
+
+def test_coverage_lists_what_ran_per_kind_of_file(tmp_path: Path) -> None:
+    reg = registry(*(Reports(n, []) for n in ("a_dateien", "b_inhalte", "b_muster", "c_code")))
+    files = {"SKILL.md": "# Skill\n", "tool.py": "x = 1\n", "main.go": "package main\n"}
+    a = _abdeckung(report_for(tmp_path, files, Eingabe.LOKAL, ScanArt.LOKAL, reg))
+    assert a["Python"]["dateien"] == 1
+    assert "Was der Code tut" in a["Python"]["geprueft"]
+    assert "Anweisungen an die KI (Prompt-Injection)" in a["Anweisungen und Doku"]["geprueft"]
+    assert "Was der Code tut: für diese Programmiersprache noch nicht" in a["Anderer Code"]["offen"]
+    # Not registered here, so never claimed as checked:
+    assert "Zugangsdaten im Klartext" not in a["Python"]["geprueft"]
+
+
+def test_coverage_never_claims_a_failed_check(tmp_path: Path) -> None:
+    class CodeCrashes(Crashes):
+        info = AnalyzerInfo(name="c_code", titel="C – Code", ebenen=frozenset({Ebene.C}))
+
+    reg = registry(Reports("a_dateien", []), CodeCrashes())
+    a = _abdeckung(report_for(tmp_path, {"t.py": "x = 1\n"}, Eingabe.LOKAL, ScanArt.LOKAL, reg))
+    assert "Was der Code tut: fehlgeschlagen" in a["Python"]["offen"]
+    assert "Was der Code tut" not in a["Python"]["geprueft"]
+
+
+def test_coverage_in_quick_scan_names_the_missing_code_check(tmp_path: Path) -> None:
+    code = AnalyzerInfo(
+        name="c_code",
+        titel="C – Code",
+        ebenen=frozenset({Ebene.C}),
+        scan_arts=frozenset({ScanArt.INTENSIV, ScanArt.LOKAL}),
+    )
+    only_deep = Reports("c_code", [])
+    only_deep.info = code
+    reg = registry(Reports("a_dateien", []), only_deep)
+    a = _abdeckung(report_for(tmp_path, {"t.js": "x()\n"}, Eingabe.ZIP, ScanArt.SCHNELL, reg))
+    assert "Was der Code tut: nur im Intensivscan" in a["JavaScript und TypeScript"]["offen"]
+
+
+@pytest.mark.parametrize(
+    ("path", "kind", "sprache", "art"),
+    [
+        ("a/b.py", "text", "python", "Python"),
+        ("x.tsx", "text", "typescript", "JavaScript und TypeScript"),
+        ("run.sh", "script", "shell", "Shell-Skripte"),
+        ("run", "script", "shell", "Anderer Code"),
+        ("x.ps1", "text", "powershell", "Anderer Code"),
+        ("SKILL.md", "text", "markdown", "Anweisungen und Doku"),
+        ("mcp.json", "text", "json", "Konfiguration und Daten"),
+        ("logo.png", "png", None, "Binärdateien, Bilder und Archive"),
+        ("__MACOSX/._a.md", "appledouble", None, "macOS-Begleitdateien"),
+    ],
+)
+def test_kind_of_file_goes_by_extension(
+    path: str, kind: str, sprache: str | None, art: str
+) -> None:
+    entry = InventoryEntry(path, 10, "0" * 64, kind, sprache)
+    assert dateiart(entry) == art

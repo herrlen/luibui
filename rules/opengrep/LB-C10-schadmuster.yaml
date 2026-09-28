@@ -1,0 +1,48 @@
+# Prüfkatalog C10 (K, Sperrliste): reverse shells, keyloggers and crypto miners.
+rules:
+  - id: LB-C10-schadmuster-py
+    languages: [python]
+    severity: ERROR
+    message: Enthält ein typisches Schadmuster (Reverse Shell, Keylogger oder Krypto-Miner).
+    pattern-either:
+      - pattern: os.dup2($S.fileno(), 0)
+      - pattern: os.dup2($S.fileno(), 1)
+      - pattern: pty.spawn("/bin/sh")
+      - pattern: pty.spawn("/bin/bash")
+      - pattern: pty.spawn("sh")
+      - pattern: pty.spawn("bash")
+      - pattern: pynput.keyboard.Listener(...)
+      - pattern: keyboard.Listener(on_press=..., ...)
+      - pattern: keyboard.hook(...)
+      - patterns:
+          - pattern: '"$S"'
+          - metavariable-regex:
+              metavariable: $S
+              regex: &miner (?i).*?(stratum\+(tcp|ssl|tls)://|\bxmrig\b|\bcryptonight\b|--donate-level\b|/dev/tcp/[^/\s]+/\d+|\bnc(at)?\s+(-\w+\s+)*-(e|c)\s+/bin/(ba)?sh\b)
+  - id: LB-C10-schadmuster-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Enthält ein typisches Schadmuster (Reverse Shell, Keylogger oder Krypto-Miner).
+    pattern-either:
+      - patterns:
+          - pattern-inside: |
+              $SH = $SPAWN("$SHELL", ...);
+              ...
+          - metavariable-regex:
+              metavariable: $SHELL
+              regex: ^(/bin/)?(ba|z)?sh$|^cmd(\.exe)?$|^powershell(\.exe)?$
+          - pattern-either:
+              - pattern: $C.pipe($SH.stdin)
+              - pattern: $SH.stdout.pipe($C)
+      - patterns:
+          - pattern-either:
+              - pattern: '"$S"'
+              - pattern: '`$S`'
+          - metavariable-regex:
+              metavariable: $S
+              regex: *miner
+  - id: LB-C10-schadmuster-sh
+    languages: [bash]
+    severity: ERROR
+    message: Enthält ein typisches Schadmuster (Reverse Shell oder Krypto-Miner).
+    pattern-regex: (?im)^(?!\s*#)[^\n]*?(/dev/tcp/[^/\s]+/\d+|\bnc(at)?\s+(-\w+\s+)*-(e|c)\s+/bin/(ba)?sh\b|\bmkfifo\b[^\n]*\|\s*nc\b|\bsocat\b[^\n]*\bexec:|stratum\+(tcp|ssl|tls)://|\bxmrig\b)

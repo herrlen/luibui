@@ -1,0 +1,59 @@
+# Prüfkatalog C09 (K, Sperrliste): dangerous actions that only start after a fixed date.
+# Narrow on purpose: the condition must compare "now" with a fixed date, and the guarded block
+# must run code, a shell, or delete files. Timeouts and expiry checks do neither.
+rules:
+  - id: LB-C09-zeitbombe-py
+    languages: [python]
+    severity: ERROR
+    message: Führt ab einem festen Datum Code aus oder löscht Dateien.
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              if <... $DT.now() ...>:
+                ...
+          - pattern-inside: |
+              if <... $DT.today() ...>:
+                ...
+          - pattern-inside: |
+              if <... $DT.utcnow() ...>:
+                ...
+      - pattern-either:
+          - pattern-inside: |
+              if <... datetime($Y, ...) ...>:
+                ...
+          - pattern-inside: |
+              if <... datetime.datetime($Y, ...) ...>:
+                ...
+          - pattern-inside: |
+              if <... date($Y, ...) ...>:
+                ...
+          - pattern-inside: |
+              if <... datetime.date($Y, ...) ...>:
+                ...
+      - pattern-either:
+          - pattern: exec(...)
+          - pattern: eval(...)
+          - pattern: os.system(...)
+          - pattern: subprocess.$F(...)
+          - pattern: shutil.rmtree(...)
+          - pattern: os.remove(...)
+          - pattern: os.unlink(...)
+  - id: LB-C09-zeitbombe-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Führt ab einem festen Datum Code aus oder löscht Dateien.
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              if (<... Date.now() ...>) { ... }
+          - pattern-inside: |
+              if (<... new Date() ...>) { ... }
+      - pattern-inside: |
+          if (<... new Date("...") ...>) { ... }
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+          - pattern: child_process.exec(...)
+          - pattern: child_process.execSync(...)
+          - pattern: fs.rmSync(...)
+          - pattern: fs.unlinkSync(...)

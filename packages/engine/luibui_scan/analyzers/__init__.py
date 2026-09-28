@@ -11,6 +11,7 @@ from luibui_scan.analyzers import (  # noqa: F401
     a_schadsoftware,
     b_inhalte,
     b_muster,
+    c_code,
     c_konfig,
     d_abhaengigkeiten,
     e_konfig,

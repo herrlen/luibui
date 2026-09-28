@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from luibui_scan import __version__
+from luibui_scan.abdeckung import abdeckung
 from luibui_scan.models import Finding, Pruefumfang, ScanArt, Schwere
 from luibui_scan.scan import ScanResult
 
@@ -94,4 +95,5 @@ def build_report(
         "befunde": [f.to_json_dict() for f in sort_findings(result.pipeline.findings)],
         "nicht_geprueft": nicht_geprueft(result),
         "hinweise": hinweise(result),
+        "abdeckung": [a.to_json_dict() for a in abdeckung(result)],
     }

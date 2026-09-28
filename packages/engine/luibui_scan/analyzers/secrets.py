@@ -5,7 +5,7 @@ An unavailable gitleaks makes the analyzer fail, so the scan is incomplete and n
 
 import re
 
-from luibui_scan.analyzers._common import finding, rules_dir, visible
+from luibui_scan.analyzers._common import finding, masked, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
 from luibui_scan.context import ScanContext
@@ -22,8 +22,7 @@ _RULE_ID = re.compile(r"[^a-z0-9._-]+")
 
 def _mask(match: str) -> str:
     """gitleaks already redacts; anything that still looks like a long token is cut to 4 chars."""
-    masked = re.sub(r"[A-Za-z0-9+/_\-]{20,}", lambda m: m.group()[:4] + "…", match)
-    return visible(masked, 200)
+    return masked(match, 200)
 
 
 _KEY_NAMES = re.compile(

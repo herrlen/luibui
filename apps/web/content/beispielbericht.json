@@ -109,5 +109,45 @@
     }
   ],
   "nicht_geprueft": [],
-  "hinweise": []
+  "hinweise": [],
+  "abdeckung": [
+    {
+      "dateiart": "Anweisungen und Doku",
+      "dateien": 3,
+      "geprueft": [
+        "Dateityp und Tarnung",
+        "Bekannte Schadsoftware",
+        "Zugangsdaten im Klartext",
+        "Versteckte Zeichen und kodierte Inhalte",
+        "Anweisungen an die KI (Prompt-Injection)"
+      ],
+      "offen": []
+    },
+    {
+      "dateiart": "Konfiguration und Daten",
+      "dateien": 3,
+      "geprueft": [
+        "Dateityp und Tarnung",
+        "Bekannte Schadsoftware",
+        "Zugangsdaten im Klartext",
+        "Versteckte Zeichen und kodierte Inhalte",
+        "Anweisungen an die KI (Prompt-Injection)"
+      ],
+      "offen": []
+    },
+    {
+      "dateiart": "Python",
+      "dateien": 3,
+      "geprueft": [
+        "Dateityp und Tarnung",
+        "Bekannte Schadsoftware",
+        "Zugangsdaten im Klartext",
+        "Versteckte Zeichen und kodierte Inhalte",
+        "Was der Code tut"
+      ],
+      "offen": [
+        "Anweisungen an die KI (Prompt-Injection): nur im Klartext von Doku- und Konfigurationsdateien"
+      ]
+    }
+  ]
 }

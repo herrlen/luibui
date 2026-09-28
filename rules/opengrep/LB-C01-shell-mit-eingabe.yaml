@@ -1,0 +1,14 @@
+# Prüfkatalog C01 (H): shell commands built from variable data (JavaScript/TypeScript;
+# Python is covered by Bandit B602/B605).
+rules:
+  - id: LB-C01-shell-mit-eingabe-js
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec($CMD, ...)
+          - pattern: child_process.execSync($CMD, ...)
+          - pattern: 'child_process.spawn($CMD, ..., {..., shell: true, ...})'
+          - pattern: 'child_process.spawnSync($CMD, ..., {..., shell: true, ...})'
+      - pattern-not: child_process.$F("...", ...)

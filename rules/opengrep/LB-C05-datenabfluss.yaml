@@ -1,0 +1,55 @@
+# Prüfkatalog C05 (K, Sperrliste): credentials, clipboard or screen content flow to the network.
+# Sending the user's own input to the tool's API is normal and not a source here.
+rules:
+  - id: LB-C05-datenabfluss-py
+    languages: [python]
+    severity: ERROR
+    message: Schickt Zugangsdaten, Zwischenablage oder Bildschirminhalt ins Netz.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: '"$S"'
+          - metavariable-regex:
+              metavariable: $S
+              regex: (?i).*?((^|[/\\])(\.ssh[/\\])?id_(rsa|dsa|ecdsa|ed25519)(_sk)?$|\.ssh[/\\]id_(rsa|dsa|ecdsa|ed25519)(_sk)?\b(?!\.pub)|\.aws[/\\]credentials\b|(^|[/\\])application_default_credentials\.json$|\.config[/\\]gcloud[/\\](credentials\.db|access_tokens\.db|legacy_credentials)|(^|[/\\~])\.netrc$|(^|[/\\~])\.git-credentials$|\.docker[/\\]config\.json$|(^|[/\\~])\.pypirc$|(^|[/\\])Login Data$|(^|[/\\])key4\.db$|Library[/\\]Keychains|login\.keychain|(^|[/\\])wallet\.dat$|\.ethereum[/\\]keystore|\bsecurity\s+(find|dump)-(generic|internet)-password\b|\bsecurity\s+dump-keychain\b)
+      - pattern: pyperclip.paste()
+      - pattern: ImageGrab.grab(...)
+      - pattern: pyautogui.screenshot(...)
+      - pattern: mss.mss().grab(...)
+    pattern-sinks:
+      - pattern-either:
+          - pattern: requests.$M(...)
+          - pattern: httpx.$M(...)
+          - pattern: urllib.request.urlopen(...)
+          - pattern: urllib.request.Request(...)
+          - pattern: $SESSION.post(...)
+          - pattern: $SOCK.send(...)
+          - pattern: $SOCK.sendall(...)
+          - pattern: smtplib.SMTP(...).sendmail(...)
+          - pattern: $SMTP.sendmail(...)
+          - pattern: $SMTP.send_message(...)
+  - id: LB-C05-datenabfluss-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Schickt Zugangsdaten, Zwischenablage oder Bildschirminhalt ins Netz.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: '"$S"'
+              - pattern: '`$S`'
+          - metavariable-regex:
+              metavariable: $S
+              regex: (?i).*?((^|[/\\])(\.ssh[/\\])?id_(rsa|dsa|ecdsa|ed25519)(_sk)?$|\.ssh[/\\]id_(rsa|dsa|ecdsa|ed25519)(_sk)?\b(?!\.pub)|\.aws[/\\]credentials\b|(^|[/\\])application_default_credentials\.json$|\.config[/\\]gcloud[/\\](credentials\.db|access_tokens\.db|legacy_credentials)|(^|[/\\~])\.netrc$|(^|[/\\~])\.git-credentials$|\.docker[/\\]config\.json$|(^|[/\\~])\.pypirc$|(^|[/\\])Login Data$|(^|[/\\])key4\.db$|Library[/\\]Keychains|login\.keychain|(^|[/\\])wallet\.dat$|\.ethereum[/\\]keystore|\bsecurity\s+(find|dump)-(generic|internet)-password\b|\bsecurity\s+dump-keychain\b)
+      - pattern: clipboardy.read(...)
+      - pattern: clipboardy.readSync(...)
+      - pattern: screenshot(...)
+    pattern-sinks:
+      - pattern-either:
+          - pattern: fetch(...)
+          - pattern: axios.$M(...)
+          - pattern: axios(...)
+          - pattern: $HTTP.request(...).write(...)
+          - pattern: $REQ.write(...)
+          - pattern: $SOCK.write(...)
+          - pattern: got.$M(...)

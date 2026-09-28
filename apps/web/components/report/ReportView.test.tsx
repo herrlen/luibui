@@ -84,3 +84,21 @@ describe("MitCode", () => {
     expect(renderToStaticMarkup(<MitCode text="ein ` einzelnes" />)).toBe("ein ` einzelnes");
   });
 });
+
+describe("Abdeckung", () => {
+  it("shows what ran per kind of file and escapes it", () => {
+    const b = beispielbericht();
+    const html = renderToStaticMarkup(<ReportView bericht={b} showDsgvo={false} />);
+    expect(html).toContain("Was geprüft wurde");
+    expect(html).toContain("Was der Code tut");
+    const boese = { ...b, abdeckung: [{ dateiart: "<b>x</b>", dateien: 1, geprueft: [], offen: ["<i>y</i>"] }] };
+    const roh = renderToStaticMarkup(<ReportView bericht={boese} showDsgvo={false} />);
+    expect(roh).not.toContain("<b>x</b>");
+    expect(roh).toContain("&lt;i&gt;y&lt;/i&gt;");
+  });
+
+  it("is left out for reports from before S2-1", () => {
+    const alt = { ...beispielbericht(), abdeckung: undefined };
+    expect(renderToStaticMarkup(<ReportView bericht={alt} showDsgvo={false} />)).not.toContain("Was geprüft wurde");
+  });
+});

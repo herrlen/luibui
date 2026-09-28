@@ -39,7 +39,7 @@ markers = ["db: needs a PostgreSQL database (DATABASE_URL)"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["docs/design", "apps/web"]
+extend-exclude = ["docs/design", "apps/web", "rules/opengrep"]  # rule fixtures are defused bad code on purpose
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "N"]

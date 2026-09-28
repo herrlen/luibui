@@ -1,0 +1,37 @@
+# Prüfkatalog C07 (K, Sperrliste): code that makes itself start again later (cron, launchd,
+# systemd, autostart, Windows Run keys; shell profiles only from Python/JS code).
+# Not here: shell installers adding a PATH line to ~/.bashrc, MCP installers registering
+# themselves in an agent config. Both are normal.
+rules:
+  - id: LB-C07-persistenz-py
+    languages: [python]
+    severity: ERROR
+    message: Richtet einen automatischen Neustart ein (Autostart, Cron, Dienst oder Shell-Profil).
+    pattern-either:
+      - pattern: subprocess.$F(["crontab", "-", ...], ...)
+      - patterns:
+          - pattern: subprocess.$F(["crontab", "$ARG", ...], ...)
+          - metavariable-regex:
+              metavariable: $ARG
+              regex: ^[^-]
+      - patterns:
+          - pattern: '"$S"'
+          - metavariable-regex:
+              metavariable: $S
+              regex: &ziele (?i).*?((^|[/\\~])\.(bashrc|bash_profile|bash_login|zshrc|zprofile|zshenv|profile)$|Library[/\\]Launch(Agents|Daemons)|^/etc/cron|/var/spool/cron|\.config[/\\]autostart|systemd[/\\](user|system)[/\\]|^/etc/rc\.local$|Start Menu[/\\]Programs[/\\]Startup|CurrentVersion[/\\]+Run(Once)?\b|\bcrontab\s+-(?![lr]\b)|\blaunchctl\s+(load|bootstrap)\b|\bsystemctl\s+(--user\s+)?enable\b|\bschtasks\s+/create\b|\breg\s+add\b.*\\Run\b)
+  - id: LB-C07-persistenz-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Richtet einen automatischen Neustart ein (Autostart, Cron, Dienst oder Shell-Profil).
+    patterns:
+      - pattern-either:
+          - pattern: '"$S"'
+          - pattern: '`$S`'
+      - metavariable-regex:
+          metavariable: $S
+          regex: *ziele
+  - id: LB-C07-persistenz-sh
+    languages: [bash]
+    severity: ERROR
+    message: Richtet einen automatischen Neustart ein (Autostart, Cron oder Dienst).
+    pattern-regex: (?im)^(?!\s*#)[^\n]*?(\bcrontab\s+-(?![lr]\b)|>>?\s*/etc/cron|/var/spool/cron|Library/Launch(Agents|Daemons)|\blaunchctl\s+(load|bootstrap)\b|\.config/autostart|\bsystemctl\s+(--user\s+)?enable\b|/etc/systemd/system/|\.config/systemd/user/|>>?\s*/etc/rc\.local)

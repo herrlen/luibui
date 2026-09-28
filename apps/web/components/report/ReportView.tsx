@@ -2,6 +2,7 @@ import { datum, datumZeit, FREIGABE_TEXT, SCHWERE_TEXT, UMFANG_TEXT } from "@/li
 import type { Bericht } from "@/lib/types";
 
 import { Ampel } from "../Ampel";
+import { Abdeckung } from "./Abdeckung";
 import { BefundKarte } from "./BefundKarte";
 
 const REIHENFOLGE = ["K", "H", "M", "N", "I"] as const;
@@ -84,6 +85,7 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
           ))}
         </ul>
       ) : null}
+      {b.abdeckung ? <Abdeckung abdeckung={b.abdeckung} /> : null}
       {sortiert.length ? (
         <section aria-label="Befunde" className="flex flex-col gap-3">
           <p className="text-sm text-muted">

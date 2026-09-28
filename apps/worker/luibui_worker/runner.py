@@ -28,6 +28,8 @@ CHILD_ENV_KEEP = (
     "LUIBUI_OSV_SCANNER",
     "LUIBUI_OSV_DB",
     "LUIBUI_MALWARE_DB",
+    "LUIBUI_OPENGREP",
+    "LUIBUI_OPENGREP_CACHE",
     "LUIBUI_NETZ_ISOLIEREN",
 )
 """Only non-secret settings reach the child: locale and where rules and scanners are."""

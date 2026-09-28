@@ -2,6 +2,8 @@
 (corpus/generate.py). Scanned with the full pipeline like ``luibui scan``."""
 
 import importlib.util
+import os
+import re
 import shutil
 from pathlib import Path
 from types import ModuleType
@@ -49,6 +51,9 @@ def _scan(tmp_path: Path, files: dict[str, bytes]) -> list[tuple[str, Schwere]]:
 @pytest.mark.parametrize("matrix_id", sorted(MALICIOUS))
 def test_malicious_fixture_is_found(tmp_path: Path, matrix_id: str) -> None:
     files, expected = MALICIOUS[matrix_id]
+    has_opengrep = os.environ.get("LUIBUI_OPENGREP") or shutil.which("opengrep")
+    if re.match(r"LB-C(0\d|1[0-3])-", expected) and not has_opengrep:
+        pytest.skip("opengrep nicht installiert (lokal LUIBUI_OPENGREP setzen)")
     found = _scan(tmp_path, files)
     assert any(rule.startswith(expected) for rule, _ in found), found
 

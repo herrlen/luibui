@@ -1,0 +1,2 @@
+# Leere Bandit-Konfiguration: verhindert, dass Bandit eine .bandit-Datei aus dem geprüften Paket liest.
+[bandit]

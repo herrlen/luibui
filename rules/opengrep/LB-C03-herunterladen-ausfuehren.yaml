@@ -1,0 +1,83 @@
+# Prüfkatalog C03 (K, Sperrliste): code that downloads something and runs it.
+rules:
+  - id: LB-C03-herunterladen-ausfuehren-py
+    languages: [python]
+    severity: ERROR
+    message: Lädt Code aus dem Netz und führt ihn aus.
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: exec(<... $NET ...>)
+              - pattern: eval(<... $NET ...>)
+          - metavariable-pattern:
+              metavariable: $NET
+              pattern-either:
+                - pattern: requests.get(...)
+                - pattern: requests.get(...).text
+                - pattern: requests.get(...).content
+                - pattern: urllib.request.urlopen(...)
+                - pattern: urlopen(...)
+                - pattern: httpx.get(...)
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  $R = requests.get(...)
+                  ...
+              - pattern-inside: |
+                  $R = httpx.get(...)
+                  ...
+              - pattern-inside: |
+                  $R = urllib.request.urlopen(...).read()
+                  ...
+              - pattern-inside: |
+                  $R = urlopen(...).read()
+                  ...
+          - pattern-either:
+              - pattern: exec(<... $R ...>)
+              - pattern: eval(<... $R ...>)
+      - patterns:
+          - pattern-either:
+              - pattern: subprocess.$F("$CMD", ...)
+              - pattern: os.system("$CMD")
+              - pattern: os.popen("$CMD", ...)
+          - metavariable-regex:
+              metavariable: $CMD
+              regex: (?i).*?\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?(ba|z|da|k)?sh\b|\b(curl|wget)\b[^|;&]*\|\s*python[0-9.]*\b
+      - patterns:
+          - pattern: urllib.request.urlretrieve($URL, $DST, ...)
+          - pattern-inside: |
+              ...
+              os.chmod($DST, ...)
+  - id: LB-C03-herunterladen-ausfuehren-js
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Lädt Code aus dem Netz und führt ihn aus.
+    pattern-either:
+      - pattern: eval(await (await fetch(...)).text())
+      - pattern: new Function(await (await fetch(...)).text())
+      - patterns:
+          - pattern-inside: |
+              $R = await fetch(...);
+              ...
+          - pattern-inside: |
+              $T = await $R.text();
+              ...
+          - pattern-either:
+              - pattern: eval($T)
+              - pattern: new Function(..., $T)
+      - patterns:
+          - pattern-either:
+              - pattern: child_process.exec("$CMD", ...)
+              - pattern: child_process.execSync("$CMD", ...)
+          - metavariable-regex:
+              metavariable: $CMD
+              regex: (?i).*?\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?(ba|z|da|k)?sh\b|\b(curl|wget)\b[^|;&]*\|\s*(node|python[0-9.]*)\b
+  - id: LB-C03-herunterladen-ausfuehren-sh
+    languages: [bash]
+    severity: ERROR
+    message: Lädt ein Skript aus dem Netz und führt es direkt aus.
+    pattern-either:
+      - pattern-regex: (?im)^(?!\s*#)[^\n]*?\b(curl|wget)\b[^\n|;&]*\|\s*(sudo\s+)?(ba|z|da|k)?sh\b
+      - pattern-regex: (?im)^(?!\s*#)[^\n]*?\b(curl|wget)\b[^\n|;&]*\|\s*(sudo\s+)?python[0-9.]*\b
+      - pattern-regex: (?im)^(?!\s*#)[^\n]*?\b(ba|z)?sh\s+(-c\s+)?["']?\$\(\s*(curl|wget)\b
+      - pattern-regex: (?im)^(?!\s*#)[^\n]*?\bsource\s+<\(\s*(curl|wget)\b

@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -68,6 +69,11 @@ def text_files(ctx: ScanContext) -> Iterator[TextFile]:
     for entry in ctx.inventory:
         if entry.kind in TEXT_KINDS and entry.size <= MAX_TEXT_BYTES:
             yield TextFile(entry, read_bytes(ctx, entry).decode("utf-8", errors="replace"))
+
+
+def masked(text: str, limit: int = MAX_BELEG_CHARS) -> str:
+    """``visible`` with anything that looks like a long token cut to 4 chars (CLAUDE.md rule 6)."""
+    return visible(re.sub(r"[A-Za-z0-9+/_\-]{20,}", lambda m: m.group()[:4] + "…", text), limit)
 
 
 def visible(text: str, limit: int = MAX_BELEG_CHARS) -> str:

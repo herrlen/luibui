@@ -64,6 +64,8 @@ _MAGIC: tuple[tuple[bytes, str], ...] = (
     (b"\xed\xab\xee\xdb", "rpm"),
     (b"GGUF", "gguf"),
     (b"\x89HDF\r\n\x1a\n", "hdf5"),
+    # macOS Finder stores extended attributes and resource forks next to the file as `._name`.
+    (b"\x00\x05\x16\x07", "appledouble"),
 )
 
 EXECUTABLE_KINDS = frozenset({"elf", "macho", "pe", "java-class", "wasm", "deb", "rpm"})

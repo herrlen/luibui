@@ -15,6 +15,7 @@ from luibui_scan.models import Finding, Pruefumfang, ScanArt
 ELF = b"\x7fELF\x02\x01\x01" + b"\x00" * 64
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 ZIP = b"PK\x03\x04" + b"\x00" * 32
+APPLEDOUBLE = b"\x00\x05\x16\x07\x00\x02\x00\x00Mac OS X        " + b"\x00" * 32
 
 
 def analyze(tmp_path: Path, files: dict[str, bytes | str], **options: Any) -> list[Finding]:
@@ -164,6 +165,32 @@ def test_a05_positive(tmp_path: Path, files: dict[str, bytes]) -> None:
 )
 def test_a05_negative(tmp_path: Path, files: dict[str, bytes | str]) -> None:
     assert "LB-A05-falsche-endung" not in rules(analyze(tmp_path, files))
+
+
+def test_a05_macos_metadata(tmp_path: Path) -> None:
+    files = {
+        "skill/SKILL.md": "# Skill",
+        "__MACOSX/skill/._SKILL.md": APPLEDOUBLE,
+        "skill/._notes.md": APPLEDOUBLE,
+    }
+    found = analyze(tmp_path, files)
+    assert "LB-A05-falsche-endung" not in rules(found)
+    assert "LB-A09-versteckte-dateien" not in rules(found)
+    f = by_rule(found, "LB-A09-macos-metadaten")
+    assert f.schwere.value == "I" and f.erklaerung.startswith("2 Dateien")
+
+
+@pytest.mark.parametrize(
+    "files",
+    [
+        {"__MACOSX/skill/._SKILL.md": ELF},  # right name, wrong content
+        {"skill/notes.md": APPLEDOUBLE},  # right content, wrong name
+    ],
+)
+def test_a05_macos_metadata_needs_name_and_header(tmp_path: Path, files: dict[str, bytes]) -> None:
+    found = rules(analyze(tmp_path, files))
+    assert "LB-A05-falsche-endung" in found
+    assert "LB-A09-macos-metadaten" not in found
 
 
 def test_a06(tmp_path: Path) -> None:

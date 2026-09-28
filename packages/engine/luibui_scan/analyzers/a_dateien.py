@@ -142,8 +142,9 @@ def _a04_to_a07(ctx: ScanContext) -> Iterator[Finding]:
                     normbezug=("OWASP-ASI04", "OWASP-LLM03"),
                 )
             )
-        mismatch = (ext in _TEXT_EXT and kind not in ("text", "script", "leer")) or (
-            ext in _BINARY_EXT and kind not in _BINARY_EXT[ext] and kind != "leer"
+        mismatch = not is_macos_metadata(entry) and (
+            (ext in _TEXT_EXT and kind not in ("text", "script", "leer"))
+            or (ext in _BINARY_EXT and kind not in _BINARY_EXT[ext] and kind != "leer")
         )
         if mismatch:
             disguised.append(
@@ -216,6 +217,15 @@ def _a06(entry: InventoryEntry, titel: str) -> Finding:
     )
 
 
+def is_macos_metadata(entry: InventoryEntry) -> bool:
+    """AppleDouble companion (`._name`, often under `__MACOSX/`) that macOS adds when zipping.
+
+    Both the name and the format header must match; any other content under such a name
+    keeps its normal checks.
+    """
+    return entry.kind == "appledouble" and entry.path.rsplit("/", 1)[-1].startswith("._")
+
+
 # --- A09 hidden files ----------------------------------------------------------------------
 
 _USUAL_DOT = frozenset(
@@ -237,6 +247,7 @@ _USUAL_DOT = frozenset(
         ".vscode",
         ".devcontainer",
         ".cursor",
+        ".codex",
         ".husky",
         ".changeset",
         ".mcp.json",
@@ -275,7 +286,11 @@ _USUAL_DOT = frozenset(
 def _a09(ctx: ScanContext) -> Iterator[Finding]:
     unusual: list[str] = []
     env_files: list[str] = []
+    macos: list[str] = []
     for entry in ctx.inventory:
+        if is_macos_metadata(entry):
+            macos.append(entry.path)
+            continue
         parts = entry.path.split("/")
         dot = next((p for p in parts if p.startswith(".")), None)
         if dot is None:
@@ -318,6 +333,31 @@ def _a09(ctx: ScanContext) -> Iterator[Finding]:
             beleg=visible(", ".join(unusual[:10])),
             fix="Prüfen, ob diese Dateien ins Paket gehören.",
             fix_prompt="Prüfe die versteckten Dateien und entferne, was nicht gebraucht wird.",
+            normbezug=(),
+        )
+    if macos:
+        yield finding(
+            rule_id="LB-A09-macos-metadaten",
+            ebene=Ebene.A,
+            schwere=Schwere.I,
+            titel="macOS-Begleitdateien im Paket",
+            erklaerung=(
+                f"{len(macos)} Dateien sind Begleitdateien, die macOS beim Packen eines ZIP "
+                "anlegt (`__MACOSX/`, `._name`). Sie enthalten Dateiattribute wie Herkunft "
+                "oder Etiketten, keinen ausführbaren Inhalt, und werden von KI-Clients nicht "
+                "geladen. Sie machen das Paket nur unübersichtlich."
+            ),
+            datei=macos[0],
+            zeile=None,
+            beleg=visible(", ".join(macos[:10])),
+            fix=(
+                "Das ZIP ohne Begleitdateien erstellen, z. B. im Terminal mit "
+                "`zip -r -X paket.zip ordner -x '*/.DS_Store' '__MACOSX/*' '*/._*'`."
+            ),
+            fix_prompt=(
+                "Erstelle das ZIP neu ohne __MACOSX/ und ._*-Dateien "
+                "(zip -r -X paket.zip ordner -x '__MACOSX/*' '*/._*')."
+            ),
             normbezug=(),
         )
 

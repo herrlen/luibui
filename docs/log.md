@@ -1051,3 +1051,20 @@ Prüfung ohne Guthaben, Kauf ohne echte Zugangsdaten scheitert mit Meldung.
 - **MalwareBazaar-Lizenz:** abuse.ch erlaubt die kostenlose Nutzung nur nicht-kommerziell. Vor dem
   Einschalten der Zahlungen klären, ob luibui dafür eine kommerzielle Lizenz braucht.
 - Bestehende Konten müssen ihre E-Mail einmal bestätigen (Knopf auf der Übersicht).
+
+## 2026-09-28 – macOS-Begleitdateien nicht mehr als getarnte Dateien (Rückmeldung Len)
+
+**Was:** Ein auf dem Mac gepacktes ZIP (`marketing-skill.zip`, 376 Dateien unter `__MACOSX/`)
+bekam 20× „Dateiendung passt nicht zum Inhalt“ (Hoch), Ampel Rot, Note 0. Die Dateien sind
+AppleDouble-Begleitdateien (`._name`, Kennung `00 05 16 07`), die der Finder beim Komprimieren
+anlegt: Dateiattribute, kein ausführbarer Inhalt, von keinem KI-Client geladen. Das Inventar
+erkennt den Typ jetzt als `appledouble`. Stimmen Name (`._…`) und Kennung, entfällt A05 und
+statt „Ungewöhnliche versteckte Dateien“ gibt es einen Hinweis `LB-A09-macos-metadaten` (I, kein
+Abzug) mit dem `zip`-Befehl ohne Begleitdateien. Passt nur eins von beiden (z. B. ELF unter
+`._SKILL.md`), bleibt A05 Hoch. `.codex/` (OpenAI Codex) gilt als bekannter versteckter Ordner.
+
+**Geprüft:** 817 Engine-Tests (3 neu), ruff, mypy. Das ZIP von Len: vorher Rot/0, jetzt Gelb/94.
+
+**Offen:** Übrig bleibt `ATR-2026-00443` (Word-Fragment Concatenation, M) auf einer SEO-Zeile
+„`/seo-tips` not `/seo_tips`“ in `url-design-guide.md` – sehr wahrscheinlich Fehlalarm der
+externen Regel, getrennt ansehen.

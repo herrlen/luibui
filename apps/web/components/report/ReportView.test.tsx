@@ -5,6 +5,7 @@ import { beispielbericht } from "@/content/beispiel";
 import { berichtAlsCsv, zelle } from "@/lib/csv";
 import type { Befund, Bericht } from "@/lib/types";
 
+import { MitCode } from "./BefundKarte";
 import { ReportView } from "./ReportView";
 
 const DSGVO_BEFUND: Befund = {
@@ -70,5 +71,16 @@ describe("CSV", () => {
     expect(csv.startsWith("﻿")).toBe(true);
     expect(csv.trim().split("\r\n")).toHaveLength(1 + 5);
     expect(csv).not.toContain("dsgvo");
+  });
+});
+
+describe("MitCode", () => {
+  it("shows backtick names in code type and still escapes everything", () => {
+    const html = renderToStaticMarkup(<MitCode text={"Die Datei heißt `.md`, ist aber `<b>x</b>`."} />);
+    expect(html).toBe(
+      'Die Datei heißt <code class="rounded bg-grund px-1 font-mono text-[0.9em]">.md</code>, ist aber ' +
+        '<code class="rounded bg-grund px-1 font-mono text-[0.9em]">&lt;b&gt;x&lt;/b&gt;</code>.',
+    );
+    expect(renderToStaticMarkup(<MitCode text="ein ` einzelnes" />)).toBe("ein ` einzelnes");
   });
 });

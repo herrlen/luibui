@@ -1100,3 +1100,11 @@ Schnellscan-Seite zeigt die Links nicht, dort gibt es diese Routen nicht.
 **Offen:** Teilen eines Berichts per Link mit Zufalls-Token (zweiter Teil von S2-12, braucht eine
 Tabelle und eine öffentliche Route, eigener Commit). SARIF-Import in GitHub Code Scanning (DoD
 Sprint 2) von Hand prüfen, sobald ausgerollt; Actions laufen im privaten Repo derzeit nicht.
+## 2026-09-28 – Befundkarte: Namen in Backticks als Code-Schrift
+
+**Was:** Die Engine-Texte markieren Dateinamen und Befehle mit Backticks (`.md`, `__MACOSX/`). Die
+Befundkarte zeigte sie wörtlich. Jetzt erscheint Text zwischen Backticks in Code-Schrift, in
+Erklärung und Behebung. Weiter nur React-Text, kein Markdown, kein HTML; ein Test prüft, dass `<b>`
+im Code-Teil escaped bleibt und ein einzelner Backtick unverändert stehen bleibt.
+
+**Geprüft:** Web 14 Tests, eslint, tsc.

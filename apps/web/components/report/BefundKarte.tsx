@@ -21,6 +21,23 @@ export function ort(b: Befund): string {
   return b.datei ? `${b.datei}${b.zeile ? `:${b.zeile}` : ""}` : "ganzes Paket";
 }
 
+/** Engine texts mark names with backticks. Shown in code type, still as plain text. */
+export function MitCode({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/`([^`\n]+)`/).map((teil, i) =>
+        i % 2 ? (
+          <code key={i} className="rounded bg-grund px-1 font-mono text-[0.9em]">
+            {teil}
+          </code>
+        ) : (
+          teil
+        ),
+      )}
+    </>
+  );
+}
+
 export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }) {
   const [auf, setAuf] = useState(offen);
   const id = useId();
@@ -48,7 +65,9 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
         <p className="font-mono text-xs text-muted">
           {b.rule_id} · {b.achse === "dsgvo" ? "DSGVO" : "Sicherheit"}
         </p>
-        <p className="mt-3 text-[15px] leading-[1.6] text-ink-2">{b.erklaerung}</p>
+        <p className="mt-3 text-[15px] leading-[1.6] text-ink-2">
+          <MitCode text={b.erklaerung} />
+        </p>
         {b.beleg ? (
           <figure className="mt-3">
             <figcaption className="text-xs text-muted">Beleg aus {ort(b)}</figcaption>
@@ -59,7 +78,7 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
         ) : null}
         <p className="mt-3 text-sm">
           <span className="font-semibold">So behebst du es: </span>
-          {b.fix}
+          <MitCode text={b.fix} />
         </p>
         {b.fix_prompt ? (
           <div className="mt-3 flex flex-col gap-2">

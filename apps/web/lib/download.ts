@@ -11,8 +11,10 @@ import type { ScanStatus } from "./types";
 export async function berichtDownload(id: string, format: Format): Promise<Response> {
   const scan = await apiGet<ScanStatus>(`/api/v1/scans/${encodeURIComponent(id)}`);
   if (!scan.ok || !scan.data.bericht) {
-    const status = !scan.ok && scan.status === 401 ? 401 : 404;
-    return new Response(status === 401 ? "Nicht angemeldet" : "Nicht gefunden", {
+    const status = !scan.ok && (scan.status === 401 || scan.status === 503) ? scan.status : 404;
+    const text =
+      status === 401 ? "Nicht angemeldet" : status === 503 ? "Der Dienst antwortet gerade nicht." : "Nicht gefunden";
+    return new Response(text, {
       status,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });

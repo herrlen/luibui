@@ -1074,3 +1074,29 @@ schlägt im gutartigen Korpus an (vor dem Entfernen rot, danach grün). Das ZIP 
 Ampel Gelb nur wegen „Prüfung unvollständig“ (C, E, G noch nicht eingebaut).
 
 **Geprüft:** 819 Engine-Tests, ruff, mypy.
+
+**Ausrollen:** noch nicht. Aus der Cloud-Sitzung fehlt das Schreibrecht auf ghcr.io; Len rollt am
+Mac mit `scripts/release.sh` aus.
+
+## 2026-09-28 – S2-12: Bericht als CSV, JSON und SARIF herunterladen
+
+**Was:** Unter jedem fertigen Bericht auf app.luibui.com stehen drei Downloads:
+`/pruefungen/<id>/bericht.csv`, `.json` und `.sarif`. Die Route holt den Bericht über
+`GET /api/v1/scans/<id>` mit dem Sitzungs-Cookie, die Eigentümerprüfung bleibt also allein in der
+API: fremde, unbekannte oder noch laufende Prüfungen geben 404, ohne Anmeldung 401, API nicht
+erreichbar 503. CSV nutzt den
+vorhandenen Baustein (`lib/csv.ts`: BOM, Semikolon, Formel-Schutz). SARIF 2.1.0 (`lib/sarif.ts`):
+eine Regel pro `rule_id`, K/H → `error`, M → `warning`, N/I → `note`, `security-severity` für
+GitHub, relative URIs, Zeile nur wenn bekannt, nur `message.text` (nie Markdown), Beleg und
+Fix-Prompt als Eigenschaften. Schnellscans tragen „ohne Gewähr“ in jedem Format (CSV-Spalte
+`scan_art`, JSON und SARIF als erster Hinweis). Dateiname aus Paketname und Datum, nur sichere
+Zeichen; `Content-Disposition: attachment`, `nosniff`, `no-store`. Die öffentliche
+Schnellscan-Seite zeigt die Links nicht, dort gibt es diese Routen nicht.
+
+**Geprüft:** 19 Web-Tests (6 neu: SARIF-Aufbau, Schwere → Level, relative URIs ohne Markdown,
+„ohne Gewähr“ in allen drei Formaten, nicht beim Intensivscan, sichere Dateinamen), ESLint, `tsc`,
+`next build` (die drei Routen erscheinen als dynamische Routen).
+
+**Offen:** Teilen eines Berichts per Link mit Zufalls-Token (zweiter Teil von S2-12, braucht eine
+Tabelle und eine öffentliche Route, eigener Commit). SARIF-Import in GitHub Code Scanning (DoD
+Sprint 2) von Hand prüfen, sobald ausgerollt; Actions laufen im privaten Repo derzeit nicht.

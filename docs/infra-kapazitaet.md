@@ -247,3 +247,7 @@ Fenster mit Fehlern; Ursache vermutlich ein zwischengespeicherter DNS-Eintrag f�
 Gemessen mit gezieltem API-Neustart und einer Anfrage pro Sekunde über die Weboberfläche:
 100 von 100 erfolgreich (vorher: 1 × 500, 3 × hängend bis zur Linux-Frist von rund 127 s).
 Anfragen im Fenster warten jetzt höchstens rund 21 s. Logs ohne Fehler. cgroup: api 157 MiB (Spitze 187); worker 93 MiB (Spitze 368); web 101 MiB (Spitze 102).
+
+## Nach Deploy `adb0704` (29.09.2026, Datenexport als Datenstrom)
+
+Logs ohne Fehler. cgroup: api 80 MiB (Spitze 126); worker 50 MiB (Spitze 50); web 121 MiB (Spitze 134).

@@ -233,4 +233,4 @@ Logs ohne Fehler. cgroup nach Selbsttest: api 78 MiB (Spitze 130); worker 455 Mi
 
 ## Nach Deploy `e04d68f` (29.09.2026, DoD Sprint 2, Maskierung)
 
-Logs ohne Fehler. cgroup: api 0 MiB (Spitze 0); worker 45 MiB (Spitze 45); web 43 MiB (Spitze 44).
+Logs ohne Fehler. cgroup: api 86 MiB (Spitze 133; erste Messung lief während des Neustarts); worker 45 MiB (Spitze 45); web 43 MiB (Spitze 44).

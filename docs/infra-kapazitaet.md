@@ -267,3 +267,8 @@ cgroup: api 89 MiB (Spitze 135); worker 45 MiB (Spitze 45); web 130 MiB (Spitze 
 Live: Schnellscan mit 2,2 MB und 20 MB → 413 statt 500; Übersicht ohne Anmeldung → Weiterleitung
 zur Anmeldung, `offene-befunde` → 401. Logs ohne Fehler.
 cgroup nach `d528216`: api 88 MiB (Spitze 133); worker 45 MiB (Spitze 45); web 70 MiB (Spitze 71).
+
+## Nach Deploy `3570512` (29.09.2026, Quelle beim Anlegen, Versionsliste)
+
+Health ok, `versions` ohne Anmeldung → 401, Logs ohne Fehler.
+cgroup: api 88 MiB (Spitze 131); worker 48 MiB (Spitze 48); web 161 MiB (Spitze 169).

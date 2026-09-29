@@ -1,5 +1,6 @@
-"""Registration, login, logout, the current user and two-factor login (S2-6)."""
+"""Registration, login, logout, password reset, the current user and two-factor login (S2-6)."""
 
+import contextlib
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -8,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from luibui_api import guthaben, mail
@@ -22,7 +23,7 @@ from luibui_api.auth import (
     start_session,
 )
 from luibui_api.errors import fehler
-from luibui_api.models import EmailToken, User
+from luibui_api.models import EmailToken, User, UserSession
 from luibui_api.ratelimit import RateLimiter
 from luibui_api.security import (
     PASSWORD_MAX,
@@ -104,6 +105,7 @@ def _bestaetigung_senden(db: DbSession, user: User) -> bool:
         EmailToken(
             owner_id=user.id,
             secret_hash=sha256_hex(secret),
+            zweck="bestaetigung",
             expires_at=datetime.now(UTC) + timedelta(hours=BESTAETIGUNG_STUNDEN),
         )
     )
@@ -133,7 +135,9 @@ def bestaetigen(body: Bestaetigung, db: DbSession) -> dict[str, bool]:
     """Works without a session: the link may be opened on another device."""
     now = datetime.now(UTC)
     token = db.scalar(
-        select(EmailToken).where(EmailToken.secret_hash == sha256_hex(body.token)).with_for_update()
+        select(EmailToken)
+        .where(EmailToken.secret_hash == sha256_hex(body.token), EmailToken.zweck == "bestaetigung")
+        .with_for_update()
     )
     if token is None or token.used_at is not None or token.expires_at < now:
         raise fehler(
@@ -174,6 +178,91 @@ def bestaetigung_senden(caller: CurrentCaller, db: DbSession) -> dict[str, bool]
             "Die Mail konnte gerade nicht verschickt werden. Bitte später erneut.",
         )
     return {"gesendet": True}
+
+
+# --- password reset ----------------------------------------------------------------------------
+
+RESET_MINUTEN = 60
+
+
+@lru_cache
+def reset_limiter() -> RateLimiter:
+    return RateLimiter(3, 3600)
+
+
+class PasswortVergessen(BaseModel):
+    email: str = Field(max_length=320)
+
+
+class PasswortNeu(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    passwort: Passwort
+
+
+@router.post("/passwort-vergessen", status_code=status.HTTP_202_ACCEPTED)
+def passwort_vergessen(body: PasswortVergessen, request: Request, db: DbSession) -> dict[str, str]:
+    """Always the same answer, whether the account exists or not (no address probing)."""
+    antwort = {"hinweis": "Falls es ein Konto mit dieser Adresse gibt, ist eine Mail unterwegs."}
+    email = body.email.strip().lower()
+    client = request.client.host if request.client else "unbekannt"
+    limiter = reset_limiter()
+    keys = (f"email:{email}", f"ip:{client}")
+    if limiter.blocked(*keys):
+        return antwort
+    limiter.hit(*keys)
+    user = db.scalar(select(User).where(func.lower(User.email) == email))
+    if user is None:
+        return antwort
+    secret = new_secret()
+    db.add(
+        EmailToken(
+            owner_id=user.id,
+            secret_hash=sha256_hex(secret),
+            zweck="passwort",
+            expires_at=datetime.now(UTC) + timedelta(minutes=RESET_MINUTEN),
+        )
+    )
+    audit(db, user.id, "konto.passwort_link_angefordert", "user", user.id)
+    db.commit()
+    link = f"{get_settings().app_origin}/passwort-neu?token={secret}"
+    # Same answer when the mail fails; the user can ask again.
+    with contextlib.suppress(mail.MailError):
+        mail.senden(
+            user.email,
+            "luibui: Neues Passwort festlegen",
+            "Hallo,\n\nfür dein luibui-Konto wurde ein neues Passwort angefordert. Mit diesem Link "
+            f"legst du es fest:\n\n{link}\n\nDer Link gilt {RESET_MINUTEN} Minuten und nur "
+            "einmal. Danach bist du auf allen Geräten abgemeldet.\n\nHast du das nicht "
+            "angefordert, ignoriere diese Mail; dein Passwort bleibt unverändert.\n\n"
+            "-- \nluibui · luibui.com · Diese Mail wurde automatisch verschickt.\n",
+        )
+    return antwort
+
+
+@router.post("/passwort-neu")
+def passwort_neu(body: PasswortNeu, db: DbSession) -> dict[str, bool]:
+    """Sets the new password and ends every session. Two-factor login stays on."""
+    now = datetime.now(UTC)
+    token = db.scalar(
+        select(EmailToken)
+        .where(EmailToken.secret_hash == sha256_hex(body.token), EmailToken.zweck == "passwort")
+        .with_for_update()
+    )
+    if token is None or token.used_at is not None or token.expires_at < now:
+        raise fehler(
+            status.HTTP_400_BAD_REQUEST,
+            "link_ungueltig",
+            "Der Link ist abgelaufen oder wurde schon benutzt. Fordere einen neuen an.",
+        )
+    token.used_at = now
+    user = db.get(User, token.owner_id)
+    if user is None:
+        raise fehler(status.HTTP_400_BAD_REQUEST, "link_ungueltig", "Der Link ist ungültig.")
+    user.password_hash = hash_password(body.passwort)
+    db.execute(delete(UserSession).where(UserSession.owner_id == user.id))
+    audit(db, user.id, "konto.passwort_geaendert", "user", user.id)
+    db.commit()
+    return {"geaendert": True}
 
 
 @router.post("/registrieren", status_code=status.HTTP_201_CREATED, dependencies=[AnnahmeOffen])

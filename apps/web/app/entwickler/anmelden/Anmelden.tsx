@@ -37,6 +37,11 @@ export function Anmelden() {
       <Meldung text={fehler} />
       <Knopf disabled={laeuft}>Anmelden</Knopf>
       <p className="text-sm">
+        <Link href="/passwort-vergessen" className="text-petrol underline">
+          Passwort vergessen?
+        </Link>
+      </p>
+      <p className="text-sm">
         Noch kein Konto? <Link href="/registrieren" className="text-petrol underline">Kostenlos registrieren</Link>
       </p>
     </form>

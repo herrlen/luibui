@@ -384,16 +384,20 @@ class AuditLog(Base):
 
 
 class EmailToken(Base):
-    """One-time link to confirm the e-mail address. Only the SHA-256 hash is stored."""
+    """One-time link by e-mail: confirm the address or reset the password. Only the SHA-256 hash
+    is stored, and a link only works for its own ``zweck``."""
 
     __tablename__ = "email_tokens"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     owner_id: Mapped[uuid.UUID] = _owner()
     secret_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    zweck: Mapped[str] = mapped_column(String(20), server_default="bestaetigung")
     expires_at: Mapped[datetime]
     used_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = _created()
+
+    __table_args__ = (CheckConstraint("zweck IN ('bestaetigung', 'passwort')", name="zweck"),)
 
 
 ZAHLUNG_STATUS = _enum("zahlung_status", "angelegt", "bezahlt", "abgebrochen")

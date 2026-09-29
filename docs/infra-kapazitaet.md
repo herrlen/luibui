@@ -251,3 +251,7 @@ Anfragen im Fenster warten jetzt höchstens rund 21 s. Logs ohne Fehler. cgroup:
 ## Nach Deploy `adb0704` (29.09.2026, Datenexport als Datenstrom)
 
 Logs ohne Fehler. cgroup: api 80 MiB (Spitze 126); worker 50 MiB (Spitze 50); web 121 MiB (Spitze 134).
+
+## Nach Deploy `cdc6ad9` (29.09.2026, Bericht per Link teilen)
+
+Logs ohne Fehler. cgroup: api 88 MiB (Spitze 132); worker 46 MiB (Spitze 46); web 122 MiB (Spitze 122).

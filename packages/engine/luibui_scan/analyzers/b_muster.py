@@ -6,7 +6,10 @@ text, YAML, JSON, TOML. Code is layer C. A match inside inline code, a code bloc
 treated as a quoted example and lowered to M, so documentation about attacks is not locked.
 """
 
+import ast
+import io
 import re
+import tokenize
 from pathlib import PurePosixPath
 
 from luibui_scan.analyzers._common import TextFile, finding, rules_dir, text_files, visible
@@ -137,6 +140,83 @@ def _finding(rule: TextRule, f: TextFile, start: int, end: int) -> Finding:
     )
 
 
+# --- instructions in comments and docstrings of code ------------------------------------------
+
+_SLASH = frozenset(
+    {".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".go", ".rs",
+     ".java", ".kt", ".cs", ".php", ".c", ".h", ".cpp", ".swift", ".scala"}
+)  # fmt: skip
+_HASH = frozenset({".sh", ".bash", ".zsh", ".rb", ".ps1", ".psm1", ".pl", ".r"})
+_BATCH = frozenset({".bat", ".cmd"})
+_SLASH_COMMENT = re.compile(r"/\*.*?\*/|(?<![:\"'`\\\w])//[^\n]*", re.DOTALL)
+_HASH_COMMENT = re.compile(r"<#.*?#>|(?:^|(?<=\s))#(?!!)[^\n]*", re.DOTALL | re.MULTILINE)
+_BATCH_COMMENT = re.compile(r"(?im)^\s*(?:rem\b|::)[^\n]*")
+
+
+def _python_comments(f: TextFile) -> list[tuple[int, str]]:
+    """Comments (``tokenize``) and docstrings (``ast``); neither runs the code."""
+    lines = f.text.split("\n")
+    starts = [0]
+    for line in lines[:-1]:
+        starts.append(starts[-1] + len(line) + 1)
+    out: list[tuple[int, str]] = []
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(f.text).readline):
+            if tok.type == tokenize.COMMENT:
+                out.append((starts[tok.start[0] - 1] + tok.start[1], tok.string))
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        pass
+    try:
+        tree = ast.parse(f.text)
+    except (SyntaxError, ValueError, RecursionError, MemoryError):
+        return out
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+                value = body[0].value
+                if isinstance(value.value, str) and value.lineno <= len(starts):
+                    out.append((starts[value.lineno - 1] + value.col_offset, value.value))
+    return out
+
+
+def _comments(f: TextFile) -> list[tuple[int, str]]:
+    """Text a coding agent reads in the source but that is not code: (offset, text)."""
+    suffix = PurePosixPath(f.path.lower()).suffix
+    if suffix in (".py", ".pyw"):
+        return _python_comments(f)
+    pattern = (
+        _SLASH_COMMENT if suffix in _SLASH else _HASH_COMMENT if suffix in _HASH
+        else _BATCH_COMMENT if suffix in _BATCH else None
+    )  # fmt: skip
+    if pattern is None and f.entry.kind == "script":
+        pattern = _HASH_COMMENT  # shebang scripts without extension
+    return [(m.start(), m.group()) for m in pattern.finditer(f.text)] if pattern else []
+
+
+_KOMMENTAR_SCHWERE = frozenset({Schwere.K, Schwere.H})
+"""Only injection-type rules apply to comments. Softer ones (B15 autonomy: "loop forever",
+"never stop") describe ordinary program logic; calibrated on about 800 real code files."""
+
+
+def _comment_finding(rule: TextRule, f: TextFile, offset: int, text: str) -> Finding | None:
+    if rule.schwere not in _KOMMENTAR_SCHWERE:
+        return None
+    span = _search(rule, text)
+    if span is None:
+        return None
+    base = _finding(rule, f, offset + span[0], offset + span[1])
+    return base.model_copy(
+        update={
+            "titel": f"{base.titel} (in einem Code-Kommentar)"[:200],
+            "erklaerung": (
+                base.erklaerung + " Die Stelle steht in einem Kommentar oder Docstring. Ein "
+                "Coding-Agent, der die Datei liest, bekommt sie wie jede andere Anweisung."
+            )[:4000],
+        }
+    )
+
+
 @register
 class MusterAnalyzer:
     info = AnalyzerInfo(name="b_muster", titel="B – Anweisungsmuster", ebenen=frozenset({Ebene.B}))
@@ -149,11 +229,16 @@ class MusterAnalyzer:
         for f in text_files(ctx):
             hidden = _hidden(f)
             visible_text = _is_instruction_text(f)
+            comments = [] if visible_text else _comments(f)
             for rule in rules:
                 if visible_text:
                     span = _search(rule, f.text)  # RuleTimeoutError fails the analyzer
                     if span is not None:
                         findings.append(_finding(rule, f, *span))
+                for offset, text in comments:
+                    if found := _comment_finding(rule, f, offset, text):
+                        findings.append(found)
+                        break  # one finding per rule and file
                 for offset, art, text in hidden:
                     if _search(rule, text) is not None:
                         findings.append(_hidden_finding(rule, f, offset, art, text))

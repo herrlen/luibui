@@ -1515,3 +1515,33 @@ API-Route gab es schon, die Oberfläche fehlte).
 **Geprüft:** lokal mit API, Vorschau-Datenbank und echten Engine-Berichten angesehen (Übersicht,
 Projekt, Bericht, Handybreite 390 px); 2 neue Web-Tests (Breadcrumb verlinkt und escaped),
 31 Web-Tests, Lint, Build.
+
+## 2026-09-29 – S3-11 (vorgezogen): Prüfbericht als PDF, Standard und Detail
+
+**Was (Wunsch von Len):** Neben CSV, JSON und SARIF gibt es im Bericht „PDF“ und „PDF mit Details“.
+`GET /api/v1/scans/{id}/bericht.pdf?umfang=standard|detail` (Eigentümer-Prüfung wie überall,
+fremde Prüfung 404, unfertige 409). Standard: Deckblatt mit Gesamt-, Sicherheits- und DSGVO-Ampel
+(Wort und Farbe), Note, Freigabe, Umfang, Scan-Art, Datum, Hinweisen, dazu eine Zeile pro Befund.
+Detail: jeder Befund aufgeklappt wie im Web (Erklärung, Beleg, Fix, Fix-Prompt, Bezug), dazu
+„Was geprüft wurde“. Auf jeder Seite Kopf und Haftungsausschluss, beim Schnellscan „ohne Gewähr“
+im Kopf jeder Seite.
+
+**Entscheidung (Len):** ReportLab 5.0.1 (BSD) statt WeasyPrint: klein, wenig RAM, keine
+Systembibliotheken. Neue Abhängigkeiten: reportlab, pillow (HPND), charset-normalizer (MIT).
+Schriften IBM Plex Sans/Mono als TTF aus dem offiziellen IBM-Release (OFL 1.1, `OFL.txt` liegt
+bei) in `apps/api/luibui_api/pdf_schriften/`; nichts wird zur Laufzeit geladen.
+
+**Sicherheit:** Jeder Text aus dem Bericht wird für die Absatz-Auszeichnung von ReportLab
+escaped. Unsichtbare Zeichen (Steuerzeichen, Nullbreite, Richtungswechsel) und Zeichen ohne
+Glyphe erscheinen als `[U+XXXX]`, damit ein Beleg im PDF nichts verstecken kann. Geprüft mit
+`<script>`, `</para>`, `<font>`, `&amp;`, U+200B, U+202E, BEL.
+
+**Abweichung von ENTWICKLERREGELN („PDF als Job“):** synchron im Thread-Pool. Gemessen: normaler
+Bericht 0,05 s, 510 Befunde im Detail 6 s, weit unter der 30-s-Frist der Weiterleitung. Wird es
+bei großen Berichten knapp, auf einen Job umstellen.
+
+**Geprüft:** 5 API-Tests (Escaping, sichtbare Sonderzeichen, feindliche Berichte in beiden Formen,
+Dateiname, Download und Fehlerfälle, Nutzer B bekommt 404, ohne Anmeldung 401), Isolationstest
+deckt die Route ab; PDFs und Knöpfe lokal angesehen.
+
+**Offen:** PDF (und CSV) auf der öffentlichen Schnellscan-Ergebnisseite.

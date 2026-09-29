@@ -5,11 +5,20 @@ import { Aktualisieren } from "./Aktualisieren";
 import { Teilen } from "./app/Teilen";
 import { ReportView } from "./report/ReportView";
 
+/** PDFs come straight from the API (same host, the session cookie goes along); the rest is built here. */
 const DOWNLOADS = [
+  { pfad: "pdf", text: "PDF", titel: "Ergebnis und Liste der Befunde" },
+  { pfad: "pdf-detail", text: "PDF mit Details", titel: "Jeder Befund aufgeklappt: Erklärung, Beleg, Fix und Fix-Prompt" },
   { format: "csv", text: "CSV", titel: "Eine Zeile pro Befund, für Excel und LibreOffice" },
   { format: "json", text: "JSON", titel: "Der vollständige Bericht, maschinenlesbar" },
   { format: "sarif", text: "SARIF", titel: "Für GitHub Code Scanning und andere SARIF-Werkzeuge" },
 ] as const;
+
+function downloadUrl(scanId: string, d: (typeof DOWNLOADS)[number]): string {
+  const id = encodeURIComponent(scanId);
+  if ("format" in d) return `/pruefungen/${id}/bericht.${d.format}`;
+  return `/api/v1/scans/${id}/bericht.pdf${d.pfad === "pdf-detail" ? "?umfang=detail" : ""}`;
+}
 
 /** `downloads`: only in the developer area, where /pruefungen/<id>/bericht.* exists. */
 export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloads?: boolean }) {
@@ -43,8 +52,8 @@ export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloa
               <span className="text-sm text-muted">Herunterladen:</span>
               {DOWNLOADS.map((d) => (
                 <a
-                  key={d.format}
-                  href={`/pruefungen/${encodeURIComponent(scan.id)}/bericht.${d.format}`}
+                  key={d.text}
+                  href={downloadUrl(scan.id, d)}
                   download
                   title={d.titel}
                   className="inline-flex h-10 items-center rounded-[10px] border border-linie-stark bg-surface px-4 text-[15px] font-medium text-ink hover:border-petrol"

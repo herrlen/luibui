@@ -183,7 +183,7 @@
 | S3-7 | **Befund-Status** im Entwicklerbereich: offen, behoben (automatisch, wenn in neuer Version weg), akzeptiert (mit Begründung), bestritten (Einspruch); Moderationsansicht für Einsprüche | Claude | 5 |
 | S3-8 | Rechtstexte einbauen: Impressum, Datenschutz, Nutzungsbedingungen mit Haftungsausschluss, Disclosure-Richtlinie; DSA-Meldeformular | Claude (Texte: Anwalt) | 3 |
 | S3-9 | luibui.com fertigstellen: Marketingseite (Nutzen, Ablauf, Ampel erklärt, Beispielbericht, „Kostenlos registrieren“), „So prüfen wir“, Doku-Einstieg (kein öffentlicher vollständiger Prüfkatalog, Entscheidung Len 27.09.2026), Transparenz- und Spendenseite, SEO-Grundlagen | Claude | 5 |
-| S3-11 | **PDF-Bericht** für Schnell- und Intensivscan: Deckblatt (Ampeln, Note, Umfang, Scan-Art, Datum), Befunde mit Beleg und Fix, Haftungsausschluss auf jeder Seite, beim Schnellscan „ohne Gewähr“ im Kopf; serverseitig erzeugt ohne Nachladen externer Ressourcen | Claude | 4 |
+| S3-11 | ◐ **(vorgezogen 29.09.2026)** **PDF-Bericht** für Schnell- und Intensivscan: Deckblatt (Ampeln, Note, Umfang, Scan-Art, Datum), Befunde mit Beleg und Fix, Haftungsausschluss auf jeder Seite, beim Schnellscan „ohne Gewähr“ im Kopf; serverseitig erzeugt ohne Nachladen externer Ressourcen. Erledigt im Entwicklerbereich als Standard und Detail (Len, 29.09.). Offen: PDF auf der Schnellscan-Ergebnisseite. | Claude | 4 |
 | S3-12 | Modelle, Teil 2 (Matrix MOD-04): GGUF-Header und eingebettetes `chat_template` (A16/A18) | Claude | 2 |
 | S3-13 | Personenbezogene Daten, Teil 2 (Matrix DAT-01, COD-02): Presidio nach RAM-Messung, Notebook-Ausgaben | Claude | 3 |
 | S3-10 | Produktion: Limits, Backups, verschlüsselter pg_dump, Restore-Test, Health-Cronjob mit Mail-Alarm | Claude | 4 |

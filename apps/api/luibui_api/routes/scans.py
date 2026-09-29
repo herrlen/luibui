@@ -2,9 +2,9 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
@@ -14,6 +14,7 @@ from luibui_api import guthaben
 from luibui_api.audit import audit
 from luibui_api.auth import AnnahmeOffen, CurrentCaller, DbSession, get_owned
 from luibui_api.models import CreditEntry, Project, Scan
+from luibui_api.pdf import bericht_als_pdf, dateiname
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, ablesen, create_scan
 from luibui_scan.intake import DEFAULT_LIMITS
@@ -170,6 +171,38 @@ async def scan_starten(
 @router.get("/api/v1/scans/{scan_id}")
 def scan_status(scan_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> ScanStatus:
     return scan_status_of(get_owned(db, Scan, scan_id, caller))
+
+
+@router.get(
+    "/api/v1/scans/{scan_id}/bericht.pdf",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def bericht_pdf(
+    scan_id: uuid.UUID,
+    caller: CurrentCaller,
+    db: DbSession,
+    umfang: Literal["standard", "detail"] = "standard",
+) -> Response:
+    """The finished report as PDF (S3-11). ``detail`` opens every finding up: explanation,
+    evidence, fix and fix prompt. Built in a worker thread: a few hundred findings take seconds."""
+    scan = get_owned(db, Scan, scan_id, caller)
+    if scan.report is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {"code": "nicht_fertig", "text": "Die Prüfung ist noch nicht fertig."},
+        )
+    report = scan.report
+    pdf = await run_in_threadpool(bericht_als_pdf, report, umfang)
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{dateiname(report, umfang)}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 # --- Single checks from the overview (no project, nothing stored) -----------------------------

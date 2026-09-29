@@ -59,3 +59,8 @@ warn_unreachable = true
 plugins = ["pydantic.mypy"]
 # Test dirs share module names (conftest.py); product code is checked strictly.
 exclude = ["/tests/"]
+
+[[tool.mypy.overrides]]
+# ReportLab ships no type hints (PDF report, apps/api/luibui_api/pdf.py).
+module = ["reportlab.*"]
+ignore_missing_imports = true

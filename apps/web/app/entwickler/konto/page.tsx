@@ -8,6 +8,7 @@ import { datumZeit } from "@/lib/format";
 import type { Guthaben, Ich } from "@/lib/types";
 
 import { Abmelden } from "./Abmelden";
+import { DatenExport, KontoLoeschen } from "./DatenUndLoeschen";
 import { type TokenInfo, Tokens } from "./Tokens";
 
 export const metadata = { title: "Konto – luibui" };
@@ -60,6 +61,26 @@ export default async function Konto() {
         </section>
       ) : null}
       <Tokens tokens={tokens.ok ? tokens.data : []} />
+      <section aria-labelledby="export" className="flex flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6">
+        <h2 id="export" className="font-display text-xl font-bold">
+          Deine Daten
+        </h2>
+        <p className="text-sm text-muted">
+          Ein ZIP mit allem, was luibui zu deinem Konto speichert: Kontodaten, Tokens (ohne Schlüssel), Guthaben, Käufe,
+          Protokoll, Projekte mit allen Berichten und die gespeicherten Dateien.
+        </p>
+        <DatenExport totp={ich.data.totp_aktiv} />
+      </section>
+      <section aria-labelledby="loeschen" className="flex flex-col gap-3 rounded-[14px] border border-rot bg-surface p-6">
+        <h2 id="loeschen" className="font-display text-xl font-bold">
+          Konto löschen
+        </h2>
+        <p className="text-sm text-muted">
+          Löscht dein Konto mit allen Projekten, Dateien, Berichten und Tokens sofort und endgültig. Kaufbelege bewahren
+          wir zehn Jahre auf, wie das Steuerrecht es verlangt (§ 147 AO), dann ohne Verbindung zu einem Konto.
+        </p>
+        <KontoLoeschen totp={ich.data.totp_aktiv} />
+      </section>
       <div>
         <Abmelden />
       </div>

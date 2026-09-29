@@ -87,8 +87,8 @@ export function Datenschutz() {
         <h2>5. Konto im Entwicklerbereich</h2>
         <p>
           Mit der Registrierung entsteht ein Konto. Grundlage ist die Erfüllung des Nutzungsverhältnisses (Art. 6 Abs.
-          1 lit. b DSGVO), soweit unten nichts anderes steht. Wir verschicken nur die Mail mit dem Bestätigungslink,
-          keine Werbung und keine Newsletter.
+          1 lit. b DSGVO), soweit unten nichts anderes steht. Wir verschicken nur die Mails mit dem Bestätigungslink
+          und, wenn du es anforderst, mit dem Link für ein neues Passwort, keine Werbung und keine Newsletter.
         </p>
         <Zeilen
           zeilen={[
@@ -96,6 +96,10 @@ export function Datenschutz() {
             [
               "Bestätigungslink",
               "Nach der Registrierung schicken wir einen Link an deine E-Mail-Adresse. Gespeichert wird nur ein Prüfwert (SHA-256) des Links; er gilt 24 Stunden und nur einmal. Erneut anfordern kannst du ihn höchstens dreimal pro Stunde.",
+            ],
+            [
+              "Link für ein neues Passwort",
+              "Nur auf deine Anforderung. Gespeichert wird nur ein Prüfwert (SHA-256) des Links; er gilt eine Stunde und nur einmal, höchstens drei Anforderungen pro Stunde. Ob es zu einer Adresse ein Konto gibt, verrät die Antwort nicht.",
             ],
             [
               "Guthaben",
@@ -180,9 +184,10 @@ export function Datenschutz() {
         <h2>7. Wie lange wir speichern</h2>
         <Zeilen
           zeilen={[
-            ["Konto", "Bis du es löschen lässt."],
+            ["Konto", "Bis du es löschst (Konto → Konto löschen)."],
             ["Zahlungsbelege", "10 Jahre (§ 147 AO, § 257 HGB), auch nach Löschung des Kontos."],
             ["Bestätigungslink", "24 Stunden gültig, der Prüfwert wird mit dem Konto gelöscht."],
+            ["Link für ein neues Passwort", "Eine Stunde gültig, der Prüfwert wird mit dem Konto gelöscht."],
             ["Projekte, Dateien, Berichte", "Bis du das Projekt löschst; höchstens die letzten 10 Versionen."],
             ["Bericht einer Einzelprüfung", "Bis du ihn löschst. Die geprüften Dateien werden nicht gespeichert."],
             ["Bericht eines Schnellscans", "7 Tage."],
@@ -273,9 +278,9 @@ export function Datenschutz() {
           <li>Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21)</li>
         </ul>
         <p>
-          Projekte, Dateien, Berichte und API-Tokens kannst du im Entwicklerbereich selbst löschen. Für Auskunft,
-          Datenexport und das Löschen deines Kontos genügt eine formlose E-Mail an {mail}; eine Funktion dafür im
-          Entwicklerbereich folgt.
+          Unter Konto im Entwicklerbereich lädst du alle zu deinem Konto gespeicherten Daten als ZIP herunter
+          (Auskunft und Datenübertragbarkeit, gespeicherte Dateien entschlüsselt) und löschst dein Konto mit allen
+          Projekten, Dateien, Berichten und Tokens sofort. Für alles andere genügt eine formlose E-Mail an {mail}.
         </p>
         <p>
           Du hast das Recht, dich bei einer Aufsichtsbehörde zu beschweren. Für uns zuständig ist der Hamburgische

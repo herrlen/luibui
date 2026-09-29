@@ -1354,3 +1354,28 @@ mit Datei bis 2 MB, offene K/H auf der Übersicht, Passwort vergessen.
 **Live geprüft:** keine externen Ressourcen (CSP `default-src 'self'`), Session-Cookie
 `__Host-luibui_session` ohne Domain, `luibui.com/api` erreicht die API nicht, Schnellscan 5 s mit
 „ohne Gewähr“.
+
+## 2026-09-29 – S2-6/S2-10: Passwort vergessen, Datenexport, Konto löschen
+
+**Was:**
+- **Passwort vergessen (S2-6):** `POST /auth/passwort-vergessen` antwortet immer gleich (keine
+  Prüfung, ob eine Adresse registriert ist), höchstens 3 Anforderungen pro Stunde je Adresse und IP;
+  Link 60 Minuten, einmal, nur SHA-256 gespeichert. `POST /auth/passwort-neu` setzt das Passwort,
+  beendet alle Sitzungen; die Zwei-Faktor-Anmeldung bleibt. Migration `0004`: `email_tokens.zweck`
+  (`bestaetigung`/`passwort`) – vorher hätte ein Link beider Arten für beides gegolten. Seiten
+  `/passwort-vergessen`, `/passwort-neu`, Link auf der Anmeldeseite.
+- **Datenexport (S2-10, Art. 15/20):** `POST /konto/export` mit Passwort (und Code bei 2FA), nur mit
+  Sitzung: ZIP mit `konto.json` (Konto, Sitzungen, Tokens ohne Schlüssel, Guthaben, Käufe, eigenes
+  Protokoll), Einzelprüfungen, je Projekt `projekt.json`, `pruefungen.json` mit allen Berichten und
+  die gespeicherten Dateien entschlüsselt. Temporär im Scratch, nach dem Senden gelöscht.
+- **Konto löschen (S2-10, Art. 17):** `POST /konto/loeschen` mit Passwort, Code und „LÖSCHEN“:
+  löscht Konto, Projekte, Versionen, Prüfungen, Befunde, Tokens, Sitzungen und die Dateien auf dem
+  Volume (nach dem Commit). Kaufbelege bleiben 10 Jahre ohne Kontoverbindung. Audit-Eintrag
+  `konto.geloescht` ohne Akteur.
+- Kontoseite: „Deine Daten“ und „Konto löschen“. Datenschutzerklärung angepasst (Passwort-Link,
+  Selbstbedienung für Auskunft, Übertragbarkeit, Löschung).
+
+**Geprüft:** 141 API-Tests mit Datenbank (9 neu: Export vollständig und ohne Geheimnisse, 2FA und nur
+mit Sitzung, Löschen samt Dateien und ohne Folgen für andere Nutzer, Belege bleiben, Reset gleich
+antwortend, einmalig, Sitzungen beendet, Links nicht austauschbar, 2FA bleibt, Begrenzung),
+Migrationsabgleich, 24 Web-Tests, eslint, ruff, mypy.

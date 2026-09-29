@@ -78,9 +78,24 @@ def _zu_gross() -> HTTPException:
     )
 
 
+_ABLESEN = 16 * 1024 * 1024
+"""Up to this size an oversized body is read and thrown away before the 413: the web proxy of
+Next.js is still sending, and an early answer breaks its pipe and turns into a 500."""
+
+
+async def _verwerfen(request: Request) -> None:
+    gelesen = 0
+    async for teil in request.stream():
+        gelesen += len(teil)
+        if gelesen > _ABLESEN:
+            break
+
+
 async def _datei_upload(request: Request) -> tuple[Upload, str, list[UploadFile]]:
     laenge = request.headers.get("content-length")
     if laenge is not None and laenge.isdigit() and int(laenge) > MAX_DATEI + 64 * 1024:
+        if int(laenge) <= _ABLESEN:
+            await _verwerfen(request)
         raise _zu_gross()
     form = await request.form(max_files=1, max_fields=5)
     datei = form.get("datei")

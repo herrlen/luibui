@@ -1441,3 +1441,9 @@ Registrierung auf app.luibui.com).
 **Geprüft:** 5 neue API-Tests (Datei wird geprüft und nicht abgelegt, Archiv wird entpackt,
 über 2 MB → 413 ohne Zählung, gemeinsames Limit, fehlende Datei → 422), 18 Tests in
 `test_git_scans.py`, Web-Lint, 29 Web-Tests, Build.
+
+**Nachtrag nach dem Ausrollen:** Live gab eine 2,2-MB-Datei 500 statt 413. Die API antwortete
+vor dem Lesen des Bodys, die Weiterleitung von Next.js schrieb noch und scheiterte mit `EPIPE`.
+Jetzt liest die API zu große Bodys bis 16 MB ab und verwirft sie, erst dann kommt 413; darüber
+bleibt der sofortige Abbruch (die Oberfläche prüft die Größe schon im Browser). Dasselbe Muster
+betrifft die Upload-Grenze der Projekt-Routen (`_check_size`); offen.

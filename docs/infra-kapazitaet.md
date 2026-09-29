@@ -222,3 +222,7 @@ Note 100): api 69 MiB (Spitze 121), worker 88 MiB (Spitze 673, überwiegend Seit
 ## Nach Deploy `1188de2` (29.09.2026, Erweiterungen B/C/E/G)
 
 Logs ohne Fehler. cgroup nach einem Selbsttest (PowerShell, Go, .env, Code-Kommentar): api 73 MiB (Spitze 125); worker 460 MiB (Spitze 671); web 90 MiB (Spitze 169).
+
+## Nach Deploy `ffd5852` (29.09.2026, Kalibrierung B08/B09/B14)
+
+Logs ohne Fehler. cgroup: api 101 MiB (Spitze 125); worker 69 MiB (Spitze 69); web 88 MiB (Spitze 169).

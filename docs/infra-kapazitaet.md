@@ -237,5 +237,7 @@ Logs ohne Fehler. cgroup: api 86 MiB (Spitze 133; erste Messung lief während de
 
 ## Nach Deploy `2361e48` (29.09.2026, Passwort vergessen, Datenexport, Konto löschen)
 
-Migration 0004 gelaufen. Logs ohne Fehler (eine Anfrage direkt beim Neustart bekam vom Web-Proxy
-500, danach normal). cgroup: api 88 MiB (Spitze 135); worker 51 MiB (Spitze 51); web 115 MiB (Spitze 116).
+Migration 0004 gelaufen. API und Worker ohne Fehler. **Beobachtung:** Der Web-Proxy erreichte die
+API noch rund zwei Minuten nach ihrem Neustart unter der alten Adresse nicht (`connect ETIMEDOUT
+100.121.38.184:8000`, Anfragen bekamen 500), danach normal. Nach jedem Ausrollen droht so ein kurzes
+Fenster mit Fehlern; Ursache vermutlich ein zwischengespeicherter DNS-Eintrag für `api`. cgroup: api 88 MiB (Spitze 135); worker 51 MiB (Spitze 51); web 115 MiB (Spitze 116).

@@ -1379,3 +1379,24 @@ mit Datei bis 2 MB, offene K/H auf der Übersicht, Passwort vergessen.
 mit Sitzung, Löschen samt Dateien und ohne Folgen für andere Nutzer, Belege bleiben, Reset gleich
 antwortend, einmalig, Sitzungen beendet, Links nicht austauschbar, 2FA bleibt, Begrenzung),
 Migrationsabgleich, 24 Web-Tests, eslint, ruff, mypy.
+
+## 2026-09-29 – Fehlerfenster nach einem Neustart der API geschlossen
+
+**Befund:** Nach jedem Ausrollen hingen Anfragen über die Weboberfläche bis zu zwei Minuten und
+endeten mit 500. Gemessen mit einem gezielten API-Neustart und einer Anfrage pro Sekunde: rund
+25 Sekunden lang liefert das Cluster-DNS für `api` noch die Adresse des beendeten Containers; eine
+Verbindung dorthin bekommt keine Antwort, und Linux gibt erst nach etwa 127 Sekunden auf.
+
+**Was:** `apps/web/lib/api-verbindung.ts` mit einem Agenten für die Weiterleitung `/api/v1`
+(`http-proxy` in Next.js übergibt `agent: false`, Node legt dann eine Instanz der Klasse des
+globalen Agenten an): höchstens 2 Sekunden je Verbindungsversuch, danach neu nachschlagen, bis zu
+30 Sekunden lang, ohne Keep-Alive. Vor dem Verbindungsaufbau ist nichts gesendet, der Wiederversuch
+ist also auch für Uploads sicher. Eingebunden in `instrumentation.ts`. Serverseitige Lesezugriffe
+(`apiGet`) wiederholen bei Verbindungsfehlern ebenfalls bis zu 30 Sekunden.
+
+**Geprüft:** 3 Tests (tote Adresse, dann richtige; Aufgeben nach der Frist; `agent: false`), lokal
+mit gebautem Server: Anfrage ohne laufende API, Ersatz-API nach 3 s → Antwort nach 3,2 s statt 500.
+
+**Nebenbefund:** Die Weiterleitung von Next.js hat eine Frist von 30 Sekunden ohne Daten
+(`proxyTimeout`). Ein Datenexport, der länger zum Zusammenstellen braucht, würde so abbrechen.
+Bei 500 MB Kontingent vorstellbar; offen.

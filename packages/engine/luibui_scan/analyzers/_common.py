@@ -71,9 +71,19 @@ def text_files(ctx: ScanContext) -> Iterator[TextFile]:
             yield TextFile(entry, read_bytes(ctx, entry).decode("utf-8", errors="replace"))
 
 
+_TOKEN = re.compile(r"(?=[A-Za-z0-9+/_\-]*\d)(?=[A-Za-z0-9+/_\-]*[A-Za-z])[A-Za-z0-9+/_\-]{20,}")
+"""20+ token characters with at least one digit and one letter: keys, tokens, base64 blocks;
+long plain identifiers such as ``sitemap_analyzer_extended`` stay readable."""
+
+
+def mask_tokens(text: str) -> str:
+    """Anything that looks like a long token cut to its first 4 chars (CLAUDE.md rule 6)."""
+    return _TOKEN.sub(lambda m: m.group()[:4] + "…", text)
+
+
 def masked(text: str, limit: int = MAX_BELEG_CHARS) -> str:
-    """``visible`` with anything that looks like a long token cut to 4 chars (CLAUDE.md rule 6)."""
-    return visible(re.sub(r"[A-Za-z0-9+/_\-]{20,}", lambda m: m.group()[:4] + "…", text), limit)
+    """``visible`` with tokens masked."""
+    return visible(mask_tokens(text), limit)
 
 
 def visible(text: str, limit: int = MAX_BELEG_CHARS) -> str:

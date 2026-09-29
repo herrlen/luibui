@@ -114,3 +114,11 @@ def test_context_resolve_refuses_escape(ctx: ScanContext) -> None:
     (ctx.root / "link").symlink_to("/etc")
     with pytest.raises(ValueError):
         ctx.resolve("link/passwd")
+
+
+def test_evidence_of_every_analyzer_is_masked(ctx: ScanContext) -> None:
+    token = "sk-" + "A1b2C3d4" * 4
+    reg = AnalyzerRegistry()
+    reg.add(Fixed("b_x", [make_finding(beleg=f"Nutze den Schlüssel {token} hier.")]))
+    (f,) = run_pipeline(ctx, reg).findings
+    assert f.beleg is not None and token not in f.beleg and "sk-A…" in f.beleg

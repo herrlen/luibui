@@ -7,6 +7,7 @@ refuse a green light for an incomplete scan.
 import logging
 from dataclasses import dataclass, field
 
+from luibui_scan.analyzers._common import mask_tokens
 from luibui_scan.analyzers.base import Analyzer
 from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry
 from luibui_scan.context import ScanContext
@@ -77,8 +78,10 @@ def run_pipeline(ctx: ScanContext, registry: AnalyzerRegistry | None = None) -> 
         for finding in findings:
             if not isinstance(finding, Finding):
                 raise TypeError(f"Analyzer {info.name} lieferte {type(finding).__name__}")
-            result.findings.append(
-                finding if finding.analyzer else finding.model_copy(update={"analyzer": info.name})
-            )
+            update: dict[str, object] = {} if finding.analyzer else {"analyzer": info.name}
+            beleg = mask_tokens(finding.beleg) if finding.beleg is not None else None
+            if beleg != finding.beleg:
+                update["beleg"] = beleg  # CLAUDE.md rule 6, for every analyzer
+            result.findings.append(finding.model_copy(update=update) if update else finding)
         result.ran.append(info.name)
     return result

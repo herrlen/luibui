@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Ampel } from "@/components/Ampel";
-import { datumZeit, STATUS_TEXT } from "@/lib/format";
+import { datumZeit, SCHWERE_TEXT, STATUS_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
 import { AufladenKnopf, BestaetigungSenden } from "@/components/app/KontoKnoepfe";
-import type { Einzel, Guthaben, Ich, Projekt } from "@/lib/types";
+import type { Einzel, Guthaben, Ich, OffenerBefund, Projekt } from "@/lib/types";
 
 import { EinzelLoeschen } from "./EinzelLoeschen";
 import { Einzelpruefung } from "./Einzelpruefung";
@@ -13,6 +13,25 @@ import { NeuesProjekt } from "./NeuesProjekt";
 
 export const metadata = { title: "Übersicht – luibui" };
 export const dynamic = "force-dynamic";
+
+const SICHTBAR = 10;
+
+/** Colour plus shape and word, never colour alone (ENTWICKLERREGELN A5/F6). */
+function SchwereMarke({ schwere }: { schwere: "K" | "H" }) {
+  const stil = schwere === "K" ? "bg-rot-bg text-rot" : "bg-gelb-bg text-gelb";
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-semibold ${stil}`}>
+      <span aria-hidden="true">{schwere === "K" ? "■" : "▲"}</span>
+      {SCHWERE_TEXT[schwere]}
+    </span>
+  );
+}
+
+function OffeneZahl({ k = 0, h = 0 }: { k?: number; h?: number }) {
+  if (!k && !h) return null;
+  const teile = [k ? `${k} kritisch` : "", h ? `${h} hoch` : ""].filter(Boolean);
+  return <span className={k ? "font-semibold text-rot" : "font-semibold text-gelb"}>{teile.join(" · ")} offen</span>;
+}
 
 export default async function Uebersicht() {
   const ich = await apiGet<Ich>("/api/v1/auth/ich");
@@ -22,6 +41,8 @@ export default async function Uebersicht() {
   const einzel = await apiGet<Einzel[]>("/api/v1/scans");
   const einzelListe = einzel.ok ? einzel.data : [];
   const guthaben = await apiGet<Guthaben>("/api/v1/guthaben");
+  const offen = await apiGet<OffenerBefund[]>("/api/v1/projects/offene-befunde");
+  const offenListe = offen.ok ? offen.data : [];
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -47,6 +68,36 @@ export default async function Uebersicht() {
             <AufladenKnopf />
           </span>
         </div>
+      ) : null}
+      {offenListe.length ? (
+        <section aria-labelledby="offen" className="flex flex-col gap-3">
+          <h2 id="offen" className="font-display text-xl font-bold">
+            Offene kritische und hohe Befunde
+          </h2>
+          <p className="text-sm text-muted">Aus der jeweils letzten fertigen Prüfung deiner Projekte.</p>
+          <ul className="flex flex-col gap-2">
+            {offenListe.slice(0, SICHTBAR).map((b, i) => (
+              <li key={`${b.scan_id}-${i}`}>
+                <Link
+                  href={`/pruefungen/${b.scan_id}`}
+                  className="flex flex-wrap items-center gap-3 rounded-[14px] border border-linie bg-surface p-4 hover:border-petrol"
+                >
+                  <SchwereMarke schwere={b.schwere} />
+                  <span className="min-w-0 font-semibold">{b.titel}</span>
+                  <span className="ml-auto min-w-0 break-all text-sm text-muted">
+                    {b.projekt}
+                    {b.datei ? ` · ${b.datei}${b.zeile ? `:${b.zeile}` : ""}` : ""}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {offenListe.length > SICHTBAR ? (
+            <p className="text-sm text-muted">
+              Und {offenListe.length - SICHTBAR} weitere{offenListe.length >= 50 ? " oder mehr" : ""}, siehe die Projekte unten.
+            </p>
+          ) : null}
+        </section>
       ) : null}
       <Einzelpruefung />
       {einzelListe.length ? (
@@ -95,7 +146,8 @@ export default async function Uebersicht() {
               >
                 <span className="font-semibold">{p.name}</span>
                 <span className="text-sm text-muted">{p.typ}</span>
-                <span className="ml-auto flex items-center gap-3 text-sm">
+                <span className="ml-auto flex flex-wrap items-center gap-3 text-sm">
+                  <OffeneZahl k={p.offen_k} h={p.offen_h} />
                   {p.letzte_pruefung?.ampel_gesamt ? (
                     <>
                       <Ampel wert={p.letzte_pruefung.ampel_gesamt} />

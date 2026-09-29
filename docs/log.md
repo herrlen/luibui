@@ -1458,3 +1458,19 @@ schneidet ohnehin bei 61 MB ab. Die Oberfläche begrenzt Projekt-Uploads schon i
 
 **Geprüft:** lokal über den `http-proxy` von Next.js mit 2,2 MB und 70 MB: 413, kein Proxy-Fehler;
 Gegenprobe ohne Korrektur: `EPIPE`. 151 API-Tests.
+
+## 2026-09-29 – S2-8: offene kritische und hohe Befunde auf der Übersicht
+
+**Was:** `GET /api/v1/projects` liefert je Projekt `offen_k` und `offen_h`: kritische und hohe
+Befunde der letzten *fertigen* Prüfung, ohne die als behoben, akzeptiert oder bestritten
+markierten (`finding_status`, per Fingerprint). Die Liste ist danach sortiert (erst kritisch,
+dann hoch, dann nach Alter). Neu `GET /api/v1/projects/offene-befunde`: alle offenen K/H-Befunde
+über alle Projekte, kritische zuerst, höchstens 50. Die Übersicht zeigt oben „Offene kritische und
+hohe Befunde“ (10 sichtbar, Link zum Bericht) und in jeder Projektzeile „1 kritisch · 2 hoch offen“.
+Schwere mit Farbe, Form und Wort.
+
+**Geprüft:** 3 API-Tests (Sortierung und Zählung, markierte Befunde und eine wartende neuere
+Prüfung zählen nicht, Nutzer B sieht nichts von A), 157 API-Tests, Web-Lint, 29 Web-Tests.
+Die Übersicht selbst ist nur per Typprüfung und Lint geprüft, nicht mit echten Daten angesehen.
+
+**Offen in S2-8:** Quelle beim Anlegen wählen, Versionsliste.

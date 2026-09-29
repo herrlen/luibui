@@ -1,8 +1,9 @@
 """Projects of the signed-in developer (minimal backend for S1-1; the UI follows with S2-8)."""
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
@@ -13,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from luibui_api import guthaben
 from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, get_owned
-from luibui_api.models import Project, ProjectVersion, Scan, StoredFile
+from luibui_api.models import FindingStatus, Project, ProjectVersion, Scan, StoredFile
 from luibui_api.storage import blob_store
 from luibui_scan.intake.safe_git import canonical_url
 
@@ -58,6 +59,23 @@ class Projekt(BaseModel):
     nach_pruefung_loeschen: bool
     created_at: datetime
     letzte_pruefung: Pruefungskurz | None = None
+    offen_k: int = 0
+    """Open critical findings of the last finished check (not marked as fixed, accepted or
+    disputed)."""
+    offen_h: int = 0
+
+
+class OffenerBefund(BaseModel):
+    """A critical or high finding of a project's last finished check, for the overview."""
+
+    project_id: uuid.UUID
+    projekt: str
+    scan_id: uuid.UUID
+    rule_id: str
+    schwere: Literal["K", "H"]
+    titel: str
+    datei: str | None
+    zeile: int | None
 
 
 def kurz(s: Scan) -> Pruefungskurz:
@@ -73,7 +91,7 @@ def kurz(s: Scan) -> Pruefungskurz:
     )
 
 
-def _out(p: Project, letzte: Scan | None = None) -> Projekt:
+def _out(p: Project, letzte: Scan | None = None, offen: Sequence[dict[str, Any]] = ()) -> Projekt:
     return Projekt(
         id=p.id,
         name=p.name,
@@ -83,6 +101,8 @@ def _out(p: Project, letzte: Scan | None = None) -> Projekt:
         nach_pruefung_loeschen=p.delete_files_after_scan,
         created_at=p.created_at,
         letzte_pruefung=kurz(letzte) if letzte else None,
+        offen_k=sum(1 for f in offen if f.get("schwere") == "K"),
+        offen_h=sum(1 for f in offen if f.get("schwere") == "H"),
     )
 
 
@@ -112,23 +132,79 @@ def anlegen(body: ProjektNeu, caller: CurrentCaller, db: DbSession) -> Projekt:
     return _out(project)
 
 
-@router.get("")
-def liste(caller: CurrentCaller, db: DbSession) -> list[Projekt]:
-    rows = list(
-        db.scalars(
-            select(Project).where(Project.owner_id == caller.user.id).order_by(Project.created_at)
-        )
+def _latest(db: DbSession, owner_id: uuid.UUID, *, fertig: bool) -> dict[uuid.UUID, Scan]:
+    query = select(Scan).where(Scan.owner_id == owner_id, Scan.project_id.is_not(None))
+    if fertig:
+        query = query.where(Scan.status == "fertig", Scan.report.is_not(None))
+    rows = db.scalars(
+        query.ext(distinct_on(Scan.project_id)).order_by(Scan.project_id, Scan.created_at.desc())
     )
-    latest = {
-        s.project_id: s
-        for s in db.scalars(
-            select(Scan)
-            .where(Scan.owner_id == caller.user.id, Scan.project_id.is_not(None))
-            .ext(distinct_on(Scan.project_id))
-            .order_by(Scan.project_id, Scan.created_at.desc())
+    return {s.project_id: s for s in rows if s.project_id is not None}
+
+
+def _offen(
+    db: DbSession, owner_id: uuid.UUID
+) -> dict[uuid.UUID, tuple[Scan, list[dict[str, Any]]]]:
+    """Per project: the last finished check and its critical and high findings that nobody
+    marked as fixed, accepted or disputed."""
+    erledigt = {
+        (f.project_id, f.fingerprint)
+        for f in db.scalars(
+            select(FindingStatus).where(
+                FindingStatus.owner_id == owner_id, FindingStatus.status != "offen"
+            )
         )
     }
-    return [_out(p, latest.get(p.id)) for p in rows]
+    ergebnis = {}
+    for pid, scan in _latest(db, owner_id, fertig=True).items():
+        befunde = (scan.report or {}).get("befunde") or []
+        ergebnis[pid] = (
+            scan,
+            [
+                f
+                for f in befunde
+                if isinstance(f, dict)
+                and f.get("schwere") in ("K", "H")
+                and (pid, f.get("fingerprint")) not in erledigt
+            ],
+        )
+    return ergebnis
+
+
+@router.get("")
+def liste(caller: CurrentCaller, db: DbSession) -> list[Projekt]:
+    """Projects with open critical findings first, then open high ones, then by age."""
+    uid = caller.user.id
+    rows = db.scalars(select(Project).where(Project.owner_id == uid).order_by(Project.created_at))
+    latest = _latest(db, uid, fertig=False)
+    offen = _offen(db, uid)
+    projekte = [_out(p, latest.get(p.id), offen.get(p.id, (None, []))[1]) for p in rows]
+    return sorted(projekte, key=lambda p: (-p.offen_k, -p.offen_h))
+
+
+@router.get("/offene-befunde")
+def offene_befunde(caller: CurrentCaller, db: DbSession) -> list[OffenerBefund]:
+    """For the overview: open critical and high findings across all projects, critical first,
+    at most 50."""
+    projekte = {
+        p.id: p.name for p in db.scalars(select(Project).where(Project.owner_id == caller.user.id))
+    }
+    liste_ = [
+        OffenerBefund(
+            project_id=pid,
+            projekt=projekte.get(pid, ""),
+            scan_id=scan.id,
+            rule_id=str(f.get("rule_id") or ""),
+            schwere=f["schwere"],
+            titel=str(f.get("titel") or ""),
+            datei=f.get("datei") if isinstance(f.get("datei"), str) else None,
+            zeile=f.get("zeile") if isinstance(f.get("zeile"), int) else None,
+        )
+        for pid, (scan, befunde) in _offen(db, caller.user.id).items()
+        for f in befunde
+    ]
+    liste_.sort(key=lambda b: (b.schwere != "K", b.projekt.lower(), b.datei or "", b.zeile or 0))
+    return liste_[:50]
 
 
 @router.get("/{project_id}/scans")

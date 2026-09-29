@@ -76,6 +76,20 @@ export type Projekt = {
   nach_pruefung_loeschen: boolean;
   created_at: string;
   letzte_pruefung: Pruefungskurz | null;
+  /** Open critical and high findings of the last finished check (S2-8). */
+  offen_k?: number;
+  offen_h?: number;
+};
+
+export type OffenerBefund = {
+  project_id: string;
+  projekt: string;
+  scan_id: string;
+  rule_id: string;
+  schwere: "K" | "H";
+  titel: string;
+  datei: string | null;
+  zeile: number | null;
 };
 
 export type Ich = { id: string; email: string; totp_aktiv: boolean; email_bestaetigt: boolean };

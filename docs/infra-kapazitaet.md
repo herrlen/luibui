@@ -226,3 +226,7 @@ Logs ohne Fehler. cgroup nach einem Selbsttest (PowerShell, Go, .env, Code-Komme
 ## Nach Deploy `ffd5852` (29.09.2026, Kalibrierung B08/B09/B14)
 
 Logs ohne Fehler. cgroup: api 101 MiB (Spitze 125); worker 69 MiB (Spitze 69); web 88 MiB (Spitze 169).
+
+## Nach Deploy `20571bb` (29.09.2026, S2-5 Korrelation)
+
+Logs ohne Fehler. cgroup nach Selbsttest: api 78 MiB (Spitze 130); worker 455 MiB (Spitze 651); web 73 MiB (Spitze 74).

@@ -18,9 +18,18 @@ const ARTEN: [Art, string][] = [
   ["git", "Git-Repository"],
 ];
 
-export function Upload({ projektId }: { projektId: string }) {
+/** The source chosen when the project was created preselects the kind of input (S2-8). */
+const ART_ZUR_QUELLE: Record<string, Art> = {
+  datei: "dateien",
+  auswahl: "ordner",
+  zip: "zip",
+  text: "text",
+  git: "git",
+};
+
+export function Upload({ projektId, quelle, gitUrl }: { projektId: string; quelle: string; gitUrl: string | null }) {
   const router = useRouter();
-  const [art, setArt] = useState<Art>("dateien");
+  const [art, setArt] = useState<Art>(ART_ZUR_QUELLE[quelle] ?? "dateien");
   const [fehler, setFehler] = useState<string | null>(null);
   const [unbestaetigt, setUnbestaetigt] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
@@ -109,6 +118,7 @@ export function Upload({ projektId }: { projektId: string }) {
           name="git_url"
           type="url"
           required
+          defaultValue={gitUrl ?? ""}
           placeholder="https://github.com/besitzer/repository"
           className="h-12 rounded-xl border border-linie-stark bg-surface px-4 focus:border-petrol"
         />

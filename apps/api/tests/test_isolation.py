@@ -23,11 +23,13 @@ def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
     token = a.post("/api/v1/tokens", json={"name": "ci"}).json()["id"]
     kaufen(a, paypal)
     (beleg,) = a.get("/api/v1/guthaben").json()["kaeufe"]
+    (version,) = a.get(f"/api/v1/projects/{pid}/versions").json()
     return {
         "project_id": [pid],
         "scan_id": [scan, einzelpruefung],
         "token_id": [token],
         "payment_id": [beleg["id"]],
+        "version_id": [version["id"]],
     }
 
 
@@ -48,6 +50,8 @@ def test_user_b_reaches_nothing_of_user_a_on_any_route(
         assert not unbekannt, f"{pfad}: Parameter {unbekannt} im Isolationstest ergänzen"
         for wert in ids[params[0]]:
             url = pfad.replace("{" + params[0] + "}", wert)
+            for weiterer in params[1:]:  # further parameters: A's first ID of that kind
+                url = url.replace("{" + weiterer + "}", ids[weiterer][0])
             for methode in operationen:
                 antwort = b.request(methode.upper(), url)
                 geprueft.append(f"{methode.upper()} {pfad}")

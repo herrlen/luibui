@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Ampel } from "@/components/Ampel";
-import { datumZeit, STATUS_TEXT, UMFANG_TEXT } from "@/lib/format";
+import { datumZeit, groesse, STATUS_TEXT, UMFANG_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
-import type { Projekt, Pruefungskurz } from "@/lib/types";
+import type { Projekt, Pruefungskurz, Version } from "@/lib/types";
 
 import { Upload } from "./Upload";
+import { VersionLoeschen } from "./VersionLoeschen";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
   }
   const scans = await apiGet<Pruefungskurz[]>(`/api/v1/projects/${encodeURIComponent(id)}/scans`);
   const liste = scans.ok ? scans.data : [];
+  const versionen = await apiGet<Version[]>(`/api/v1/projects/${encodeURIComponent(id)}/versions`);
+  const versionListe = versionen.ok ? versionen.data : [];
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -31,7 +34,47 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           {projekt.data.nach_pruefung_loeschen ? " · Dateien werden nach der Prüfung gelöscht" : " · Dateien verschlüsselt gespeichert"}
         </p>
       </div>
-      <Upload projektId={projekt.data.id} />
+      <Upload projektId={projekt.data.id} quelle={projekt.data.quelle} gitUrl={projekt.data.git_url} />
+      {versionListe.length ? (
+        <section aria-labelledby="versionen">
+          <h2 id="versionen" className="font-display text-xl font-bold">
+            Versionen
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Die letzten 10 Versionen bleiben verschlüsselt gespeichert. Löschen entfernt die Dateien, der Bericht bleibt.
+          </p>
+          <ul className="mt-3 flex flex-col gap-2">
+            {versionListe.map((v) => (
+              <li
+                key={v.id}
+                className="flex flex-wrap items-center gap-4 rounded-[14px] border border-linie bg-surface px-5 py-3"
+              >
+                <span className="font-semibold">Version {v.nummer}</span>
+                <span className="text-sm text-muted">
+                  {datumZeit(v.angelegt)} · {v.dateien} {v.dateien === 1 ? "Datei" : "Dateien"} · {groesse(v.bytes)}
+                  {v.commit_sha ? ` · Commit ${v.commit_sha.slice(0, 7)}` : ""}
+                  {v.dateien_geloescht ? " · Dateien gelöscht" : ""}
+                </span>
+                <span className="ml-auto flex items-center gap-3 text-sm">
+                  {v.pruefung ? (
+                    <Link href={`/pruefungen/${v.pruefung.id}`} className="flex items-center gap-2 hover:text-petrol">
+                      {v.pruefung.ampel_gesamt ? (
+                        <>
+                          <Ampel wert={v.pruefung.ampel_gesamt} />
+                          {v.pruefung.note !== null ? <span>Note {v.pruefung.note}</span> : null}
+                        </>
+                      ) : (
+                        <span>Prüfung {STATUS_TEXT[v.pruefung.status]}</span>
+                      )}
+                    </Link>
+                  ) : null}
+                  <VersionLoeschen projektId={projekt.data.id} versionId={v.id} nummer={v.nummer} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section>
         <h2 className="font-display text-xl font-bold">Prüfungen</h2>
         {liste.length === 0 ? (

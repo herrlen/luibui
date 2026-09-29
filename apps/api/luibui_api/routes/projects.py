@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
@@ -34,7 +34,13 @@ class ProjektNeu(BaseModel):
     @field_validator("git_url")
     @classmethod
     def _git_url(cls, value: str | None) -> str | None:
-        return None if value is None else canonical_url(value)
+        return None if not value else canonical_url(value)
+
+    @model_validator(mode="after")
+    def _git_braucht_url(self) -> "ProjektNeu":
+        if self.quelle == "git" and not self.git_url:
+            raise ValueError("Für die Quelle Git bitte die Adresse des Repositorys angeben")
+        return self
 
 
 class Pruefungskurz(BaseModel):
@@ -217,6 +223,80 @@ def pruefungen(project_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> l
         .limit(100)
     )
     return [kurz(s) for s in rows]
+
+
+class Version(BaseModel):
+    """A stored version of a project (S2-7, S2-8)."""
+
+    id: uuid.UUID
+    nummer: int
+    angelegt: datetime
+    dateien: int
+    bytes: int
+    commit_sha: str | None
+    dateien_geloescht: bool
+    """The files were removed after the check (project option); only the report is left."""
+    pruefung: Pruefungskurz | None
+
+
+@router.get("/{project_id}/versions")
+def versionen(project_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> list[Version]:
+    """Newest first, each with its latest check."""
+    project = get_owned(db, Project, project_id, caller)
+    rows = db.scalars(
+        select(ProjectVersion)
+        .where(ProjectVersion.project_id == project.id)
+        .order_by(ProjectVersion.number.desc())
+    )
+    pruefungen_ = {
+        s.version_id: s
+        for s in db.scalars(
+            select(Scan)
+            .where(Scan.project_id == project.id, Scan.version_id.is_not(None))
+            .ext(distinct_on(Scan.version_id))
+            .order_by(Scan.version_id, Scan.created_at.desc())
+        )
+    }
+    return [
+        Version(
+            id=v.id,
+            nummer=v.number,
+            angelegt=v.created_at,
+            dateien=v.file_count,
+            bytes=v.bytes,
+            commit_sha=v.commit_sha,
+            dateien_geloescht=v.files_deleted_at is not None,
+            pruefung=kurz(pruefungen_[v.id]) if v.id in pruefungen_ else None,
+        )
+        for v in rows
+    ]
+
+
+@router.delete("/{project_id}/versions/{version_id}", status_code=status.HTTP_204_NO_CONTENT)
+def version_loeschen(
+    project_id: uuid.UUID, version_id: uuid.UUID, caller: CurrentCaller, db: DbSession
+) -> None:
+    """Removes the version and its encrypted files; the reports of its checks stay."""
+    project = get_owned(db, Project, project_id, caller)
+    version = get_owned(db, ProjectVersion, version_id, caller)
+    if version.project_id != project.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    keys = list(
+        db.scalars(select(StoredFile.storage_key).where(StoredFile.version_id == version.id))
+    )
+    db.delete(version)
+    audit(
+        db,
+        caller.user.id,
+        "version.geloescht",
+        "project_version",
+        version_id,
+        nummer=version.number,
+    )
+    db.commit()
+    # Only after the commit: a failed commit must not leave records without their files.
+    for key in keys:
+        blob_store().delete(key)
 
 
 @router.get("/{project_id}")

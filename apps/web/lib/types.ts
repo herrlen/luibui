@@ -81,6 +81,17 @@ export type Projekt = {
   offen_h?: number;
 };
 
+export type Version = {
+  id: string;
+  nummer: number;
+  angelegt: string;
+  dateien: number;
+  bytes: number;
+  commit_sha: string | null;
+  dateien_geloescht: boolean;
+  pruefung: Pruefungskurz | null;
+};
+
 export type OffenerBefund = {
   project_id: string;
   projekt: string;

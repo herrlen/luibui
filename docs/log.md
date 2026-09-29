@@ -1474,3 +1474,24 @@ Prüfung zählen nicht, Nutzer B sieht nichts von A), 157 API-Tests, Web-Lint, 2
 Die Übersicht selbst ist nur per Typprüfung und Lint geprüft, nicht mit echten Daten angesehen.
 
 **Offen in S2-8:** Quelle beim Anlegen wählen, Versionsliste.
+
+## 2026-09-29 – S2-8: Quelle beim Anlegen, Versionsliste, Versionen löschen (S2-7)
+
+**Was:** Beim Anlegen eines Projekts wird die Quelle gewählt (Datei(en), Ordner, Archiv, Text,
+Git); bei Git ist die Adresse Pflicht (API: 422 ohne Adresse). Das Upload-Feld auf der
+Projektseite ist danach vorgewählt, bei Git mit der gespeicherten Adresse. Ältere Projekte haben
+die Quelle „zip“ (bisheriger Standard) und zeigen deshalb „Archiv“ vorgewählt.
+Neu `GET /api/v1/projects/{id}/versions` (neueste zuerst, mit Dateizahl, Größe, Commit und der
+letzten Prüfung dieser Version) und `DELETE /api/v1/projects/{id}/versions/{version_id}`: löscht
+die Version und ihre verschlüsselten Dateien (nach dem Commit), die Prüfungen und Berichte
+bleiben (`scans.version_id` wird NULL), Audit `version.geloescht`. Die Projektseite zeigt die
+Versionen mit Ampel, Note und „Löschen“.
+
+**Isolationstest:** setzt jetzt alle Pfad-Parameter ein, nicht nur den ersten (die neue Route hat
+zwei); `version_id` ergänzt.
+
+**Geprüft:** 4 neue API-Tests (Liste und Zuordnung, Löschen entfernt Dateien und lässt den
+Bericht, Version nur über das eigene Projekt erreichbar, Git braucht Adresse), 158 API-Tests,
+Web-Lint, 29 Web-Tests. Die Seiten selbst nur per Typprüfung und Lint geprüft.
+
+S2-8 ist damit vollständig.

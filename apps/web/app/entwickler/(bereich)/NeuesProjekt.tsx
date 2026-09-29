@@ -31,6 +31,7 @@ export function NeuesProjekt() {
   const [quelle, setQuelle] = useState<string>("datei");
   return (
     <form method="post"
+      id="neu"
       className="grid gap-4 rounded-[14px] border border-linie bg-surface p-6 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -46,6 +47,7 @@ export function NeuesProjekt() {
         if (zahlungNoetig(r)) return;
         if (!r.ok) return setFehler(r.fehler.text);
         router.push(`/projekte/${r.data.id}`);
+        router.refresh(); // the project list in the explorer column
       }}
     >
       <Feld label="Neues Projekt" name="name" placeholder="z. B. wetter-skill" maxLength={200} required />

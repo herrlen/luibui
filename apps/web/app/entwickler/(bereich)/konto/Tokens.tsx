@@ -15,8 +15,8 @@ export function Tokens({ tokens }: { tokens: TokenInfo[] }) {
   const [neu, setNeu] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   return (
-    <section className="flex flex-col gap-4 rounded-[14px] border border-linie bg-surface p-6">
-      <h2 className="font-display text-xl font-bold">API-Tokens</h2>
+    <section aria-labelledby="tokens" className="flex flex-col gap-4 rounded-[14px] border border-linie bg-surface p-6">
+      <h2 id="tokens" className="font-display text-xl font-bold">API-Tokens</h2>
       <p className="text-sm text-muted">Für die CLI und CI. Ein Token wird nur einmal angezeigt.</p>
       {neu ? (
         <div className="rounded-lg bg-gelb-bg p-3 text-sm text-gelb" role="status">

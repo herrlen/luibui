@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { apiGet } from "@/lib/server-api";
 import Link from "next/link";
 
+import { Brotkrumen } from "@/components/app/Brotkrumen";
 import { AufladenKnopf } from "@/components/app/KontoKnoepfe";
 import { datumZeit } from "@/lib/format";
 import type { Guthaben, Ich } from "@/lib/types";
@@ -21,8 +22,9 @@ export default async function Konto() {
   const guthaben = await apiGet<Guthaben>("/api/v1/guthaben");
   return (
     <div className="flex flex-col gap-6">
+      <Brotkrumen pfad={[{ text: "Übersicht", href: "/" }, { text: "Konto" }]} />
       <h1 className="font-display text-3xl font-bold">Konto</h1>
-      <section className="rounded-[14px] border border-linie bg-surface p-6 text-sm">
+      <section id="profil" className="scroll-mt-6 rounded-[14px] border border-linie bg-surface p-6 text-sm">
         <p>
           <span className="font-semibold">E-Mail:</span> {ich.data.email}
         </p>

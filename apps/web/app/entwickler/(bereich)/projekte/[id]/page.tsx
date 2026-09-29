@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Ampel } from "@/components/Ampel";
+import { Brotkrumen } from "@/components/app/Brotkrumen";
 import { datumZeit, groesse, STATUS_TEXT, UMFANG_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
 import type { Projekt, Pruefungskurz, Version } from "@/lib/types";
 
+import { ProjektLoeschen } from "./ProjektLoeschen";
 import { Upload } from "./Upload";
 import { VersionLoeschen } from "./VersionLoeschen";
 
@@ -24,11 +26,11 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
   const versionListe = versionen.ok ? versionen.data : [];
   return (
     <div className="flex flex-col gap-6">
+      <Brotkrumen
+        pfad={[{ text: "Übersicht", href: "/" }, { text: "Projekte", href: "/projekte" }, { text: projekt.data.name }]}
+      />
       <div>
-        <Link href="/" className="text-sm text-petrol">
-          ← Übersicht
-        </Link>
-        <h1 className="mt-2 font-display text-3xl font-bold">{projekt.data.name}</h1>
+        <h1 className="font-display text-3xl font-bold">{projekt.data.name}</h1>
         <p className="text-sm text-muted">
           {projekt.data.typ}
           {projekt.data.nach_pruefung_loeschen ? " · Dateien werden nach der Prüfung gelöscht" : " · Dateien verschlüsselt gespeichert"}
@@ -98,6 +100,16 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
             ))}
           </ul>
         )}
+      </section>
+      <section aria-labelledby="gefahr" className="flex flex-col gap-3 rounded-[14px] border border-rot bg-surface p-6">
+        <h2 id="gefahr" className="font-display text-xl font-bold">
+          Projekt löschen
+        </h2>
+        <p className="text-sm text-muted">
+          Löscht das Projekt mit allen Versionen, gespeicherten Dateien, Prüfungen und Berichten sofort und endgültig.
+          Geteilte Berichtslinks funktionieren danach nicht mehr.
+        </p>
+        <ProjektLoeschen id={projekt.data.id} name={projekt.data.name} />
       </section>
     </div>
   );

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { Brotkrumen } from "@/components/app/Brotkrumen";
 import { Drucken } from "@/components/app/Drucken";
 import { datumZeit } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
@@ -20,7 +21,10 @@ export default async function BelegSeite({ params }: { params: Promise<{ id: str
     notFound();
   }
   const d = b.data;
+  const nummer = `LB-${String(d.belegnummer).padStart(6, "0")}`;
   return (
+    <div className="flex flex-col gap-4">
+      <Brotkrumen pfad={[{ text: "Übersicht", href: "/" }, { text: "Konto", href: "/konto" }, { text: `Beleg ${nummer}` }]} />
     <article className="flex max-w-2xl flex-col gap-6 rounded-[14px] border border-linie bg-surface p-8 print:border-0 print:p-0">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="text-sm leading-[1.6]">
@@ -62,5 +66,6 @@ export default async function BelegSeite({ params }: { params: Promise<{ id: str
         <Drucken />
       </div>
     </article>
+    </div>
   );
 }

@@ -1495,3 +1495,23 @@ Bericht, Version nur über das eigene Projekt erreichbar, Git braucht Adresse), 
 Web-Lint, 29 Web-Tests. Die Seiten selbst nur per Typprüfung und Lint geprüft.
 
 S2-8 ist damit vollständig.
+
+## 2026-09-29 – S2-8: Entwicklerbereich als Explorer, Breadcrumbs, Projekte löschen
+
+**Was (Wunsch von Len, Vorbild: sein Projekt wanalyse):** app.luibui.com ist jetzt in Spalten
+aufgeteilt. Links eine dunkle Leiste mit den Bereichen (Übersicht, Projekte, Einzelprüfungen,
+Konto; unten E-Mail, Abmelden, Rechtliches), daneben die Einträge des Bereichs (Projekte mit
+Ampelpunkt und Zahl offener K/H-Befunde, „+ Neues Projekt“, Einzelprüfungen; im Konto die
+Abschnitte), rechts der Inhalt. Auf dem Handy wird die Leiste zur waagerechten Navigation, die
+mittlere Spalte entfällt. Statt „← Übersicht“ steht oben ein Breadcrumb
+(`components/app/Brotkrumen.tsx`, letzte Stufe mit `aria-current="page"`). Die Seiten liegen in
+zwei Routengruppen: `(bereich)` mit dem neuen Layout, `(einstieg)` (Anmelden, Registrieren,
+Rechtliches) mit dem bisherigen Kopf; die URLs bleiben gleich.
+Neue Seiten `/projekte` (Anlegen und Liste) und `/pruefungen` (alle Einzelprüfungen). Die
+Übersicht zeigt zuerst Projekte und „Schnell prüfen“, dann offene K/H-Befunde, dann die letzten
+fünf Einzelprüfungen. Projekte lassen sich auf der Projektseite löschen (Name eintippen; die
+API-Route gab es schon, die Oberfläche fehlte).
+
+**Geprüft:** lokal mit API, Vorschau-Datenbank und echten Engine-Berichten angesehen (Übersicht,
+Projekt, Bericht, Handybreite 390 px); 2 neue Web-Tests (Breadcrumb verlinkt und escaped),
+31 Web-Tests, Lint, Build.

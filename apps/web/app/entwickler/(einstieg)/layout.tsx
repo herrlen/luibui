@@ -1,10 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { AufladenDialog } from "@/components/app/Aufladen";
 import { LogoMarke } from "@/components/Logo";
 
-export default function EntwicklerLayout({ children }: { children: ReactNode }) {
+export default function EinstiegLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <header className="border-b border-linie bg-surface">
@@ -24,7 +23,6 @@ export default function EntwicklerLayout({ children }: { children: ReactNode }) 
       <main id="inhalt" className="mx-auto max-w-5xl px-4 py-8">
         {children}
       </main>
-      <AufladenDialog />
       <footer className="border-t border-linie">
         <nav aria-label="Rechtliches" className="mx-auto flex max-w-5xl flex-wrap gap-x-6 gap-y-2 px-4 py-6 text-sm text-muted">
           <Link href="/impressum" className="hover:text-petrol">

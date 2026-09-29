@@ -234,3 +234,8 @@ Logs ohne Fehler. cgroup nach Selbsttest: api 78 MiB (Spitze 130); worker 455 Mi
 ## Nach Deploy `e04d68f` (29.09.2026, DoD Sprint 2, Maskierung)
 
 Logs ohne Fehler. cgroup: api 86 MiB (Spitze 133; erste Messung lief während des Neustarts); worker 45 MiB (Spitze 45); web 43 MiB (Spitze 44).
+
+## Nach Deploy `2361e48` (29.09.2026, Passwort vergessen, Datenexport, Konto löschen)
+
+Migration 0004 gelaufen. Logs ohne Fehler (eine Anfrage direkt beim Neustart bekam vom Web-Proxy
+500, danach normal). cgroup: api 88 MiB (Spitze 135); worker 51 MiB (Spitze 51); web 115 MiB (Spitze 116).

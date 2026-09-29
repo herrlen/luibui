@@ -67,14 +67,17 @@ def _e01_e02(tool: Tool) -> Iterator[Finding]:
 
 def _poisoning(tool: Tool, t: Text, schwere: Schwere, detail: str, e02: str | None) -> Finding:
     if e02:
-        rule_id, titel = "LB-E02-tool-shadowing", f"Tool „{tool.name}“ will andere Tools steuern"
+        rule_id, titel = (
+            "LB-E02-tool-shadowing",
+            f"{tool.art} „{tool.name}“ will andere Tools steuern",
+        )
         erklaerung = (
             "Das Modell liest die Beschreibung jedes Tools, bevor es eines aufruft. Diese "
             "Beschreibung macht Vorgaben für andere Tools oder Server, etwa zu Empfängern oder "
             f"zur Reihenfolge. So lässt sich deren Verhalten unbemerkt ändern. {detail}"
         )
     else:
-        rule_id, titel = "LB-E01-tool-poisoning", f"Versteckte Anweisung im Tool „{tool.name}“"
+        rule_id, titel = "LB-E01-tool-poisoning", f"Versteckte Anweisung: {tool.art} „{tool.name}“"
         erklaerung = (
             "Das Modell liest Name, Beschreibung und Parameter jedes Tools, bevor es eines "
             "aufruft. Dieser Text enthält eine Anweisung an das Modell oder etwas, das ein "
@@ -174,6 +177,21 @@ _PASSTHROUGH = re.compile(
 )
 
 
+_ABLAGE_MUSTER = (
+    r"(tokens?\.json|credentials?\.json|access_token|refresh_token|auth_token|oauth|"
+    r"tokens?_?(path|file)|credentials?_(path|file))"
+)
+_KLARTEXT_TOKEN = re.compile(
+    rf"""(?i)\bopen\([^\n]{{0,120}}?{_ABLAGE_MUSTER}[^\n]{{0,80}}?,\s*["'][wa]|"""
+    rf"""{_ABLAGE_MUSTER}\w*\.write_text\(|"""
+    rf"""json\.dump\(\s*\w*(token|credential)s?\w*\s*,\s*open\(|"""
+    rf"""writeFile(Sync)?\([^\n]{{0,120}}?{_ABLAGE_MUSTER}"""
+)
+"""Where a server writes OAuth tokens or credential files, not any variable named "secret"."""
+_TESTDATEI = re.compile(r"(^|/)(tests?|__tests__|spec)/|[._-](test|spec)\.\w+$|(^|/)test_\w+\.py$")
+_GESCHUETZT = re.compile(r"(?i)\bkeyring\b|\bkeytar\b|safeStorage|Fernet|encrypt|cryptography")
+
+
 def _line(text: str, m: re.Match[str]) -> tuple[int, str]:
     start = text.count("\n", 0, m.start()) + 1
     return start, text.split("\n")[start - 1]
@@ -261,6 +279,28 @@ def _server(files: list[TextFile], package_has_auth: bool) -> Iterator[Finding]:
                 normbezug=("OWASP-ASI03", "OWASP-LLM02"),
             )
             break
+        klartext = not _TESTDATEI.search(f.path) and not _GESCHUETZT.search(f.text)
+        if klartext and (m := _KLARTEXT_TOKEN.search(f.text)):
+            zeile, code = _line(f.text, m)
+            yield finding(
+                rule_id="LB-E06-token-im-klartext",
+                ebene=Ebene.E,
+                schwere=Schwere.H,
+                titel="Server speichert Tokens im Klartext",
+                erklaerung=(
+                    "Der Server schreibt Zugangs-Token oder Zugangsdaten in eine Datei, ohne sie "
+                    "zu verschlüsseln oder einen Schlüsselspeicher des Systems zu nutzen. Jedes "
+                    "Programm mit Zugriff auf die Datei kann sie lesen."
+                ),
+                datei=f.path,
+                zeile=zeile,
+                beleg=visible(code.strip()),
+                fix="Tokens im Schlüsselspeicher des Systems ablegen (keyring, keytar) oder "
+                "verschlüsseln.",
+                fix_prompt=f"Speichere die Tokens in {f.path}, Zeile {zeile}, im Schlüsselspeicher "
+                "des Systems (Python: keyring, Node: keytar) statt in einer Datei.",
+                normbezug=("OWASP-ASI03", "OWASP-LLM02"),
+            )
 
 
 @register

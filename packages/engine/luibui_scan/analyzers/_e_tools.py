@@ -34,7 +34,9 @@ class Tool:
     zeile: int
     texte: list[Text] = field(default_factory=list)
     faehigkeiten: set[str] = field(default_factory=set)
-    """What the handler does (Python only): ``befehle``, ``dateien``."""
+    """What the handler does: ``befehle``, ``dateien`` (Python; JS/TS for inline handlers)."""
+    art: str = "Tool"
+    """``Tool``, ``Prompt`` or ``Resource``: all are read by the model, only tools act."""
 
     @property
     def beschreibung(self) -> str:
@@ -64,15 +66,19 @@ def _kwarg(call: ast.Call, name: str) -> ast.AST | None:
     return next((k.value for k in call.keywords if k.arg == name), None)
 
 
-def _is_tool_decorator(d: ast.expr) -> ast.Call | bool:
-    """``@x.tool``, ``@x.tool(...)``, ``@tool``, ``@tool(...)``; the call if there is one."""
+_ARTEN = {"tool": "Tool", "prompt": "Prompt", "resource": "Resource"}
+
+
+def _decorator(d: ast.expr) -> tuple[str, ast.Call | None] | None:
+    """``@x.tool``, ``@x.prompt(...)``, ``@x.resource("uri")``, ``@tool``: (art, call or None)."""
     target = d.func if isinstance(d, ast.Call) else d
-    named = (isinstance(target, ast.Attribute) and target.attr == "tool") or (
-        isinstance(target, ast.Name) and target.id == "tool"
-    )
-    if not named:
-        return False
-    return d if isinstance(d, ast.Call) else True
+    if isinstance(target, ast.Attribute) and target.attr in _ARTEN:
+        art = _ARTEN[target.attr]
+    elif isinstance(target, ast.Name) and target.id == "tool":
+        art = "Tool"
+    else:
+        return None
+    return art, d if isinstance(d, ast.Call) else None
 
 
 def _field_description(annotation: ast.AST | None, default: ast.AST | None) -> str | None:
@@ -152,12 +158,12 @@ def _python(f: TextFile) -> Iterator[Tool]:
     konstanten = _konstanten(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            deco = next((r for d in node.decorator_list if (r := _is_tool_decorator(d))), None)
+            deco = next((r for d in node.decorator_list if (r := _decorator(d))), None)
             if deco is None:
                 continue
-            call = deco if isinstance(deco, ast.Call) else None
+            art, call = deco
             name = (_str(_kwarg(call, "name")) if call else None) or node.name
-            tool = Tool(name, f.path, node.lineno)
+            tool = Tool(name, f.path, node.lineno, art=art)
             tool.texte.append(Text("name", name, node.lineno))
             desc = _str(_kwarg(call, "description")) if call else None
             zeile = node.lineno
@@ -174,7 +180,8 @@ def _python(f: TextFile) -> Iterator[Tool]:
                 text = _field_description(arg.annotation, default)
                 if text:
                     tool.texte.append(Text(f"parameter {arg.arg}", text[:MAX_TEXT], arg.lineno))
-            tool.faehigkeiten = _faehigkeiten(node)
+            if art == "Tool":
+                tool.faehigkeiten = _faehigkeiten(node)
             yield tool
         elif isinstance(node, ast.Call):
             func = node.func
@@ -199,7 +206,23 @@ def _python(f: TextFile) -> Iterator[Tool]:
 # --- JavaScript / TypeScript -------------------------------------------------------------------
 
 _S = r"""(?:"((?:\\.|[^"\\\n])*)"|'((?:\\.|[^'\\\n])*)'|`((?:\\.|[^`\\])*)`)"""
-_TOOL_CALL = re.compile(rf"\.tool\(\s*{_S}\s*,\s*(?:{_S})?")
+_TOOL_CALL = re.compile(rf"\.(tool|prompt)\(\s*{_S}\s*,\s*(?:{_S})?")
+_REGISTER = re.compile(rf"\.(registerTool|registerPrompt|registerResource|resource)\(\s*{_S}")
+_CALL_ART = {
+    "tool": "Tool",
+    "prompt": "Prompt",
+    "registerTool": "Tool",
+    "registerPrompt": "Prompt",
+    "registerResource": "Resource",
+    "resource": "Resource",
+}
+_JS_BEFEHLE = re.compile(r"\b(exec|execSync|execFile|execFileSync|spawn|spawnSync|fork)\s*\(")
+_JS_DATEIEN = re.compile(
+    r"\b(writeFile|writeFileSync|appendFile|appendFileSync|unlink|unlinkSync|rm|rmSync|rmdir|"
+    r"rmdirSync|mkdir|mkdirSync|rename|renameSync|copyFile|copyFileSync|cp|cpSync)\s*\("
+)
+_JS_CHILD = re.compile(r"""["'](node:)?child_process["']""")
+_JS_FS = re.compile(r"""["'](node:)?fs(/promises)?["']""")
 _DESCRIPTION = re.compile(rf"\bdescription\s*:\s*{_S}")
 _INPUT_SCHEMA = re.compile(r"\binputSchema\b")
 _NAME_BEFORE = (
@@ -231,17 +254,72 @@ def _js_name(text: str, pos: int) -> str:
     return "unbenannt"
 
 
+def _call_end(text: str, open_paren: int) -> int:
+    """Index after the parenthesis that closes the call opened at ``open_paren``; strings,
+    template literals and comments are skipped. Unbalanced input ends at the end of the text."""
+    depth, i, n = 0, open_paren, len(text)
+    while i < n:
+        c = text[i]
+        if c in "\"'`":
+            i += 1
+            while i < n and text[i] != c:
+                i += 2 if text[i] == "\\" else 1
+        elif text.startswith("//", i):
+            i = text.find("\n", i)
+            i = n if i < 0 else i
+        elif text.startswith("/*", i):
+            i = text.find("*/", i)
+            i = n if i < 0 else i + 1
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return n
+
+
+def _faehigkeiten_js(span: str, child: bool, fs: bool) -> set[str]:
+    found = set()
+    if child and _JS_BEFEHLE.search(span):
+        found.add("befehle")
+    if fs and _JS_DATEIEN.search(span):
+        found.add("dateien")
+    return found
+
+
 def _javascript(f: TextFile) -> Iterator[Tool]:
     if not _MCP_JS.search(f.text):
         return
+    child, fs = bool(_JS_CHILD.search(f.text)), bool(_JS_FS.search(f.text))
     starts: list[tuple[int, Tool]] = []
+    calls: list[tuple[int, int, set[str]]] = []
     for m in _TOOL_CALL.finditer(f.text):
-        name = _group(m, 1) or ""
-        tool = Tool(name, f.path, f.line_of(m.start()))
+        name = _group(m, 2) or ""
+        tool = Tool(name, f.path, f.line_of(m.start()), art=_CALL_ART[m.group(1)])
         tool.texte.append(Text("name", name, tool.zeile))
-        if (desc := _group(m, 4)) is not None:
+        if (desc := _group(m, 5)) is not None:
             tool.texte.append(Text("beschreibung", desc[:MAX_TEXT], tool.zeile))
         starts.append((m.start(), tool))
+    for m in _REGISTER.finditer(f.text):
+        paren = f.text.index("(", m.start())
+        end = _call_end(f.text, paren)
+        art = _CALL_ART[m.group(1)]
+        if art == "Tool":
+            calls.append((m.start(), end, _faehigkeiten_js(f.text[paren:end], child, fs)))
+            continue  # its description is found below, next to the input schema
+        name = _group(m, 2) or ""
+        tool = Tool(name, f.path, f.line_of(m.start()), art=art)
+        tool.texte.append(Text("name", name, tool.zeile))
+        if d := _DESCRIPTION.search(f.text, m.end(), end):
+            tool.texte.append(Text("beschreibung", (_group(d, 1) or "")[:MAX_TEXT], tool.zeile))
+        starts.append((m.start(), tool))
+    for pos, tool in starts:
+        if tool.art == "Tool":
+            paren = f.text.index("(", pos)
+            end = _call_end(f.text, paren)
+            tool.faehigkeiten = _faehigkeiten_js(f.text[paren:end], child, fs)
     # Tool objects: registerTool configs, ListTools entries, config constants. What makes them a
     # tool (and not a resource or prompt) is the input schema right after the description.
     for m in _DESCRIPTION.finditer(f.text):
@@ -253,6 +331,12 @@ def _javascript(f: TextFile) -> Iterator[Tool]:
         tool = Tool(name, f.path, f.line_of(m.start()))
         tool.texte.append(Text("name", name, tool.zeile))
         tool.texte.append(Text("beschreibung", (_group(m, 1) or "")[:MAX_TEXT], tool.zeile))
+        # The handler: the registerTool call around this object, or the next one after it.
+        call = next((c for c in calls if c[0] <= m.start() < c[1]), None) or next(
+            (c for c in calls if c[0] > m.start()), None
+        )
+        if call is not None:
+            tool.faehigkeiten = call[2]
         starts.append((m.start(), tool))
     starts.sort(key=lambda s: s[0])
     for m in _DESCRIBE.finditer(f.text):

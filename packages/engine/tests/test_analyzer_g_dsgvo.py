@@ -234,3 +234,53 @@ def test_all_findings_are_on_the_dsgvo_axis(tmp_path: Path) -> None:
 
 def test_quick_scan_has_no_dsgvo_analysis() -> None:
     assert ScanArt.SCHNELL not in DsgvoAnalyzer.info.scan_arts
+
+
+# --- configuration files and further languages ----------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("path", "text"),
+    [
+        (".env.example", "LLM_BASE_URL=https://api.deepseek.com/v1\n"),
+        ("config.yaml", "server:\n  api_url: https://api.deepseek.com/v1\n"),
+        ("settings.toml", 'endpoint = "https://api.deepseek.com"\n'),
+        ("config.json", '{"webhook": "https://api.deepseek.com/hook"}\n'),
+    ],
+)
+def test_endpoints_in_configuration(tmp_path: Path, path: str, text: str) -> None:
+    f = analyze(tmp_path, {path: text})[0]
+    assert f.rule_id == "LB-G02-drittland" and f.datei == path
+
+
+@pytest.mark.parametrize(
+    ("path", "text"),
+    [
+        ("pyproject.toml", '[project.urls]\nHomepage = "https://api.deepseek.com"\n'),
+        ("config.yaml", "homepage: https://api.deepseek.com\ndocs_url: https://api.deepseek.com\n"),
+        ("package.json", '{"repository": {"url": "https://api.deepseek.com"}}\n'),
+    ],
+)
+def test_project_links_in_configuration_are_not_endpoints(
+    tmp_path: Path, path: str, text: str
+) -> None:
+    assert analyze(tmp_path, {path: text}) == []
+
+
+@pytest.mark.parametrize(
+    ("path", "code"),
+    [
+        ("main.go", 'package main\nimport "net/http"\nvar u = "https://api.deepseek.com/x"\n'),
+        ("tool.rb", 'require "net/http"\nNet::HTTP.get(URI("https://api.deepseek.com/x"))\n'),
+        ("tool.php", '<?php\n$r = file_get_contents("https://api.deepseek.com/x");\n'),
+        ("install.ps1", "Invoke-RestMethod https://api.deepseek.com/x\n"),
+    ],
+)
+def test_endpoints_in_further_languages(tmp_path: Path, path: str, code: str) -> None:
+    f = analyze(tmp_path, {path: code})[0]
+    assert f.rule_id == "LB-G02-drittland" and "api.deepseek.com" in f.titel
+
+
+def test_further_languages_comments_are_not_endpoints(tmp_path: Path) -> None:
+    code = 'package main\nimport "net/http"\n// siehe https://api.deepseek.com\n'
+    assert analyze(tmp_path, {"main.go": code}) == []

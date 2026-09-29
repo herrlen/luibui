@@ -264,6 +264,70 @@ def _shell(f: TextFile, ld: Laender, code: Code) -> None:
             code.netz = code.netz or Stelle(f.path, i, line.strip())
 
 
+# Further languages: URLs in quoted strings of files that use a network client.
+_ANDERE_NETZ = {
+    ".go": r"net/http|http\.(Get|Post|NewRequest)|resty",
+    ".rb": r"Net::HTTP|HTTParty|Faraday|RestClient|open-uri|URI\.open",
+    ".php": r"curl_init|file_get_contents\s*\(|Guzzle|wp_remote_|fsockopen",
+    ".rs": r"reqwest|ureq|hyper::|surf::",
+    ".java": r"HttpClient|HttpURLConnection|OkHttp|RestTemplate|WebClient",
+    ".kt": r"HttpClient|HttpURLConnection|OkHttp|RestTemplate|WebClient|ktor",
+    ".cs": r"HttpClient|WebClient|RestSharp|HttpWebRequest",
+    ".ps1": r"(?i)Invoke-WebRequest|Invoke-RestMethod|\biwr\b|\birm\b|WebClient",
+    ".psm1": r"(?i)Invoke-WebRequest|Invoke-RestMethod|\biwr\b|\birm\b|WebClient",
+    ".bat": r"(?i)\bcurl\b|\bpowershell\b|\bbitsadmin\b|\bcertutil\b",
+    ".cmd": r"(?i)\bcurl\b|\bpowershell\b|\bbitsadmin\b|\bcertutil\b",
+}
+_KOMMENTAR = {
+    "slash": re.compile(r"/\*.*?\*/|(?<![:\"'`\\\w])//[^\n]*", re.DOTALL),
+    "hash": re.compile(r"(?m)^\s*#[^\n]*|(?<=\s)#(?![{\[])[^\n]*"),
+    "batch": re.compile(r"(?im)^\s*(rem\b|::)[^\n]*"),
+}
+_KOMMENTAR_ART = {".rb": "hash", ".ps1": "hash", ".psm1": "hash", ".bat": "batch", ".cmd": "batch"}
+
+
+def _andere(f: TextFile, ld: Laender, code: Code) -> None:
+    suffix = PurePosixPath(f.path).suffix.lower()
+    kommentar = _KOMMENTAR[_KOMMENTAR_ART.get(suffix, "slash")]
+    text = kommentar.sub(lambda m: "\n" * m.group().count("\n"), f.text)
+    if not re.search(_ANDERE_NETZ[suffix], text):
+        return
+    code.netz = code.netz or Stelle(f.path, 1, "Netzwerk-Client")
+    for m in _URL.finditer(text):
+        zeile = text.count("\n", 0, m.start()) + 1
+        _add(code.hosts, _host(m, ld), Stelle(f.path, zeile, f.line_text(zeile).strip()))
+
+
+# Configuration: keys that name a target (base_url, API_ENDPOINT, webhook …), never project links.
+_KONFIG_KEY = re.compile(r"(?i)(url|uri|endpoint|host|base|api|server|webhook|remote)")
+_KONFIG_NICHT = re.compile(
+    r"(?i)(homepage|repository|repo|documentation|docs|bugs|issues|changelog|license|source|"
+    r"funding|schema|image|icon|logo|avatar|website|help|support|privacy|terms)"
+)
+_KONFIG_ZEILE = re.compile(
+    r"""(?m)(?:^|[{,])\s*(?:export\s+)?["']?([\w.-]+)["']?\s*[:=]\s*["']?((?:https?|wss?)://[^"'\s,}]+)"""
+)
+_KONFIG_DATEIEN = re.compile(r"(?i)(^|/)\.env(\.[\w-]+)?$|\.(ya?ml|toml|json|ini|cfg|conf)$")
+_KONFIG_AUSGENOMMEN = re.compile(
+    r"(?i)(^|/)(package(-lock)?\.json|composer\.(json|lock)|tsconfig[\w.-]*\.json|luibui\.json|"
+    r"pyproject\.toml|cargo\.toml|\.eslintrc[\w.]*|renovate\.json|\.github/.*|"
+    r"[\w.-]*lock\.(json|ya?ml))$"
+)
+
+
+def _konfig(f: TextFile, ld: Laender, code: Code) -> None:
+    for m in _KONFIG_ZEILE.finditer(f.text):
+        key = m.group(1).rsplit(".", 1)[-1]
+        if not _KONFIG_KEY.search(key) or _KONFIG_NICHT.search(key):
+            continue
+        inner = _URL.search(m.group(2))
+        if inner is None:
+            continue
+        zeile = f.line_of(m.start(2))
+        stelle = Stelle(f.path, zeile, f.line_text(zeile).strip())
+        _add(code.hosts, _host(inner, ld), stelle)
+
+
 def _code(ctx: ScanContext, ld: Laender) -> Code:
     code = Code()
     for f in text_files(ctx):
@@ -274,6 +338,10 @@ def _code(ctx: ScanContext, ld: Laender) -> Code:
             _javascript(f, ld, code)
         elif suffix in _SH:
             _shell(f, ld, code)
+        elif suffix in _ANDERE_NETZ:
+            _andere(f, ld, code)
+        elif _KONFIG_DATEIEN.search(f.path) and not _KONFIG_AUSGENOMMEN.search(f.path):
+            _konfig(f, ld, code)
     return code
 
 

@@ -3,6 +3,7 @@
 import type { Bericht, Schwere } from "./types";
 
 const SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
+const PAKET_ANKER = "luibui.json";
 export const OHNE_GEWAEHR = "Schnellscan: eingeschränkter Umfang, ohne Gewähr.";
 
 const LEVEL: Record<Schwere, "error" | "warning" | "note"> = {
@@ -40,18 +41,16 @@ export function berichtAlsSarif(b: Bericht): object {
       ruleIndex: index,
       level: LEVEL[x.schwere],
       message: { text: `${x.titel}: ${x.erklaerung}` },
-      ...(x.datei
-        ? {
-            locations: [
-              {
-                physicalLocation: {
-                  artifactLocation: { uri: dateiUri(x.datei) },
-                  ...(x.zeile && x.zeile > 0 ? { region: { startLine: x.zeile } } : {}),
-                },
-              },
-            ],
-          }
-        : {}),
+      // GitHub Code Scanning rejects results without a location. Findings about the whole
+      // package are anchored at its manifest, line 1.
+      locations: [
+        {
+          physicalLocation: {
+            artifactLocation: { uri: x.datei ? dateiUri(x.datei) : PAKET_ANKER },
+            region: { startLine: x.datei && x.zeile && x.zeile > 0 ? x.zeile : 1 },
+          },
+        },
+      ],
       properties: {
         schwere: x.schwere,
         achse: x.achse,

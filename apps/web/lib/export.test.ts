@@ -42,7 +42,7 @@ describe("SARIF", () => {
     expect(run.tool.driver.rules[0].properties["security-severity"]).toBe("9.5");
   });
 
-  it("uses relative URIs, a line only when known, and plain text only", () => {
+  it("uses relative URIs, gives every result a location, and plain text only", () => {
     const b = beispielbericht();
     const x = { ...b.befunde[0], beleg: "<script>x</script>" };
     const run = sarif({
@@ -57,8 +57,13 @@ describe("SARIF", () => {
       artifactLocation: { uri: "skill/mit%20leer.md" },
       region: { startLine: 3 },
     });
-    expect(run.results[1].locations?.[0].physicalLocation.region).toBeUndefined();
-    expect(run.results[2].locations).toBeUndefined();
+    // GitHub Code Scanning rejects results without a location: unknown line → 1, no file →
+    // the package manifest.
+    expect(run.results[1].locations?.[0].physicalLocation.region).toEqual({ startLine: 1 });
+    expect(run.results[2].locations?.[0].physicalLocation).toEqual({
+      artifactLocation: { uri: "luibui.json" },
+      region: { startLine: 1 },
+    });
     expect(run.results.every((r) => r.message.markdown === undefined)).toBe(true);
   });
 });

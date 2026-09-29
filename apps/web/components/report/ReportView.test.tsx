@@ -50,6 +50,16 @@ describe("ReportView", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 
+  it("shows a Markdown image link in evidence, explanation and fix as text", () => {
+    const b = beispielbericht();
+    const md = "![x](https://sammler.invalid/p.png?d=1) [klick](javascript:alert(1))";
+    const boese = { ...b.befunde[0], beleg: md, erklaerung: md, fix: md };
+    const html = renderToStaticMarkup(<ReportView bericht={{ ...b, befunde: [boese] }} />);
+    expect(html).not.toContain("<img");
+    expect(html).not.toMatch(/<a [^>]*href="(https:\/\/sammler|javascript)/);
+    expect(html).toContain("![x](https://sammler.invalid/p.png?d=1)");
+  });
+
   it("renders nothing about DSGVO with showDsgvo={false}", () => {
     const html = renderToStaticMarkup(<ReportView bericht={mitDsgvo()} showDsgvo={false} />);
     expect(html).not.toMatch(/DSGVO|personenbezogen/i);
@@ -62,6 +72,9 @@ describe("CSV", () => {
   it("neutralises formulas", () => {
     expect(zelle("=HYPERLINK(1)")).toBe(`"'=HYPERLINK(1)"`);
     expect(zelle("@x")).toBe(`"'@x"`);
+    expect(zelle("+1+1")).toBe(`"'+1+1"`);
+    expect(zelle("-2+3")).toBe(`"'-2+3"`);
+    expect(zelle("\rx")).toBe(`"'\rx"`);
     expect(zelle("\tx")).toBe(`"'\tx"`);
     expect(zelle('a "b"')).toBe(`"a ""b"""`);
   });

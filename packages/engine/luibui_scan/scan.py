@@ -10,10 +10,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from luibui_scan.analyzers._common import text_files
 from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry
 from luibui_scan.context import ScanContext
 from luibui_scan.intake.nested import expand_packages
 from luibui_scan.inventory import Inventory, build_inventory
+from luibui_scan.korrelation import ist_code, korreliere, mit_fingerprints, verweise
 from luibui_scan.models import Pruefumfang, ScanArt
 from luibui_scan.pipeline import PipelineResult, run_pipeline
 from luibui_scan.scoring import Bewertung, bewerte
@@ -103,6 +105,11 @@ def scan_prepared(
         nicht_entpackt=nested.abgelehnt,
     )
     pipeline = run_pipeline(ctx, registry)
+    pipeline.findings[:] = mit_fingerprints(pipeline.findings)
+    if umfang is not Pruefumfang.EINZELDATEI and scan_art is not ScanArt.SCHNELL:
+        ziele = verweise(list(text_files(ctx)), {e.path for e in inventory.entries})
+        code = {e.path for e in inventory.entries if ist_code(e)}
+        pipeline.findings[:] = korreliere(pipeline.findings, ziele, code)
     names = {a.info.name for a in (default_registry if registry is None else registry)}
     expected = ERWARTET[scan_art] if erwartet is None else erwartet
     fehlend = tuple(titel for name, titel in expected.items() if name not in names)

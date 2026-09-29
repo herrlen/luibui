@@ -26,7 +26,11 @@ Sperrliste zählt jede Regel der Prüfung. Externe Regeln behalten ihr Präfix (
 
 **Schwere:** Die Spalte nennt die **Regelschwere**. Eine einzelne Regel darf niedriger liegen,
 wenn der Benchmark (S3-6) zu viele Fehlalarme zeigt, nie höher. Die Korrelation (Konzept §4,
-Schritt 11) stuft einen Befund um eine Stufe hoch und setzt `hochgestuft_von`.
+Schritt 11) stuft einen Befund um eine Stufe hoch und setzt `hochgestuft_von`
+(`korrelation.py`): nur in Code, auf den eine Anleitung zeigt (SKILL.md, AGENTS.md, CLAUDE.md,
+Commands, Agents, Cursor-Regeln; über verlinktes Markdown bis Tiefe 3), nur Befunde der Ebenen A,
+C und E, nur M→H und H→K. Markdown selbst wird nicht hochgestuft (sonst würden bewusst als
+Beispiel herabgestufte Zitate wieder scharf). Nicht bei Einzeldateien und im Schnellscan.
 
 | Kürzel | Schwere | Wirkung auf die Sicherheitsampel |
 |---|---|---|

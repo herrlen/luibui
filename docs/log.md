@@ -1306,3 +1306,26 @@ sperrend.
 (vorher 12). Es bleiben 27 M, überwiegend zitierte Beispiele in Sicherheitsdokumentation.
 
 **Geprüft:** 993 Python-Tests, Regeltests B08–B17.
+
+## 2026-09-29 – S2-5: Korrelation und Fingerprints
+
+**Was:**
+- `korrelation.py`: Verweise aus Anleitungen, die ein Agent liest (SKILL.md, AGENTS.md, CLAUDE.md,
+  GEMINI.md, Cursor/Windsurf/Cline-Regeln, Markdown in `commands/`, `agents/`, `prompts/`,
+  `rules/`), über Markdown-Links, Pfade in Backticks, Befehle (`python`, `bash`, `node`, `uv run`,
+  `pwsh -File` …) und `./x`, mit Platzhaltern wie `${CLAUDE_PLUGIN_ROOT}/` oder `{baseDir}/`.
+  Ketten über verlinktes Markdown bis Tiefe 3; nie außerhalb des Pakets.
+- Hochgestuft wird nur Code, auf den verwiesen wird, und nur Befunde der Ebenen A, C, E (M→H,
+  H→K), mit Hinweis auf die verweisende Zeile, `hochgestuft_von` und `verweise` (Fingerprints der
+  Befunde in der verweisenden Datei). Nicht bei Einzeldateien und im Schnellscan.
+- Jeder Befund bekommt einen Fingerprint aus Regel, Datei und Beleg (ohne Zeile, damit er über
+  Versionen stabil bleibt); Grundlage für den Befund-Status (S3-7). Der Worker speichert beides.
+- Befundkarte: „hochgestuft von …“.
+
+**Kalibrierung:** Erster Entwurf stufte in claude-skills-main 112 Befunde hoch, 76 davon
+Werkzeugrechte (E08) in Agent-Definitionen und viele bewusst herabgestufte Zitate in Markdown.
+Beschränkt auf Code und Ebenen A/C/E: 6 (zweimal `shell=True` mit variablem Befehl in Skripten,
+die eine SKILL.md ausführen lässt, H→K; zweimal `torch.load`, zweimal CORS `*`, M→H).
+marketing-skill: 0.
+
+**Geprüft:** 1.008 Python-Tests (15 neu), 23 Web-Tests, ruff, mypy, eslint.

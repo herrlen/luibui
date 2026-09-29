@@ -18,6 +18,9 @@ export type Befund = {
   normbezug: string[];
   fix: string;
   fix_prompt: string;
+  /** Set when the correlation raised the finding (S2-5). */
+  hochgestuft_von?: Schwere;
+  fingerprint?: string;
 };
 
 export type Bericht = {

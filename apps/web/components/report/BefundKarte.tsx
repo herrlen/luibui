@@ -64,6 +64,7 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
       <div id={id} hidden={!auf} className="border-t border-linie px-5 pb-5 pt-4">
         <p className="font-mono text-xs text-muted">
           {b.rule_id} · {b.achse === "dsgvo" ? "DSGVO" : "Sicherheit"}
+          {b.hochgestuft_von ? ` · hochgestuft von ${SCHWERE_TEXT[b.hochgestuft_von]}` : ""}
         </p>
         <p className="mt-3 text-[15px] leading-[1.6] text-ink-2">
           <MitCode text={b.erklaerung} />

@@ -102,3 +102,12 @@ describe("Abdeckung", () => {
     expect(renderToStaticMarkup(<ReportView bericht={alt} showDsgvo={false} />)).not.toContain("Was geprüft wurde");
   });
 });
+
+describe("Hochgestufte Befunde", () => {
+  it("names the original severity", () => {
+    const b = beispielbericht();
+    const erster = { ...b.befunde[0], schwere: "K" as const, hochgestuft_von: "H" as const };
+    const html = renderToStaticMarkup(<ReportView bericht={{ ...b, befunde: [erster] }} showDsgvo={false} />);
+    expect(html).toContain("hochgestuft von Hoch");
+  });
+});

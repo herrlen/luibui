@@ -3,25 +3,26 @@
 Both need a browser session (never an API token), the password and, with two-factor login, the
 code. The export is a ZIP with everything stored about the account: account data, sessions and
 tokens (no secrets or hashes), credit, purchases, the own audit log, projects with their reports
-and the stored files, decrypted. Deleting removes the account with all projects, reports and the
-encrypted files on the volume. Receipts stay for ten years (§ 147 AO), without the account link.
+and the stored files, decrypted, streamed while it is built. Deleting removes the account with
+all projects, reports and the encrypted files on the volume. Receipts stay for ten years
+(§ 147 AO), without the account link.
 """
 
+import io
 import json
-import os
 import re
-import tempfile
 import uuid
 import zipfile
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from typing import Any
 
 from fastapi import APIRouter, Response, status
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from starlette.background import BackgroundTask
 
 from luibui_api.audit import audit
 from luibui_api.auth import DbSession, SessionCaller, cookie_name
@@ -90,10 +91,6 @@ def _name(text: str) -> str:
     return re.sub(r"[^\w.\- ]", "_", text).strip(". ")[:80] or "projekt"
 
 
-def _json(zf: zipfile.ZipFile, name: str, data: Any) -> None:
-    zf.writestr(name, json.dumps(data, ensure_ascii=False, indent=2, default=str))
-
-
 def _konto(db: DbSession, user: User) -> dict[str, Any]:
     uid = user.id
     return {
@@ -147,64 +144,108 @@ def _scan(s: Scan) -> dict[str, Any]:
     }
 
 
-def _export(db: DbSession, user: User, ziel: str) -> None:
+@dataclass(frozen=True, slots=True)
+class _Datei:
+    name: str
+    storage_key: str
+    data_key: bytes
+
+
+@dataclass(slots=True)
+class _Plan:
+    """Everything the export needs from the database, read before streaming starts: the
+    response is sent after the request's database session may already be closed."""
+
+    json: list[tuple[str, Any]] = field(default_factory=list)
+    dateien: list[_Datei] = field(default_factory=list)
+
+
+def _plan(db: DbSession, user: User) -> _Plan:
     uid = user.id
-    with zipfile.ZipFile(ziel, "w", zipfile.ZIP_DEFLATED) as zf:
-        _json(zf, "konto.json", _konto(db, user))
-        einzeln = db.scalars(
-            select(Scan)
-            .join(Project, Scan.project_id == Project.id)
-            .where(Scan.owner_id == uid, Project.is_einzelpruefungen)
+    plan = _Plan()
+    plan.json.append(("konto.json", _konto(db, user)))
+    einzeln = db.scalars(
+        select(Scan)
+        .join(Project, Scan.project_id == Project.id)
+        .where(Scan.owner_id == uid, Project.is_einzelpruefungen)
+    )
+    plan.json.append(("einzelpruefungen.json", [_scan(s) for s in einzeln]))
+    for p in db.scalars(select(Project).where(Project.owner_id == uid)):
+        if p.is_einzelpruefungen:
+            continue
+        ordner = f"projekte/{_name(p.name)}-{str(p.id)[:8]}"
+        versionen = list(
+            db.scalars(select(ProjectVersion).where(ProjectVersion.project_id == p.id))
         )
-        _json(zf, "einzelpruefungen.json", [_scan(s) for s in einzeln])
-        for p in db.scalars(select(Project).where(Project.owner_id == uid)):
-            if p.is_einzelpruefungen:
-                continue
-            ordner = f"projekte/{_name(p.name)}-{str(p.id)[:8]}"
-            versionen = list(
-                db.scalars(select(ProjectVersion).where(ProjectVersion.project_id == p.id))
-            )
-            status_liste = db.scalars(select(FindingStatus).where(FindingStatus.project_id == p.id))
-            _json(zf, f"{ordner}/projekt.json", {
-                "name": p.name, "typ": p.typ, "quelle": p.quelle, "git_url": p.git_url,
-                "angelegt": _iso(p.created_at), "nach_pruefung_loeschen": p.delete_files_after_scan,
-                "versionen": [{"nummer": v.number, "angelegt": _iso(v.created_at),
-                               "dateien": v.file_count, "bytes": v.bytes} for v in versionen],
-                "befund_status": [{"fingerprint": f.fingerprint, "status": f.status,
-                                   "begruendung": f.begruendung} for f in status_liste],
-            })  # fmt: skip
-            scans = db.scalars(select(Scan).where(Scan.project_id == p.id))
-            _json(zf, f"{ordner}/pruefungen.json", [_scan(s) for s in scans])
-            if p.data_key_enc is None:
-                continue
-            data_key, _ = project_data_key(p.id, p.data_key_enc)
-            for v in versionen:
-                dateien = db.scalars(select(StoredFile).where(StoredFile.version_id == v.id))
-                for f in dateien:
-                    with zf.open(f"{ordner}/dateien/v{v.number}/{f.path}", "w") as out:
-                        for teil in blob_store().open(f.storage_key, data_key):
-                            out.write(teil)
+        status_liste = db.scalars(select(FindingStatus).where(FindingStatus.project_id == p.id))
+        plan.json.append((f"{ordner}/projekt.json", {
+            "name": p.name, "typ": p.typ, "quelle": p.quelle, "git_url": p.git_url,
+            "angelegt": _iso(p.created_at), "nach_pruefung_loeschen": p.delete_files_after_scan,
+            "versionen": [{"nummer": v.number, "angelegt": _iso(v.created_at),
+                           "dateien": v.file_count, "bytes": v.bytes} for v in versionen],
+            "befund_status": [{"fingerprint": f.fingerprint, "status": f.status,
+                               "begruendung": f.begruendung} for f in status_liste],
+        }))  # fmt: skip
+        scans = db.scalars(select(Scan).where(Scan.project_id == p.id))
+        plan.json.append((f"{ordner}/pruefungen.json", [_scan(s) for s in scans]))
+        if p.data_key_enc is None:
+            continue
+        data_key, _ = project_data_key(p.id, p.data_key_enc)
+        for v in versionen:
+            for f in db.scalars(select(StoredFile).where(StoredFile.version_id == v.id)):
+                name = f"{ordner}/dateien/v{v.number}/{f.path}"
+                plan.dateien.append(_Datei(name, f.storage_key, data_key))
+    return plan
+
+
+class _Puffer(io.RawIOBase):
+    """A write-only stream: zipfile writes into it, the response takes the bytes out."""
+
+    def __init__(self) -> None:
+        self._teile: list[bytes] = []
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, b: Any) -> int:
+        self._teile.append(bytes(b))
+        return len(b)
+
+    def abholen(self) -> bytes:
+        daten = b"".join(self._teile)
+        self._teile.clear()
+        return daten
+
+
+def _zip_strom(plan: _Plan) -> Iterator[bytes]:
+    """The ZIP piece by piece, so data keeps flowing (the web proxy gives up after 30 s of
+    silence) and nothing is kept on disk. zipfile supports streams without seek since 3.5."""
+    puffer = _Puffer()
+    with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name, daten in plan.json:
+            zf.writestr(name, json.dumps(daten, ensure_ascii=False, indent=2, default=str))
+            yield puffer.abholen()
+        for datei in plan.dateien:
+            with zf.open(datei.name, "w") as out:
+                for teil in blob_store().open(datei.storage_key, datei.data_key):
+                    out.write(teil)
+                    if chunk := puffer.abholen():
+                        yield chunk
+    yield puffer.abholen()
 
 
 @router.post("/export")
-def export(body: Nachweis, caller: SessionCaller, db: DbSession) -> FileResponse:
+def export(body: Nachweis, caller: SessionCaller, db: DbSession) -> StreamingResponse:
     user = db.merge(caller.user)
     _pruefen(user, body)
-    get_settings().scratch_root.mkdir(parents=True, exist_ok=True)
-    fd, ziel = tempfile.mkstemp(prefix="export-", suffix=".zip", dir=get_settings().scratch_root)
-    os.close(fd)
-    try:
-        _export(db, user, ziel)
-    except BaseException:
-        os.unlink(ziel)
-        raise
+    plan = _plan(db, user)
     audit(db, user.id, "konto.exportiert", "user", user.id)
     db.commit()
-    return FileResponse(
-        ziel,
+    name = f"luibui-export-{date.today().isoformat()}.zip"
+    return StreamingResponse(
+        _zip_strom(plan),
         media_type="application/zip",
-        filename=f"luibui-export-{date.today().isoformat()}.zip",
-        background=BackgroundTask(os.unlink, ziel),
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
     )
 
 

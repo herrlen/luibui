@@ -194,3 +194,22 @@ def test_reset_requests_are_limited(api: Api, post: list[Any]) -> None:
             == 202
         )
     assert len(_resets(post)) == 3
+
+
+def test_export_is_streamed_and_intact(api: Api, tmp_path: Path) -> None:
+    import os
+
+    a = api.user("anna@example.org")
+    gross = os.urandom(3 * 1024 * 1024)  # does not compress: the ZIP really carries 3 MB
+    files = {"SKILL.md": b"# LUIBUI-TESTFIXTURE Skill\n", "daten/gross.bin": gross}
+    assert upload_zip(a, project(a), files).status_code == 202
+    with a.stream("POST", "/api/v1/konto/export", json={"passwort": PW}) as r:
+        assert r.status_code == 200
+        assert "content-length" not in r.headers  # streamed while it is built
+        teile = list(r.iter_bytes())
+    zf = zipfile.ZipFile(io.BytesIO(b"".join(teile)))
+    assert zf.testzip() is None
+    datei = next(n for n in zf.namelist() if n.endswith("/dateien/v1/daten/gross.bin"))
+    assert zf.read(datei) == gross
+    # The export never touches the disk (the scratch only holds the upload for the queued check).
+    assert not list((tmp_path / "scratch").rglob("*.zip"))

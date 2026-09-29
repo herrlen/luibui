@@ -1400,3 +1400,14 @@ mit gebautem Server: Anfrage ohne laufende API, Ersatz-API nach 3 s → Antwort 
 **Nebenbefund:** Die Weiterleitung von Next.js hat eine Frist von 30 Sekunden ohne Daten
 (`proxyTimeout`). Ein Datenexport, der länger zum Zusammenstellen braucht, würde so abbrechen.
 Bei 500 MB Kontingent vorstellbar; offen.
+
+## 2026-09-29 – S2-10: Datenexport als Datenstrom
+
+**Was:** Das Export-ZIP wird beim Erzeugen gesendet (`StreamingResponse`, `zipfile` in einen nicht
+zurückspulbaren Puffer), statt erst vollständig als Datei im Scratch zu entstehen. Alle Angaben aus
+der Datenbank werden vorher gelesen, beim Senden wird nur noch entschlüsselt und gepackt.
+Speicherbedarf je Block (1 MiB), keine Datei auf der Platte, und die 30-Sekunden-Frist der
+Weiterleitung greift nicht mehr, weil laufend Daten fließen.
+
+**Geprüft:** neuer Test mit 3 MB nicht komprimierbarer Datei: Antwort ohne `Content-Length`,
+ZIP unversehrt (`testzip`), Inhalt gleich, keine Export-Datei im Scratch. 142 API-Tests.

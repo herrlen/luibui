@@ -202,3 +202,13 @@ fehlgeschlagen): api 69 MiB (Spitze 122), worker 96 MiB (Spitze 358), web 75 MiB
 Container-Test mit dem marketing-skill-Paket (234 Dateien, 63 Python) lag die Spitze bei 375 MiB,
 Dauer 47 s bei 1,5 CPU. Opengrep läuft mit `--jobs 1` und `--max-memory 900`; das Worker-Limit
 von 1536 MiB reicht. Das Image ist um den Opengrep-Cache größer (ca. 290 MB).
+
+## Nach Deploy `3ab909e` (29.09.2026, S2-3 MCP-Analyzer)
+
+cgroup nach einem Selbsttest im Worker (vergiftetes MCP-Tool, alle Prüfungen, keine
+fehlgeschlagen): api 79 MiB (Spitze 133), worker 450 MiB (Spitze 656), web 156 MiB (Spitze 169).
+Der höhere Worker-Wert ist überwiegend Seiten-Cache (`memory.current` zählt gelesene Dateien mit:
+Opengrep-Cache 240 MB, Schadsoftware-Liste), der bei Bedarf freigegeben wird; der Python-Prozess
+selbst lag beim Test vom 28.09. bei rund 270 MB. Im Web-Log stehen Zeilen „Server Reference ID did
+not match the expected format“: abgewiesene Anfragen mit ungültigem `Next-Action`-Header
+(automatisierte Proben), kein Fehler der Anwendung.

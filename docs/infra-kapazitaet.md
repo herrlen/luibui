@@ -261,3 +261,9 @@ Logs ohne Fehler. cgroup: api 88 MiB (Spitze 132); worker 46 MiB (Spitze 46); we
 Live geprüft: Datei-Schnellscan fertig in rund 5 s, 2,2 MB → 413. Logs seit der Korrektur ohne
 Fehler (die zwei `EPIPE` stammen aus dem Test vor `c4dee0f`, siehe `docs/log.md`).
 cgroup: api 89 MiB (Spitze 135); worker 45 MiB (Spitze 45); web 130 MiB (Spitze 130).
+
+## Nach Deploy `d7682aa` und `d528216` (29.09.2026, Upload-Grenze hinter der Weiterleitung, offene K/H auf der Übersicht)
+
+Live: Schnellscan mit 2,2 MB und 20 MB → 413 statt 500; Übersicht ohne Anmeldung → Weiterleitung
+zur Anmeldung, `offene-befunde` → 401. Logs ohne Fehler.
+cgroup nach `d528216`: api 88 MiB (Spitze 133); worker 45 MiB (Spitze 45); web 70 MiB (Spitze 71).

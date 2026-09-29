@@ -1411,3 +1411,18 @@ Weiterleitung greift nicht mehr, weil laufend Daten fließen.
 
 **Geprüft:** neuer Test mit 3 MB nicht komprimierbarer Datei: Antwort ohne `Content-Length`,
 ZIP unversehrt (`testzip`), Inhalt gleich, keine Export-Datei im Scratch. 142 API-Tests.
+
+## 2026-09-29 – S2-12: Bericht per Link teilen
+
+**Was:** `POST /api/v1/scans/{id}/teilen` erzeugt für eine fertige Prüfung einen Link mit
+256-Bit-Zufallstoken (nur SHA-256 in `scans.share_token_hash`, Spalte gab es schon); ein neuer
+Link ersetzt den alten, `DELETE …/teilen` beendet das Teilen, Löschen der Prüfung oder des
+Projekts ebenso. `GET /api/v1/geteilt/{token}` ohne Anmeldung liefert nur den Bericht und das
+Prüfdatum, keine Kontodaten. Öffentliche Seite `luibui.com/bericht/<token>` (noindex), im
+Entwicklerbereich „Bericht teilen“ unter den Downloads; der Link wird nur einmal angezeigt.
+`geteilt` im Prüfungsstatus und im Datenexport. Isolationstest nimmt die öffentliche Route
+ausdrücklich aus (der Link ist die Berechtigung). Datenschutzerklärung ergänzt.
+
+**Geprüft:** 4 API-Tests (nur fertige Prüfungen, anonymer Abruf ohne Kontodaten, nur Hash
+gespeichert, neuer Link ersetzt alten, Beenden, Link stirbt mit dem Projekt, kaputte Tokens → 404),
+Isolationstest deckt die neuen Routen mit `scan_id` ab, 2 Web-Tests.

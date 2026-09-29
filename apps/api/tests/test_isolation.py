@@ -12,6 +12,8 @@ from .test_scans import project, upload_zip
 
 ERLAUBT = {404}
 """Foreign resources look like missing ones (CLAUDE.md rule 9)."""
+OEFFENTLICH = {"/api/v1/geteilt/{token}"}
+"""Public by design: the random link token itself is the permission (S2-12, test_teilen.py)."""
 
 
 def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
@@ -40,7 +42,7 @@ def test_user_b_reaches_nothing_of_user_a_on_any_route(
     geprueft = []
     for pfad, operationen in routen.items():
         params = [s[1:-1] for s in pfad.split("/") if s.startswith("{")]
-        if not params:
+        if not params or pfad in OEFFENTLICH:
             continue
         unbekannt = [p for p in params if p not in ids]
         assert not unbekannt, f"{pfad}: Parameter {unbekannt} im Isolationstest ergänzen"
@@ -54,4 +56,4 @@ def test_user_b_reaches_nothing_of_user_a_on_any_route(
     # A's data is still there: B's requests changed nothing.
     assert a.get(f"/api/v1/projects/{ids['project_id'][0]}").status_code == 200
     assert a.get(f"/api/v1/scans/{ids['scan_id'][0]}").status_code == 200
-    assert len(geprueft) >= 9
+    assert len(geprueft) >= 11

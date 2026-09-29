@@ -52,6 +52,8 @@ export type ScanStatus = {
   created_at: string;
   finished_at: string | null;
   bericht: Bericht | null;
+  /** A share link is active (S2-12). */
+  geteilt?: boolean;
 };
 
 export type Pruefungskurz = {

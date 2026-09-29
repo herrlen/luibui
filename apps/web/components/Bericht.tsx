@@ -2,6 +2,7 @@ import { datumZeit, STATUS_TEXT } from "@/lib/format";
 import type { ScanStatus } from "@/lib/types";
 
 import { Aktualisieren } from "./Aktualisieren";
+import { Teilen } from "./app/Teilen";
 import { ReportView } from "./report/ReportView";
 
 const DOWNLOADS = [
@@ -53,6 +54,7 @@ export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloa
               ))}
             </div>
           ) : null}
+          {downloads ? <Teilen scanId={scan.id} geteilt={scan.geteilt ?? false} /> : null}
         </>
       ) : null}
     </div>

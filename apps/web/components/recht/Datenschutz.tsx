@@ -188,6 +188,7 @@ export function Datenschutz() {
             ["Zahlungsbelege", "10 Jahre (§ 147 AO, § 257 HGB), auch nach Löschung des Kontos."],
             ["Bestätigungslink", "24 Stunden gültig, der Prüfwert wird mit dem Konto gelöscht."],
             ["Link für ein neues Passwort", "Eine Stunde gültig, der Prüfwert wird mit dem Konto gelöscht."],
+            ["Link zum Teilen eines Berichts", "Nur wenn du ihn erzeugst; gespeichert wird nur ein Prüfwert (SHA-256). Gilt, bis du das Teilen beendest, einen neuen Link erzeugst oder den Bericht löschst. Wer den Link hat, sieht den Bericht, aber keine Kontodaten."],
             ["Projekte, Dateien, Berichte", "Bis du das Projekt löschst; höchstens die letzten 10 Versionen."],
             ["Bericht einer Einzelprüfung", "Bis du ihn löschst. Die geprüften Dateien werden nicht gespeichert."],
             ["Bericht eines Schnellscans", "7 Tage."],

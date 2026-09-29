@@ -40,6 +40,8 @@ class ScanStatus(BaseModel):
     finished_at: datetime | None
     bericht: dict[str, Any] | None
     """The full report (spec/report.schema.json) once the scan is finished."""
+    geteilt: bool = False
+    """Whether a share link is active (S2-12)."""
 
 
 def scan_status_of(scan: Scan) -> ScanStatus:
@@ -63,6 +65,7 @@ def scan_status_of(scan: Scan) -> ScanStatus:
         created_at=scan.created_at,
         finished_at=scan.finished_at,
         bericht=scan.report,
+        geteilt=scan.share_token_hash is not None,
     )
 
 

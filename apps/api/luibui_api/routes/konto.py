@@ -140,6 +140,7 @@ def _scan(s: Scan) -> dict[str, Any]:
         "fertig": _iso(s.finished_at),
         "status": s.status,
         "scan_art": s.scan_art,
+        "per_link_geteilt": s.share_token_hash is not None,
         "bericht": s.report,
     }
 

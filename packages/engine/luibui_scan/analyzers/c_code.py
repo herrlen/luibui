@@ -237,7 +237,7 @@ def _zeile(code: str, zeile: int | None) -> str:
 
 # --- Opengrep ----------------------------------------------------------------------------------
 
-_SPRACHE = re.compile(r"-(py|js|sh)$")
+_SPRACHE = re.compile(r"-(py|js|sh|go|rb|php|rs|java|ps|andere)$")
 
 
 def _opengrep(ctx: ScanContext) -> list[Finding]:

@@ -1,0 +1,38 @@
+# Prüfkatalog C03, C04, C07, C08, C10 für PowerShell und Batch (Opengrep kennt beide Sprachen nicht,
+# deshalb Regex auf diese Dateiendungen). Kommentarzeilen (#, REM, ::) zählen nicht.
+rules:
+  - id: LB-C03-herunterladen-ausfuehren-ps
+    languages: [regex]
+    severity: ERROR
+    message: Lädt ein Skript aus dem Netz und führt es direkt aus.
+    paths:
+      include: ["*.ps1", "*.psm1", "*.bat", "*.cmd"]
+    pattern-regex: (?im)^(?!\s*(#|rem\b|::))[^\n]*?(\b(iex|invoke-expression)\b[^\n]*\b(downloadstring|invoke-webrequest|invoke-restmethod|iwr|irm)\b|\b(downloadstring|invoke-webrequest|invoke-restmethod|iwr|irm)\b[^\n]*\|\s*(iex|invoke-expression)\b|\bcertutil(\.exe)?\s+[^\n]*-urlcache\b|\bbitsadmin(\.exe)?\s+/transfer\b)
+  - id: LB-C04-zugangsdaten-lesen-ps
+    languages: [regex]
+    severity: ERROR
+    message: Greift auf gespeicherte Zugangsdaten des Nutzers zu.
+    paths:
+      include: ["*.ps1", "*.psm1", "*.bat", "*.cmd"]
+    pattern-regex: (?im)^(?!\s*(#|rem\b|::))[^\n]*?(\.ssh[\\/]id_(rsa|dsa|ecdsa|ed25519)\b(?!\.pub)|\.aws[\\/]credentials\b|\\Login Data\b|\bcmdkey(\.exe)?\s+/list\b|\bGet-StoredCredential\b|\bvaultcmd\b)
+  - id: LB-C07-persistenz-ps
+    languages: [regex]
+    severity: ERROR
+    message: Richtet einen automatischen Neustart ein (Aufgabenplanung, Autostart, Dienst).
+    paths:
+      include: ["*.ps1", "*.psm1", "*.bat", "*.cmd"]
+    pattern-regex: (?im)^(?!\s*(#|rem\b|::))[^\n]*?(\bschtasks(\.exe)?\s+/create\b|\bRegister-ScheduledTask\b|\bNew-ScheduledTask\b|CurrentVersion\\Run(Once)?\b|Start Menu\\Programs\\Startup|\bNew-Service\b|\bsc(\.exe)?\s+create\b)
+  - id: LB-C08-verschleiert-ps
+    languages: [regex]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    paths:
+      include: ["*.ps1", "*.psm1", "*.bat", "*.cmd"]
+    pattern-regex: (?im)^(?!\s*(#|rem\b|::))[^\n]*?(\s-(e|en|enc|encodedcommand)\s+[A-Za-z0-9+/=]{20,}|\b(iex|invoke-expression)\b[^\n]*frombase64string|frombase64string[^\n]*\|\s*(iex|invoke-expression)\b)
+  - id: LB-C10-schadmuster-ps
+    languages: [regex]
+    severity: ERROR
+    message: Enthält ein typisches Schadmuster (Reverse Shell oder Krypto-Miner).
+    paths:
+      include: ["*.ps1", "*.psm1", "*.bat", "*.cmd"]
+    pattern-regex: (?im)^(?!\s*(#|rem\b|::))[^\n]*?(Net\.Sockets\.TCPClient\b[^\n]*GetStream|stratum\+(tcp|ssl|tls)://|\bxmrig\b)

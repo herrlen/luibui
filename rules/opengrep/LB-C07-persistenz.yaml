@@ -6,6 +6,8 @@ rules:
   - id: LB-C07-persistenz-py
     languages: [python]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Richtet einen automatischen Neustart ein (Autostart, Cron, Dienst oder Shell-Profil).
     pattern-either:
       - pattern: subprocess.$F(["crontab", "-", ...], ...)
@@ -22,6 +24,8 @@ rules:
   - id: LB-C07-persistenz-js
     languages: [javascript, typescript]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Richtet einen automatischen Neustart ein (Autostart, Cron, Dienst oder Shell-Profil).
     patterns:
       - pattern-either:

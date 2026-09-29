@@ -3,6 +3,8 @@ rules:
   - id: LB-C10-schadmuster-py
     languages: [python]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Enthält ein typisches Schadmuster (Reverse Shell, Keylogger oder Krypto-Miner).
     pattern-either:
       - pattern: os.dup2($S.fileno(), 0)
@@ -22,6 +24,8 @@ rules:
   - id: LB-C10-schadmuster-js
     languages: [javascript, typescript]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Enthält ein typisches Schadmuster (Reverse Shell, Keylogger oder Krypto-Miner).
     pattern-either:
       - patterns:

@@ -5,6 +5,8 @@ rules:
   - id: LB-C04-zugangsdaten-lesen-py
     languages: [python]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Greift auf gespeicherte Zugangsdaten des Nutzers zu.
     patterns:
       - pattern: '"$S"'
@@ -14,6 +16,8 @@ rules:
   - id: LB-C04-zugangsdaten-lesen-js
     languages: [javascript, typescript]
     severity: ERROR
+    options:
+      constant_propagation: false
     message: Greift auf gespeicherte Zugangsdaten des Nutzers zu.
     patterns:
       - pattern-either:

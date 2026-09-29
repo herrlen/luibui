@@ -1,0 +1,151 @@
+# Prüfkatalog C01–C04, C07, C08, C10 für weitere Sprachen: Go, Ruby, PHP, Rust, Java, Kotlin, C#.
+# Die sprachübergreifenden Muster stehen in Zeichenketten (Pfade, Befehle); dazu je Sprache die
+# üblichen Shell- und eval-Aufrufe. Gleiche Muster wie für Python/JS in LB-C03/C04/C07/C10.
+rules:
+  - id: LB-C03-herunterladen-ausfuehren-andere
+    languages: [go, ruby, php, rust, java, kotlin, csharp]
+    severity: ERROR
+    options:
+      constant_propagation: false
+    message: Lädt ein Skript aus dem Netz und führt es direkt aus.
+    patterns:
+      - pattern: '"$S"'
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?i).*?\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?((ba|z|da|k)?sh|python[0-9.]*)\b
+  - id: LB-C04-zugangsdaten-lesen-andere
+    languages: [go, ruby, php, rust, java, kotlin, csharp]
+    severity: ERROR
+    options:
+      constant_propagation: false
+    message: Greift auf gespeicherte Zugangsdaten des Nutzers zu.
+    patterns:
+      - pattern: '"$S"'
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?i).*?((^|[/\\])(\.ssh[/\\])?id_(rsa|dsa|ecdsa|ed25519)(_sk)?$|\.ssh[/\\]id_(rsa|dsa|ecdsa|ed25519)(_sk)?\b(?!\.pub)|\.aws[/\\]credentials\b|(^|[/\\])application_default_credentials\.json$|\.config[/\\]gcloud[/\\](credentials\.db|access_tokens\.db|legacy_credentials)|(^|[/\\~])\.netrc$|(^|[/\\~])\.git-credentials$|\.docker[/\\]config\.json$|(^|[/\\~])\.pypirc$|(^|[/\\])Login Data$|(^|[/\\])key4\.db$|Library[/\\]Keychains|login\.keychain|(^|[/\\])wallet\.dat$|\.ethereum[/\\]keystore|\bsecurity\s+(find|dump)-(generic|internet)-password\b|\bsecurity\s+dump-keychain\b)
+  - id: LB-C07-persistenz-andere
+    languages: [go, ruby, php, rust, java, kotlin, csharp]
+    severity: ERROR
+    options:
+      constant_propagation: false
+    message: Richtet einen automatischen Neustart ein.
+    patterns:
+      - pattern: '"$S"'
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?i).*?((^|[/\\~])\.(bashrc|bash_profile|bash_login|zshrc|zprofile|zshenv|profile)$|Library[/\\]Launch(Agents|Daemons)|^/etc/cron|/var/spool/cron|\.config[/\\]autostart|systemd[/\\](user|system)[/\\]|^/etc/rc\.local$|Start Menu[/\\]Programs[/\\]Startup|CurrentVersion[/\\]+Run(Once)?\b|\bcrontab\s+-(?![lr]\b)|\blaunchctl\s+(load|bootstrap)\b|\bsystemctl\s+(--user\s+)?enable\b|\bschtasks\s+/create\b|\breg\s+add\b.*\\Run\b)
+  - id: LB-C10-schadmuster-andere
+    languages: [go, ruby, php, rust, java, kotlin, csharp]
+    severity: ERROR
+    options:
+      constant_propagation: false
+    message: Enthält ein typisches Schadmuster (Reverse Shell oder Krypto-Miner).
+    patterns:
+      - pattern: '"$S"'
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?i).*?(stratum\+(tcp|ssl|tls)://|\bxmrig\b|\bcryptonight\b|--donate-level\b|/dev/tcp/[^/\s]+/\d+|\bnc(at)?\s+(-\w+\s+)*-(e|c)\s+/bin/(ba)?sh\b)
+  - id: LB-C01-shell-mit-eingabe-go
+    languages: [go]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern: exec.Command($SH, $FLAG, $CMD, ...)
+      - metavariable-regex:
+          metavariable: $SH
+          regex: ^"(/bin/)?(ba|z)?sh"$|^"cmd(\.exe)?"$|^"(pwsh|powershell)(\.exe)?"$
+      - metavariable-regex:
+          metavariable: $FLAG
+          regex: ^"(-c|/c|/C|-Command)"$
+      - pattern-not: exec.Command($SH, $FLAG, "...", ...)
+  - id: LB-C01-shell-mit-eingabe-rb
+    languages: [ruby]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern-either:
+          - pattern: system($X)
+          - pattern: exec($X)
+          - pattern: IO.popen($X, ...)
+          - pattern: Open3.capture2($X, ...)
+          - pattern: Open3.capture3($X, ...)
+      - pattern-not: system("...")
+      - pattern-not: exec("...")
+      - pattern-not: IO.popen("...", ...)
+      - pattern-not: Open3.capture2("...", ...)
+      - pattern-not: Open3.capture3("...", ...)
+  - id: LB-C01-shell-mit-eingabe-php
+    languages: [php]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern-either:
+          - pattern: shell_exec($X)
+          - pattern: exec($X, ...)
+          - pattern: system($X, ...)
+          - pattern: passthru($X, ...)
+          - pattern: popen($X, ...)
+          - pattern: proc_open($X, ...)
+      - pattern-not: $F("...", ...)
+  - id: LB-C01-shell-mit-eingabe-rs
+    languages: [rust]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern: Command::new($SH).arg($FLAG).arg($CMD)
+      - metavariable-regex:
+          metavariable: $SH
+          regex: ^"(/bin/)?(ba|z)?sh"$|^"cmd(\.exe)?"$
+      - pattern-not: Command::new($SH).arg($FLAG).arg("...")
+  - id: LB-C01-shell-mit-eingabe-java
+    languages: [java, kotlin]
+    severity: WARNING
+    message: Führt einen Shell-Befehl aus, der aus veränderlichen Daten zusammengesetzt ist.
+    patterns:
+      - pattern: Runtime.getRuntime().exec($X, ...)
+      - pattern-not: Runtime.getRuntime().exec("...", ...)
+  - id: LB-C02-dynamischer-code-php
+    languages: [php]
+    severity: WARNING
+    message: Führt Text als Code aus.
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: assert($X)
+          - pattern: create_function(...)
+      - pattern-not: assert($A == $B)
+      - pattern-not: eval(<... base64_decode(...) ...>)
+      - pattern-not: eval(<... gzinflate(...) ...>)
+      - pattern-not: eval(<... gzuncompress(...) ...>)
+      - pattern-not: eval(<... str_rot13(...) ...>)
+      - pattern-not: eval(<... hex2bin(...) ...>)
+  - id: LB-C02-dynamischer-code-rb
+    languages: [ruby]
+    severity: WARNING
+    message: Führt Text als Code aus.
+    patterns:
+      - pattern-either:
+          - pattern: eval($X, ...)
+          - pattern: instance_eval($X, ...)
+          - pattern: class_eval($X, ...)
+      - pattern-not: eval("...", ...)
+      - pattern-not: eval(<... Base64.decode64(...) ...>, ...)
+      - pattern-not: eval(<... Zlib::Inflate.inflate(...) ...>, ...)
+  - id: LB-C08-verschleiert-php
+    languages: [php]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    pattern-either:
+      - pattern: eval(<... base64_decode(...) ...>)
+      - pattern: eval(<... gzinflate(...) ...>)
+      - pattern: eval(<... gzuncompress(...) ...>)
+      - pattern: eval(<... str_rot13(...) ...>)
+      - pattern: eval(<... hex2bin(...) ...>)
+  - id: LB-C08-verschleiert-rb
+    languages: [ruby]
+    severity: ERROR
+    message: Führt Code aus, der erst zur Laufzeit entschlüsselt wird.
+    pattern-either:
+      - pattern: eval(<... Base64.decode64(...) ...>)
+      - pattern: eval(<... Zlib::Inflate.inflate(...) ...>)

@@ -48,16 +48,20 @@ def rules(findings: list[Finding]) -> list[str]:
 # --- rules/opengrep: every rule tested, and the tests pass -------------------------------------
 
 
-def _rule_ids() -> list[str]:
-    ids = []
+def _rules() -> list[tuple[str, str]]:
+    """(rule id, stem of its YAML file); the test files share that stem."""
+    out = []
     for path in sorted((RULES / "opengrep").glob("*.yaml")):
-        ids += [r["id"] for r in yaml.safe_load(path.read_text("utf-8"))["rules"]]
-    return ids
+        out += [(r["id"], path.stem) for r in yaml.safe_load(path.read_text("utf-8"))["rules"]]
+    return out
 
 
-@pytest.mark.parametrize("rule_id", _rule_ids())
-def test_every_opengrep_rule_has_a_positive_and_a_negative_case(rule_id: str) -> None:
-    stem = re.sub(r"-(py|js|sh)$", "", rule_id)
+def _rule_ids() -> list[str]:
+    return [rule_id for rule_id, _ in _rules()]
+
+
+@pytest.mark.parametrize(("rule_id", "stem"), _rules())
+def test_every_opengrep_rule_has_a_positive_and_a_negative_case(rule_id: str, stem: str) -> None:
     tests = "".join(
         p.read_text("utf-8") for p in (RULES / "opengrep").glob(f"{stem}.*") if p.suffix != ".yaml"
     )

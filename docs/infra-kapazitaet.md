@@ -272,3 +272,9 @@ cgroup nach `d528216`: api 88 MiB (Spitze 133); worker 45 MiB (Spitze 45); web 7
 
 Health ok, `versions` ohne Anmeldung → 401, Logs ohne Fehler.
 cgroup: api 88 MiB (Spitze 131); worker 48 MiB (Spitze 48); web 161 MiB (Spitze 169).
+
+## Nach Deploy `7eda75d` (29.09.2026, Explorer-Layout, PDF-Bericht)
+
+PDF im laufenden API-Container erzeugt (Schriften im Image), PDF-Route ohne Anmeldung → 401,
+neue Seiten `/projekte` und `/pruefungen` leiten ohne Anmeldung weiter. Logs ohne Fehler.
+cgroup: api 94 MiB (Spitze 131, ReportLab kaum spürbar); worker 53 MiB (Spitze 53); web 75 MiB (Spitze 90).

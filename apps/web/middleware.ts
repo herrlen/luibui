@@ -18,5 +18,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/|api/|healthz|favicon\\.ico|robots\\.txt).*)"],
+  // Files from public/ are served as they are, on both hosts.
+  matcher: ["/((?!_next/|api/|healthz|favicon\\.(?:ico|svg)|apple-touch-icon\\.png|beispielbericht\\.pdf|robots\\.txt).*)"],
 };

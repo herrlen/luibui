@@ -84,3 +84,17 @@ def test_nobody_else_gets_the_pdf(api: Api, _migrated: str) -> None:
     _fertig(_migrated, scan, [_befund("K", "geheim", "a")])
     assert b.get(f"/api/v1/scans/{scan}/bericht.pdf").status_code == 404
     assert api.client().get(f"/api/v1/scans/{scan}/bericht.pdf").status_code == 401
+
+
+def test_example_pdf_on_the_website_matches_the_example_report() -> None:
+    """apps/web/public/beispielbericht.pdf is built from content/beispielbericht.json. After
+    changing either, rebuild it: python -m luibui_api.pdf <json> <pdf>."""
+    import json
+    from pathlib import Path
+
+    web = Path(__file__).resolve().parents[2] / "web"
+    report = json.loads((web / "content" / "beispielbericht.json").read_text(encoding="utf-8"))
+    assert (
+        bericht_als_pdf(report, "detail", fest=True)
+        == (web / "public" / "beispielbericht.pdf").read_bytes()
+    )

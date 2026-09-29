@@ -33,12 +33,12 @@ describe("ReportView", () => {
   it("renders the example report with light, grade and release", () => {
     const html = renderToStaticMarkup(<ReportView bericht={beispielbericht()} showDsgvo={false} />);
     expect(html).toContain("Gesperrt");
-    expect(html).toContain("24");
+    expect(html).toContain("27");
     expect(html).toContain("blockiert");
     expect(html).toContain("beispiel/wetter-skill");
     // First finding open, the others collapsed behind a button.
     expect(html.match(/aria-expanded="true"/g)).toHaveLength(1);
-    expect(html.match(/aria-expanded="false"/g)).toHaveLength(4);
+    expect(html.match(/aria-expanded="false"/g)).toHaveLength(5);
   });
 
   it("shows evidence with <script> as text, never as HTML", () => {
@@ -82,7 +82,7 @@ describe("CSV", () => {
   it("exports the example without DSGVO rows", () => {
     const csv = berichtAlsCsv(mitDsgvo(), { showDsgvo: false });
     expect(csv.startsWith("﻿")).toBe(true);
-    expect(csv.trim().split("\r\n")).toHaveLength(1 + 5);
+    expect(csv.trim().split("\r\n")).toHaveLength(1 + 6);
     expect(csv).not.toContain("dsgvo");
   });
 });
@@ -122,5 +122,15 @@ describe("Hochgestufte Befunde", () => {
     const erster = { ...b.befunde[0], schwere: "K" as const, hochgestuft_von: "H" as const };
     const html = renderToStaticMarkup(<ReportView bericht={{ ...b, befunde: [erster] }} showDsgvo={false} />);
     expect(html).toContain("hochgestuft von Hoch");
+  });
+});
+
+describe("Abdeckung", () => {
+  it("comes last, and without the DSGVO axis it lists no DSGVO checks", () => {
+    const html = renderToStaticMarkup(<ReportView bericht={beispielbericht()} showDsgvo={false} />);
+    expect(html.indexOf("Was geprüft wurde")).toBeGreaterThan(html.lastIndexOf("aria-expanded"));
+    expect(html).not.toContain("DSGVO: Endpunkte");
+    const mit = renderToStaticMarkup(<ReportView bericht={beispielbericht()} />);
+    expect(mit).toContain("DSGVO: Endpunkte");
   });
 });

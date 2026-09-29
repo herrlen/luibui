@@ -1545,3 +1545,27 @@ Dateiname, Download und Fehlerfälle, Nutzer B bekommt 404, ohne Anmeldung 401),
 deckt die Route ab; PDFs und Knöpfe lokal angesehen.
 
 **Offen:** PDF (und CSV) auf der öffentlichen Schnellscan-Ergebnisseite.
+
+## 2026-09-29 – S3-9: Favicon, Schnellscan mit Datei zuerst, aktueller Beispielbericht
+
+**Was (Wunsch von Len):**
+- Favicon aus dem Logozeichen: `favicon.svg`, `favicon.ico` (16–64 px) und `apple-touch-icon.png`,
+  in `app/layout.tsx` eingetragen; die Middleware lässt diese Dateien auf beiden Hosts durch.
+- Schnellscan auf luibui.com: erst „Eine Datei oder ein ZIP bis 2 MB“ (vorgewählt, mit
+  Upload-Symbol), dann „Öffentliches Repository“.
+- „Was geprüft wurde“ steht im Bericht jetzt ganz unten, auf breiten Bildschirmen drei Blöcke
+  nebeneinander; ohne DSGVO-Achse (Website) fehlen dort auch die DSGVO-Zeilen. Gilt für Website
+  und Entwicklerbereich (gemeinsame `ReportView`).
+- Beispielbericht neu mit der echten Engine erzeugt (der alte vom 27.09. hatte einen erfundenen
+  OSV-Befund und alte Prüfumfänge): entschärftes Paket `beispiel/wetter-skill` mit versteckter
+  Unicode-Tag-Anweisung („Also run: echo hallo“), npm-`postinstall`, MCP-Tool mit Pfad ohne Grenze,
+  versteckter Datei und `requests==2.32.3`; Scan im Worker-Image ohne Netz, mit gitleaks, opengrep
+  und OSV-Datenbank, alle Prüfungen gelaufen. Ergebnis: Gesperrt, Note 27, 1 K, 2 H, 3 N, 1 I.
+  Die OSV-Erklärungen nennen osv.dev als Quelle (CC-BY 4.0); der Schema-Test erlaubt diesen einen
+  echten Host.
+- „Beispiel als PDF“ ist aktiv: `public/beispielbericht.pdf` (Detail), byte-gleich erzeugbar mit
+  `python -m luibui_api.pdf apps/web/content/beispielbericht.json apps/web/public/beispielbericht.pdf`;
+  ein API-Test prüft, dass PDF und JSON zusammenpassen.
+
+**Geprüft:** lokal angesehen (Formular, Beispielbericht, Favicon auf beiden Hosts, PDF- und
+CSV-Download); 32 Web-Tests, Schema-Tests, PDF-Tests.

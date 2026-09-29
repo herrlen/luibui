@@ -20,6 +20,8 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
   const befunde = showDsgvo ? b.befunde : b.befunde.filter((x) => x.achse !== "dsgvo");
   const gesamt = showDsgvo ? b.ampeln.gesamt : b.ampeln.sicherheit;
   const sortiert = REIHENFOLGE.flatMap((s) => befunde.filter((x) => x.schwere === s));
+  const ohneDsgvo = (liste: string[]) => (showDsgvo ? liste : liste.filter((t) => !t.startsWith("DSGVO")));
+  const abdeckung = b.abdeckung?.map((a) => ({ ...a, geprueft: ohneDsgvo(a.geprueft), offen: ohneDsgvo(a.offen) }));
   return (
     <div className="flex flex-col gap-6">
       {b.scan_art === "schnell" ? (
@@ -85,7 +87,6 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
           ))}
         </ul>
       ) : null}
-      {b.abdeckung ? <Abdeckung abdeckung={b.abdeckung} /> : null}
       {sortiert.length ? (
         <section aria-label="Befunde" className="flex flex-col gap-3">
           <p className="text-sm text-muted">
@@ -114,6 +115,7 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
           </ul>
         </section>
       ) : null}
+      {abdeckung ? <Abdeckung abdeckung={abdeckung} /> : null}
     </div>
   );
 }

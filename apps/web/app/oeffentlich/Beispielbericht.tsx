@@ -24,24 +24,20 @@ export function Beispielbericht({ registrieren }: { registrieren: string }) {
         >
           Beispiel als CSV
         </a>
-        <button
-          type="button"
-          disabled
-          aria-describedby="pdf-folgt"
-          className="inline-flex h-12 cursor-not-allowed items-center rounded-[10px] border border-linie bg-flaeche-2 px-[22px] text-[15px] font-medium text-muted"
+        <a
+          href="/beispielbericht.pdf"
+          download
+          className="inline-flex h-12 items-center rounded-[10px] border border-linie-stark bg-surface px-[22px] text-[15px] font-medium text-ink hover:border-petrol"
         >
           Beispiel als PDF
-        </button>
-        <span id="pdf-folgt" className="text-sm text-muted">
-          PDF folgt
-        </span>
+        </a>
       </div>
       <div className="flex flex-wrap gap-3">
         <a
           href="#schnellscan"
           className="inline-flex h-12 items-center rounded-[10px] bg-petrol px-[22px] text-[15px] font-semibold text-white hover:bg-petrol-dunkel"
         >
-          Eigenes Repository prüfen – Schnellscan
+          Eigenes Paket prüfen – Schnellscan
         </a>
         <a
           href={registrieren}

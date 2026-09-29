@@ -88,8 +88,9 @@ def test_example_report_on_the_landing_page() -> None:
         report["ampeln"]["dsgvo"],
         report["ampeln"]["gesamt"],
     )
-    assert (b.note, b.freigabe.value) == (report["note"], report["freigabe"]) == (24, "blockiert")
+    assert (b.note, b.freigabe.value) == (report["note"], report["freigabe"]) == (27, "blockiert")
     for f in report["befunde"]:
         for text in (f["beleg"] or "", f["erklaerung"], f["fix_prompt"]):
             hosts = re.findall(r"https?://([^/\s\"]+)", text)
-            assert all(h.endswith(".example") for h in hosts), hosts
+            # osv.dev: the source OSV texts must name (CC-BY 4.0); every other host is made up.
+            assert all(h.endswith(".example") or h == "osv.dev" for h in hosts), hosts

@@ -9,7 +9,7 @@ const MAX_DATEI = 2 * 1024 * 1024;
 
 export function Schnellscan() {
   const router = useRouter();
-  const [art, setArt] = useState<"git" | "datei">("git");
+  const [art, setArt] = useState<"git" | "datei">("datei");
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   return (
@@ -49,8 +49,8 @@ export function Schnellscan() {
         <div role="radiogroup" aria-label="Was prüfen?" className="flex flex-wrap gap-2">
           {(
             [
-              ["git", "Öffentliches Repository"],
               ["datei", "Eine Datei oder ein ZIP bis 2 MB"],
+              ["git", "Öffentliches Repository"],
             ] as const
           ).map(([wert, text]) => (
             <button
@@ -85,8 +85,14 @@ export function Schnellscan() {
             aria-hidden="true"
             className="shrink-0"
           >
-            <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
-            <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+            {art === "git" ? (
+              <>
+                <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+                <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+              </>
+            ) : (
+              <path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+            )}
           </svg>
           {art === "git" ? (
             <input

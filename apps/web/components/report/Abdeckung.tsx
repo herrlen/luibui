@@ -14,7 +14,7 @@ export function Abdeckung({ abdeckung }: { abdeckung: NonNullable<Bericht["abdec
           geprüft steht.
         </p>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {abdeckung.map((a) => (
           <li key={a.dateiart} className="rounded-[14px] border border-linie bg-surface p-4">
             <p className="font-semibold">

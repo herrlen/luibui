@@ -410,7 +410,11 @@ def dateiname(r: dict[str, Any], umfang: Umfang) -> str:
     return f"luibui-{paket}-{datum}{zusatz}.pdf"
 
 
-def bericht_als_pdf(report: dict[str, Any], umfang: Umfang = "standard") -> bytes:
+def bericht_als_pdf(
+    report: dict[str, Any], umfang: Umfang = "standard", *, fest: bool = False
+) -> bytes:
+    """``fest``: same bytes for the same report (no creation time, fixed IDs), for the example
+    PDF on the website that a test compares."""
     s = _stile()
     puffer = io.BytesIO()
     rand = 18 * mm
@@ -450,6 +454,7 @@ def bericht_als_pdf(report: dict[str, Any], umfang: Umfang = "standard") -> byte
         title=f"Prüfbericht {paketname}",
         author="luibui",
         subject="Prüfbericht" + (" (Schnellscan, ohne Gewähr)" if schnell else ""),
+        invariant=1 if fest else 0,
     )
     teile = _deckblatt(report, s, breite)
     befunde = _sortiert(report.get("befunde") or [])
@@ -497,3 +502,17 @@ def bericht_als_pdf(report: dict[str, Any], umfang: Umfang = "standard") -> byte
         teile += [Spacer(1, 10), Paragraph(escape(OHNE_GEWAEHR + "."), s["basis"])]
     doc.build(teile, onFirstPage=seite, onLaterPages=seite)
     return puffer.getvalue()
+
+
+def _beispiel() -> None:
+    """``python -m luibui_api.pdf <beispielbericht.json> <ziel.pdf>``: the example PDF."""
+    import json
+    import sys
+
+    quelle, ziel = sys.argv[1:3]
+    report = json.loads(Path(quelle).read_text(encoding="utf-8"))
+    Path(ziel).write_bytes(bericht_als_pdf(report, "detail", fest=True))
+
+
+if __name__ == "__main__":
+    _beispiel()

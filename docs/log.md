@@ -1447,3 +1447,14 @@ vor dem Lesen des Bodys, die Weiterleitung von Next.js schrieb noch und scheiter
 Jetzt liest die API zu große Bodys bis 16 MB ab und verwirft sie, erst dann kommt 413; darüber
 bleibt der sofortige Abbruch (die Oberfläche prüft die Größe schon im Browser). Dasselbe Muster
 betrifft die Upload-Grenze der Projekt-Routen (`_check_size`); offen.
+
+## 2026-09-29 – S1-1: zu große Uploads erst ablesen, dann abweisen
+
+**Was:** Die Korrektur aus S2-13 gilt jetzt für alle Uploads. `uploads.ablesen()` liest einen
+zu großen Body bis 80 MB und höchstens 15 s lang und verwirft ihn, dann kommt 413. Grund: Hinter
+der Weiterleitung von Next.js wird eine Antwort, die kommt, während noch gesendet wird, zu
+`EPIPE` und damit zu 500. Angekündigte Bodys über 80 MB werden sofort abgewiesen; Next.js
+schneidet ohnehin bei 61 MB ab. Die Oberfläche begrenzt Projekt-Uploads schon im Browser auf 50 MB.
+
+**Geprüft:** lokal über den `http-proxy` von Next.js mit 2,2 MB und 70 MB: 413, kein Proxy-Fehler;
+Gegenprobe ohne Korrektur: `EPIPE`. 151 API-Tests.

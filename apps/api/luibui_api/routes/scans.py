@@ -15,7 +15,7 @@ from luibui_api.audit import audit
 from luibui_api.auth import AnnahmeOffen, CurrentCaller, DbSession, get_owned
 from luibui_api.models import CreditEntry, Project, Scan
 from luibui_api.settings import get_settings
-from luibui_api.uploads import Upload, create_scan
+from luibui_api.uploads import Upload, ablesen, create_scan
 from luibui_scan.intake import DEFAULT_LIMITS
 from luibui_scan.scan import Eingabe
 
@@ -69,11 +69,12 @@ def scan_status_of(scan: Scan) -> ScanStatus:
     )
 
 
-def _check_size(request: Request) -> None:
+async def _check_size(request: Request) -> None:
     length = request.headers.get("content-length")
     if length is None or not length.isdigit():
         raise HTTPException(status.HTTP_411_LENGTH_REQUIRED, "Content-Length fehlt")
     if int(length) > get_settings().upload_max_bytes:
+        await ablesen(request)
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Upload zu groß")
 
 
@@ -147,7 +148,7 @@ async def scan_starten(
     comes in ``pfade`` (same order as ``dateien``), because browsers drop folders from file names.
     For ``git`` the URL comes in ``git_url`` or from the project."""
     project = get_owned(db, Project, project_id, caller)
-    _check_size(request)
+    await _check_size(request)
     guthaben.email_pruefen(caller.user)
     limit = DEFAULT_LIMITS.auswahl_dateien
     form = await request.form(max_files=limit + 1, max_fields=limit + 10)
@@ -194,7 +195,7 @@ async def einzelpruefung_starten(
 ) -> ScanStatus:
     """Drag and drop on the overview: a full check without a project. The files are not kept,
     the report stays until the owner deletes it. Same form fields as a project upload, no Git."""
-    _check_size(request)
+    await _check_size(request)
     guthaben.email_pruefen(caller.user)
     limit = DEFAULT_LIMITS.auswahl_dateien
     form = await request.form(max_files=limit + 1, max_fields=limit + 10)

@@ -6,6 +6,8 @@ stored encrypted as a new project version (S2-7). The scratch directory is remov
 error and by the worker after the scan.
 """
 
+import asyncio
+import contextlib
 import shutil
 import uuid
 from collections.abc import Sequence
@@ -14,9 +16,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import IO
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from starlette.requests import ClientDisconnect
 
 from luibui_api.models import Job, Project, ProjectVersion, Scan, StoredFile
 from luibui_api.settings import get_settings
@@ -271,3 +274,28 @@ def create_scan(
         blob_store().delete(key)
     db.refresh(scan)
     return scan
+
+
+ABLESEN_MAX = 80 * 1024 * 1024
+"""An oversized body up to this size is read and thrown away before the 413. Behind the web
+proxy of Next.js an answer that comes while the proxy is still sending breaks its pipe and
+turns into a 500. Next.js itself cuts bodies at 61 MB (next.config.ts), so this covers them."""
+ABLESEN_FRIST = 15.0
+
+
+async def ablesen(request: Request) -> None:
+    """Drain the request body, bounded in size and time, so an early refusal reaches the
+    client. A bigger announced body is refused at once."""
+    laenge = request.headers.get("content-length", "")
+    if not laenge.isdigit() or int(laenge) > ABLESEN_MAX:
+        return
+
+    async def lesen() -> None:
+        gelesen = 0
+        async for teil in request.stream():
+            gelesen += len(teil)
+            if gelesen > ABLESEN_MAX:
+                return
+
+    with contextlib.suppress(TimeoutError, ClientDisconnect):
+        await asyncio.wait_for(lesen(), ABLESEN_FRIST)

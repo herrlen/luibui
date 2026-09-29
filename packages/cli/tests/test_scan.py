@@ -37,7 +37,15 @@ def skill_dir(tmp_path: Path) -> Path:
     return src
 
 
-def test_folder_text(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_folder_text(
+    tmp_path: Path,
+    private_tmp: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Scanners unreachable on purpose: a scan with failed checks must never turn green.
+    for tool in ("LUIBUI_GITLEAKS", "LUIBUI_OSV_SCANNER", "LUIBUI_OPENGREP"):
+        monkeypatch.setenv(tool, "/luibui-nicht-vorhanden")
     code, out, _ = run(capsys, str(skill_dir(tmp_path)))
     assert code == 0
     assert "Umfang:    Dateiauswahl ohne Manifest" in out
@@ -47,14 +55,17 @@ def test_folder_text(tmp_path: Path, private_tmp: Path, capsys: pytest.CaptureFi
     assert "DSGVO:      nicht bewertet" in out
     assert "Gesamt:     Gelb, Prüfung nötig" in out
     assert "Note:       100 von 100" in out
-    assert "noch nicht eingebaut" in out
+    assert "fehlgeschlagen" in out
+    assert "noch nicht eingebaut" not in out  # every check of the catalog is built (S2-4)
     assert "grün" not in out.lower()
     assert list(private_tmp.iterdir()) == []
 
 
 def test_folder_with_manifest_is_a_package(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    for tool in ("LUIBUI_GITLEAKS", "LUIBUI_OSV_SCANNER", "LUIBUI_OPENGREP"):
+        monkeypatch.setenv(tool, "/luibui-nicht-vorhanden")
     src = skill_dir(tmp_path)
     (src / "luibui.json").write_text("{}")
     code, out, _ = run(capsys, str(src), "--json")
@@ -63,7 +74,7 @@ def test_folder_with_manifest_is_a_package(
     assert data["pruefumfang"] == "paket"
     assert data["paket"]["quelle"] == "lokal"
     assert data["paket"]["name"] == "skill"
-    # No analyzers yet: an incomplete scan never turns green, not even with a manifest.
+    # An invalid manifest (G01) and failed scanners: never green, not even with a manifest.
     assert data["ampeln"] == {"sicherheit": "gelb", "dsgvo": "gelb", "gesamt": "gelb"}
     assert data["freigabe"] == "pruefung_noetig"
 

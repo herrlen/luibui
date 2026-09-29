@@ -11,7 +11,7 @@ from pathlib import PurePosixPath
 from luibui_scan.analyzers._common import MAX_TEXT_BYTES, TEXT_KINDS
 from luibui_scan.analyzers.b_muster import INSTRUCTION_SUFFIXES, LOCKFILES
 from luibui_scan.context import InventoryEntry
-from luibui_scan.models import Pakettyp
+from luibui_scan.models import Pakettyp, Pruefumfang
 from luibui_scan.scan import ScanResult
 
 DATEITYP = "Dateityp und Tarnung"
@@ -22,6 +22,8 @@ ANWEISUNGEN = "Anweisungen an die KI (Prompt-Injection)"
 CODE = "Was der Code tut"
 MCP = "MCP-Tools: versteckte Anweisungen, Shadowing, Anmeldung, Token"
 MCP_ABGLEICH = "MCP-Tools: Beschreibung passt zum Code"
+ENDPUNKTE = "DSGVO: Endpunkte und Drittländer"
+MANIFEST = "DSGVO: Abgleich mit luibui.json (Endpunkte, Rechte, Datenkategorien)"
 
 ANALYZER: dict[str, str] = {
     DATEITYP: "a_dateien",
@@ -32,9 +34,11 @@ ANALYZER: dict[str, str] = {
     CODE: "c_code",
     MCP: "e_mcp",
     MCP_ABGLEICH: "e_mcp",
+    ENDPUNKTE: "g_dsgvo",
+    MANIFEST: "g_dsgvo",
 }
 
-TITEL = {"c_code": "C – Code", "e_mcp": "E – MCP"}
+TITEL = {"c_code": "C – Code", "e_mcp": "E – MCP", "g_dsgvo": "G – DSGVO"}
 """Analyzers that only the intensive scan runs, with their titles in ``scan.ERWARTET``."""
 
 _PYTHON = frozenset({".py", ".pyw"})
@@ -103,7 +107,7 @@ _MIT_TOOLS = frozenset({Pakettyp.MCP_SERVER, Pakettyp.PLUGIN, Pakettyp.GEMISCHT}
 
 
 def _vorgesehen(
-    art: str, entries: list[InventoryEntry], pakettyp: Pakettyp
+    art: str, entries: list[InventoryEntry], pakettyp: Pakettyp, manifest: bool
 ) -> list[tuple[str, str | None]]:
     """Checks for this kind of file; a reason instead of ``None`` means: not for this kind."""
     checks: list[tuple[str, str | None]] = [(DATEITYP, None), (SCHADSOFTWARE, None)]
@@ -130,6 +134,11 @@ def _vorgesehen(
         checks.append((MCP_ABGLEICH, None if art == "Python" else "bisher nur für Python"))
     elif pakettyp in _MIT_TOOLS and art == "Anderer Code":
         checks.append((MCP, "für diese Programmiersprache noch nicht"))
+    if art in ("Python", "JavaScript und TypeScript", "Shell-Skripte"):
+        checks.append((ENDPUNKTE, None))
+        checks.append((MANIFEST, None if manifest else "nur mit luibui.json"))
+    elif art == "Anderer Code":
+        checks.append((ENDPUNKTE, "für diese Programmiersprache noch nicht"))
     return checks
 
 
@@ -151,7 +160,8 @@ def abdeckung(result: ScanResult) -> list[Abdeckung]:
         if not entries:
             continue
         geprueft, offen = [], []
-        for check, nicht_hier in _vorgesehen(art, entries, result.inventory.pakettyp):
+        manifest = result.pruefumfang is Pruefumfang.PAKET
+        for check, nicht_hier in _vorgesehen(art, entries, result.inventory.pakettyp, manifest):
             name = ANALYZER[check]
             if nicht_hier:
                 offen.append(f"{check}: {nicht_hier}")

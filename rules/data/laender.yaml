@@ -1,0 +1,105 @@
+# Länderzuordnung für Ebene G (Prüfkatalog G02). Gepflegte Liste, kein Netzabruf.
+#
+# Stand: 2026-09-29. Quelle für Angemessenheitsbeschlüsse: Europäische Kommission,
+# https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en
+# Offen, vor Veröffentlichung prüfen (Len): Brasilien (Entwurf eines Beschlusses 2025, ob
+# inzwischen angenommen, ist hier nicht belegt, deshalb nicht aufgenommen).
+#
+# Hosts: nur Anbieter, deren Verarbeitungsort ohne Regionswahl feststeht. Anbieter mit frei
+# wählbarer Region (AWS, Azure, Google Cloud Run …) stehen bewusst nicht hier.
+
+ewr: [AT, BE, BG, CY, CZ, DE, DK, EE, ES, FI, FR, GR, HR, HU, IE, IT, LT, LU, LV, MT, NL, PL,
+      PT, RO, SE, SI, SK, IS, LI, NO]
+
+angemessen:
+  AD: Andorra
+  AR: Argentinien
+  CA: Kanada (Organisationen, die unter PIPEDA fallen)
+  CH: Schweiz
+  FO: Färöer
+  GB: Vereinigtes Königreich
+  GG: Guernsey
+  IL: Israel
+  IM: Isle of Man
+  JE: Jersey
+  JP: Japan
+  KR: Republik Korea
+  NZ: Neuseeland
+  UY: Uruguay
+
+# Angemessen nur für bestimmte Empfänger: Befund Mittel, bis das Manifest eine Rechtsgrundlage nennt.
+teilweise:
+  US: nur für Empfänger, die unter dem EU-US Data Privacy Framework zertifiziert sind
+
+hosts:
+  # KI-Modelle
+  api.openai.com: {land: US, betreiber: OpenAI}
+  api.anthropic.com: {land: US, betreiber: Anthropic}
+  generativelanguage.googleapis.com: {land: US, betreiber: Google}
+  api.x.ai: {land: US, betreiber: xAI}
+  api.groq.com: {land: US, betreiber: Groq}
+  api.together.xyz: {land: US, betreiber: Together AI}
+  api.perplexity.ai: {land: US, betreiber: Perplexity}
+  api.fireworks.ai: {land: US, betreiber: Fireworks AI}
+  api.replicate.com: {land: US, betreiber: Replicate}
+  openrouter.ai: {land: US, betreiber: OpenRouter}
+  huggingface.co: {land: US, betreiber: Hugging Face}
+  api-inference.huggingface.co: {land: US, betreiber: Hugging Face}
+  api.mistral.ai: {land: FR, betreiber: Mistral AI}
+  api.aleph-alpha.com: {land: DE, betreiber: Aleph Alpha}
+  llm.aihosting.mittwald.de: {land: DE, betreiber: mittwald}
+  api.deepseek.com: {land: CN, betreiber: DeepSeek}
+  api.moonshot.cn: {land: CN, betreiber: Moonshot AI}
+  dashscope.aliyuncs.com: {land: CN, betreiber: Alibaba Cloud}
+  open.bigmodel.cn: {land: CN, betreiber: Zhipu AI}
+  aip.baidubce.com: {land: CN, betreiber: Baidu}
+  # Übersetzung, Karten, Wetter
+  api.deepl.com: {land: DE, betreiber: DeepL}
+  api-free.deepl.com: {land: DE, betreiber: DeepL}
+  nominatim.openstreetmap.org: {land: GB, betreiber: OpenStreetMap Foundation}
+  api.open-meteo.com: {land: CH, betreiber: Open-Meteo}
+  # Plattformen
+  api.github.com: {land: US, betreiber: GitHub}
+  raw.githubusercontent.com: {land: US, betreiber: GitHub}
+  api.stripe.com: {land: US, betreiber: Stripe}
+  api.notion.com: {land: US, betreiber: Notion}
+  slack.com: {land: US, betreiber: Slack}
+  hooks.slack.com: {land: US, betreiber: Slack}
+  discord.com: {land: US, betreiber: Discord}
+  graph.facebook.com: {land: US, betreiber: Meta}
+  api.twitter.com: {land: US, betreiber: X}
+  api.x.com: {land: US, betreiber: X}
+  graph.microsoft.com: {land: US, betreiber: Microsoft}
+  www.googleapis.com: {land: US, betreiber: Google}
+  sheets.googleapis.com: {land: US, betreiber: Google}
+  gmail.googleapis.com: {land: US, betreiber: Google}
+  # Russland
+  api.yandex.ru: {land: RU, betreiber: Yandex}
+
+# SDK-Importe, aus denen sich der Endpunkt ergibt (Python-Modul bzw. npm-Paket).
+sdks:
+  openai: api.openai.com
+  anthropic: api.anthropic.com
+  "@anthropic-ai/sdk": api.anthropic.com
+  google.generativeai: generativelanguage.googleapis.com
+  google.genai: generativelanguage.googleapis.com
+  "@google/generative-ai": generativelanguage.googleapis.com
+  "@google/genai": generativelanguage.googleapis.com
+  mistralai: api.mistral.ai
+  "@mistralai/mistralai": api.mistral.ai
+  groq: api.groq.com
+  groq-sdk: api.groq.com
+  deepl: api.deepl.com
+  deepl-node: api.deepl.com
+  stripe: api.stripe.com
+  notion_client: api.notion.com
+  "@notionhq/client": api.notion.com
+  slack_sdk: slack.com
+  "@slack/web-api": slack.com
+
+# Hosts in URLs, die keine Datenziele sind (Schemas, Lizenzen, Links auf Projektseiten).
+keine_endpunkte: [json-schema.org, www.w3.org, w3.org, schema.org, purl.org, schemas.xmlsoap.org,
+                  xmlns.com, www.apache.org, opensource.org, spdx.org, creativecommons.org,
+                  github.com, www.github.com, gitlab.com, pypi.org, www.npmjs.com, npmjs.com,
+                  docs.python.org, developer.mozilla.org, en.wikipedia.org, de.wikipedia.org,
+                  modelcontextprotocol.io, luibui.com, www.sitemaps.org, sitemaps.org]

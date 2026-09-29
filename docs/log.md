@@ -1216,3 +1216,39 @@ Befunde.
   Tokens, Prompts und Resources (Beschreibungen) noch nicht geprüft.
 - Nur wörtlicher Text wird gelesen; zur Laufzeit zusammengesetzte Beschreibungen bleiben
   unbekannt. Ein LLM-Abgleich Beschreibung ↔ Code ist für Sprint 3 geplant.
+
+## 2026-09-29 – S2-4: Analyzer G – DSGVO und Rechte
+
+**Entscheidungen Len (29.09.):** Endpunkt im Code ohne bekanntes Land → nur Hinweis (I), sonst wäre
+fast jedes Paket mit API-Aufrufen gelb. US-Endpunkt → Mittel („DPF prüfen“), mit Rechtsgrundlage im
+Manifest nur Hinweis.
+
+**Was:**
+- `analyzers/g_dsgvo.py`, Achse dsgvo, nur Intensivscan und CLI. Endpunkte: URLs in einzeiligen
+  Code-Strings von Dateien mit Netzwerkbibliothek (Python über `ast`, ohne Docstrings; JS/TS ohne
+  Kommentare), `curl`/`wget` in Shell-Skripten, SDK-Importe (`openai` → api.openai.com usw.).
+  Ausgelassen: localhost, private Netze, `*.example`/`.invalid`/`.test`, mehrzeilige Texte
+  (Beispiel-HTML), Schema- und Namensraum-URLs, Link-Ziele wie github.com.
+- G02 über `rules/data/laender.yaml` (EWR, Angemessenheitsbeschlüsse, USA als „teilweise“, 39
+  Hosts mit festem Verarbeitungsort, SDK-Zuordnung). Drittland ohne Beschluss → H, mit Garantien
+  laut Manifest → I (Selbstauskunft).
+- Mit `luibui.json`: G01 Schema (`jsonschema`, Kopie des Schemas im Paket, Test gegen `spec/`)
+  und Pakettyp gegen die Erkennung; G03 undeklarierte Endpunkte (Platzhalter `*.` unterstützt);
+  G04 Shell, Netzwerk, Dateien schreiben, Umgebungsvariablen, Zugangsdaten; G05 Datenkategorien
+  (Zugangsdaten, „keine“ trotz Endpunkten); G06 Selbstauskunft als Hinweis.
+- Bericht „Was geprüft wurde“: „DSGVO: Endpunkte und Drittländer“ und „Abgleich mit luibui.json“
+  (ohne Manifest mit Grund).
+- Damit sind alle vorgesehenen Prüfungen eingebaut; ein vollständiger Scan ohne Befunde kann Grün
+  werden. CLI-Tests setzen die Scanner jetzt ausdrücklich unerreichbar, damit sie mit und ohne
+  installierte Werkzeuge dasselbe prüfen.
+
+**Kalibrierung:** harmloser Korpus (4 Pakete mit Manifest): nur G06-Hinweis. MCP-Referenzserver:
+nur `everything` (raw.githubusercontent.com, USA → M). marketing-skill: erst 4 Scheinendpunkte aus
+Beispiel-HTML und XML-Namensräumen, nach Nachschärfung keine.
+
+**Geprüft:** 1.041 Python-Tests mit Opengrep (26 neu für G, 1 für die Abdeckung), ruff, mypy.
+
+**Offen:**
+- Len: `rules/data/laender.yaml` fachlich freigeben (Stand der Angemessenheitsbeschlüsse, Brasilien).
+- Endpunkte aus Konfigurationsdateien (`.env.example`, YAML) und zur Laufzeit zusammengesetzte URLs
+  werden nicht erkannt; andere Programmiersprachen noch nicht.

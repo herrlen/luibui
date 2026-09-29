@@ -109,7 +109,7 @@ def scan_prepared(
     bewertung = bewerte(
         pipeline.findings,
         pruefumfang=umfang,
-        # Presence decides the scope for now; validating luibui.json belongs to Ebene G.
+        # Presence decides the scope; whether luibui.json is valid is G01 (analyzers/g_dsgvo.py).
         has_manifest=umfang is Pruefumfang.PAKET,
         # An analyzer failed, none ran or an expected one is missing: nothing may turn green.
         complete=pipeline.complete and bool(pipeline.ran) and not fehlend,

@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luibui.com/spec/luibui.schema.json",
+  "title": "luibui.json – Paket-Manifest",
+  "description": "Selbstauskunft eines Pakets über Rechte, Endpunkte und Datenkategorien (Konzept §7). Die Prüfung gleicht sie mit dem Code ab (Ebene G).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "name", "version", "typ", "beschreibung", "lizenz", "rechte", "endpunkte"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1"
+    },
+    "name": {
+      "description": "org/paket, nur Kleinbuchstaben, Ziffern und Bindestriche.",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$"
+    },
+    "version": {
+      "description": "Semantic Versioning 2.0.0.",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "typ": {
+      "type": "string",
+      "enum": ["skill", "mcp-server", "plugin", "tool"]
+    },
+    "beschreibung": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "lizenz": {
+      "description": "SPDX-Ausdruck. Veröffentlicht werden nur Pakete mit SPDX-Lizenz.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9.+\\-() ]+$"
+    },
+    "autor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "kontakt": {
+          "description": "E-Mail oder URL für Sicherheitsmeldungen (Disclosure).",
+          "type": "string",
+          "maxLength": 300
+        }
+      }
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^https://"
+    },
+    "ziele": {
+      "description": "Wo sich das Paket installieren lässt.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude", "chatgpt", "gemini", "mistral", "openwebui", "mcp"]
+      },
+      "uniqueItems": true
+    },
+    "einstieg": {
+      "description": "Hauptdatei relativ zum Paket, z. B. SKILL.md oder server.py.",
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$"
+    },
+    "rechte": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["netzwerk", "dateien", "shell", "zugangsdaten"],
+      "properties": {
+        "netzwerk": {
+          "description": "Ob das Paket Netzwerkverbindungen aufbaut. Die Ziele stehen unter endpunkte.",
+          "type": "boolean"
+        },
+        "dateien": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lesen", "schreiben"],
+          "properties": {
+            "lesen": {
+              "description": "Pfadmuster, z. B. \"./daten/**\" oder \"~/Dokumente/*.pdf\". Leer = keine.",
+              "type": "array",
+              "items": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "uniqueItems": true
+            },
+            "schreiben": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "uniqueItems": true
+            }
+          }
+        },
+        "shell": {
+          "description": "Ob Befehle in einer Shell oder als Unterprozess ausgeführt werden.",
+          "type": "boolean"
+        },
+        "zugangsdaten": {
+          "description": "Ob Zugangsdaten gelesen werden (API-Keys, Tokens, Passwörter).",
+          "type": "boolean"
+        },
+        "umgebungsvariablen": {
+          "description": "Namen der gelesenen Umgebungsvariablen.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "maxLength": 100
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "endpunkte": {
+      "description": "Alle Hosts, mit denen das Paket spricht. Leer, wenn netzwerk false ist.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["host", "zweck", "land", "datenkategorien"],
+        "properties": {
+          "host": {
+            "description": "Hostname ohne Schema, z. B. api.example.com. Platzhalter nur als erstes Label: *.example.com.",
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^(\\*\\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$"
+          },
+          "zweck": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "land": {
+            "description": "ISO 3166-1 Alpha-2 des Verarbeitungsorts, z. B. DE, US.",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "betreiber": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "datenkategorien": {
+            "$ref": "#/$defs/datenkategorien"
+          },
+          "rechtsgrundlage": {
+            "description": "Grundlage für Übermittlungen in Drittländer (DSGVO Kap. V).",
+            "type": "string",
+            "enum": ["angemessenheitsbeschluss", "standardvertragsklauseln", "binding_corporate_rules", "einwilligung", "keine_uebermittlung"]
+          }
+        }
+      }
+    },
+    "datenkategorien": {
+      "description": "Welche Daten das Paket insgesamt verarbeitet.",
+      "$ref": "#/$defs/datenkategorien"
+    },
+    "speicherung": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lokal": { "type": "boolean" },
+        "dauer": {
+          "description": "Freitext, z. B. \"nur während der Sitzung\" oder \"30 Tage\".",
+          "type": "string",
+          "maxLength": 200
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Ohne Netzwerkrecht darf es keine Endpunkte geben.",
+      "if": {
+        "properties": {
+          "rechte": { "properties": { "netzwerk": { "const": false } } }
+        }
+      },
+      "then": {
+        "properties": { "endpunkte": { "maxItems": 0 } }
+      }
+    }
+  ],
+  "$defs": {
+    "datenkategorien": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "keine",
+          "nutzereingaben",
+          "dateiinhalte",
+          "kontaktdaten",
+          "nutzungsdaten",
+          "standortdaten",
+          "zugangsdaten",
+          "gesundheitsdaten",
+          "besondere_kategorien",
+          "sonstige"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}

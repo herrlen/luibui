@@ -241,3 +241,10 @@ def test_coverage_names_mcp_checks_for_mcp_servers(tmp_path: Path) -> None:
         "MCP-Tools: Beschreibung passt zum Code: bisher nur für Python"
         in a["JavaScript und TypeScript"]["offen"]
     )
+
+
+def test_coverage_names_dsgvo_checks(tmp_path: Path) -> None:
+    reg = registry(Reports("a_dateien", []), Reports("g_dsgvo", []))
+    ohne = _abdeckung(report_for(tmp_path, {"t.py": "x = 1\n"}, Eingabe.LOKAL, ScanArt.LOKAL, reg))
+    assert "DSGVO: Endpunkte und Drittländer" in ohne["Python"]["geprueft"]
+    assert any(o.endswith("nur mit luibui.json") for o in ohne["Python"]["offen"])

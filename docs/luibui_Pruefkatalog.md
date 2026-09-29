@@ -220,6 +220,13 @@ gepflegten Liste mit Angemessenheitsbeschlüssen (`rules/data/`). Sprint 2 (S2-4
 **G01, G03, G04, G05 brauchen das Manifest** (Konzept §5); ohne Manifest bleibt die Achse „nicht
 bewertet“, nur G02 kann sie dann einfärben.
 
+Umsetzung (`analyzers/g_dsgvo.py`, Länderliste `rules/data/laender.yaml`): Endpunkte aus URLs in
+einzeiligen Code-Strings (nicht aus Kommentaren, Docstrings, mehrzeiligen Beispieltexten oder
+Schema-Kennungen), aus Shell-Befehlen und aus SDK-Importen. Entscheidungen Len (29.09.2026): Ein im
+Code gefundener Endpunkt ohne bekanntes Land ergibt nur einen Hinweis (I). Endpunkte in den USA
+ergeben Mittel (Angemessenheitsbeschluss nur für DPF-zertifizierte Empfänger), mit einer
+Rechtsgrundlage im Manifest nur einen Hinweis.
+
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
 | G01 | **Manifest fehlt oder ist ungültig:** `luibui.json` nicht nach Schema, Pflichtangaben fehlen, Pakettyp passt nicht zur Erkennung | M | – | ✓ – – – | Schema, Inventar | DSGVO-Art-13 |

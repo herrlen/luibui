@@ -172,3 +172,58 @@ def test_quickscan_end_to_end_says_ohne_gewaehr(
     assert any("ohne Gewähr" in h for h in s["bericht"]["hinweise"])
     assert s["bericht"]["paket"]["name"] == "github.com/a/b"
     assert s["bericht"]["paket"]["quelle"] == "git"
+
+
+# --- quick scan with one file (S2-13) ------------------------------------------------------------
+
+
+def quick_datei(api: Api, name: str, inhalt: bytes):  # type: ignore[no-untyped-def]
+    return api.client(base_url="https://luibui.com").post(
+        "/api/v1/quickscans", files={"datei": (name, inhalt)}
+    )
+
+
+def test_quickscan_takes_one_file_and_stores_nothing(
+    api: Api, tmp_path: Path, _migrated: str
+) -> None:
+    r = quick_datei(api, "SKILL.md", b"# LUIBUI-TESTFIXTURE Skill\nHallo\n")
+    assert r.status_code == 202, r.text
+    scan = r.json()
+    assert scan["scan_art"] == "schnell" and scan["pruefumfang"] == "einzeldatei"
+    assert api.client().get(f"/api/v1/quickscans/{scan['id']}").status_code == 200
+    assert blobs(tmp_path) == []  # nothing on the volume
+    assert db_rows(_migrated, "SELECT count(*) FROM projects")[0][0] == 0
+
+
+def test_quickscan_unpacks_an_archive(api: Api) -> None:
+    import io
+    import zipfile
+
+    puffer = io.BytesIO()
+    with zipfile.ZipFile(puffer, "w") as zf:
+        zf.writestr("skill/SKILL.md", "# LUIBUI-TESTFIXTURE Skill\n")
+        zf.writestr("skill/scripts/run.py", "print('hallo')\n")
+    r = quick_datei(api, "skill.zip", puffer.getvalue())
+    assert r.status_code == 202, r.text
+    assert r.json()["pruefumfang"] == "auswahl"
+
+
+def test_quickscan_file_over_2_mb_is_refused_and_does_not_count(api: Api) -> None:
+    for _ in range(4):
+        r = quick_datei(api, "gross.md", b"x" * (2 * 1024 * 1024 + 1))
+        assert r.status_code == 413
+        assert r.json()["detail"]["code"] == "zu_gross"
+    assert quick_datei(api, "SKILL.md", b"# ok\n").status_code == 202
+
+
+def test_quickscan_file_counts_against_the_same_limit(api: Api, fake_clone: list[str]) -> None:
+    assert quick(api).status_code == 202
+    assert quick_datei(api, "a.md", b"# a\n").status_code == 202
+    assert quick_datei(api, "b.md", b"# b\n").status_code == 202
+    assert quick_datei(api, "c.md", b"# c\n").status_code == 429
+
+
+def test_quickscan_without_file(api: Api) -> None:
+    c = api.client(base_url="https://luibui.com")
+    r = c.post("/api/v1/quickscans", files={"anderes": ("x.md", b"x")})
+    assert r.status_code == 422

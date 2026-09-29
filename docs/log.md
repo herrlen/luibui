@@ -1426,3 +1426,18 @@ ausdrücklich aus (der Link ist die Berechtigung). Datenschutzerklärung ergänz
 **Geprüft:** 4 API-Tests (nur fertige Prüfungen, anonymer Abruf ohne Kontodaten, nur Hash
 gespeichert, neuer Link ersetzt alten, Beenden, Link stirbt mit dem Projekt, kaputte Tokens → 404),
 Isolationstest deckt die neuen Routen mit `scan_id` ab, 2 Web-Tests.
+
+## 2026-09-29 – S2-13: Schnellscan mit Datei, Knopf zum Intensivscan
+
+**Was:** `POST /api/v1/quickscans` nimmt neben der Git-URL (JSON) auch genau eine Datei als
+Formular (`datei`) bis 2 MB; ZIP und tar werden über `intake/` entpackt, alles andere als
+Einzeldatei geprüft. Eine zu große Datei gibt 413 `zu_gross` und zählt nicht gegen das
+Rate-Limit; Git und Datei teilen sich Limit und Warteschlangen-Grenze. Gespeichert wird wie
+bisher nur der Bericht (7 Tage). Auf luibui.com schaltet das Formular zwischen „Öffentliches
+Repository“ und „Eine Datei oder ein ZIP bis 2 MB“ um, die Größe wird schon im Browser geprüft.
+Die Ergebnisseite hat den Abschnitt „Gründlich prüfen“ mit „Intensivscan starten“ (zur
+Registrierung auf app.luibui.com).
+
+**Geprüft:** 5 neue API-Tests (Datei wird geprüft und nicht abgelegt, Archiv wird entpackt,
+über 2 MB → 413 ohne Zählung, gemeinsames Limit, fehlende Datei → 422), 18 Tests in
+`test_git_scans.py`, Web-Lint, 29 Web-Tests, Build.

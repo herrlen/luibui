@@ -212,3 +212,9 @@ Opengrep-Cache 240 MB, Schadsoftware-Liste), der bei Bedarf freigegeben wird; de
 selbst lag beim Test vom 28.09. bei rund 270 MB. Im Web-Log stehen Zeilen „Server Reference ID did
 not match the expected format“: abgewiesene Anfragen mit ungültigem `Next-Action`-Header
 (automatisierte Proben), kein Fehler der Anwendung.
+
+## Nach Deploy `6211216` (29.09.2026, S2-4 DSGVO-Analyzer)
+
+Logs ohne Fehler. cgroup nach einem Selbsttest (harmloses Paket mit Manifest, erstmals Grün/Grün,
+Note 100): api 69 MiB (Spitze 121), worker 88 MiB (Spitze 673, überwiegend Seiten-Cache), web
+84 MiB (Spitze 169).

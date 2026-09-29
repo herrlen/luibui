@@ -172,12 +172,13 @@ def _abdeckung(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def test_coverage_lists_what_ran_per_kind_of_file(tmp_path: Path) -> None:
     reg = registry(*(Reports(n, []) for n in ("a_dateien", "b_inhalte", "b_muster", "c_code")))
-    files = {"SKILL.md": "# Skill\n", "tool.py": "x = 1\n", "main.go": "package main\n"}
+    files = {"SKILL.md": "# Skill\n", "tool.py": "x = 1\n", "main.lua": "print(1)\n"}
     a = _abdeckung(report_for(tmp_path, files, Eingabe.LOKAL, ScanArt.LOKAL, reg))
     assert a["Python"]["dateien"] == 1
     assert "Was der Code tut" in a["Python"]["geprueft"]
     assert "Anweisungen an die KI (Prompt-Injection)" in a["Anweisungen und Doku"]["geprueft"]
     assert "Was der Code tut: für diese Programmiersprache noch nicht" in a["Anderer Code"]["offen"]
+    assert "Anweisungen an die KI in Kommentaren und Docstrings" in a["Python"]["geprueft"]
     # Not registered here, so never claimed as checked:
     assert "Zugangsdaten im Klartext" not in a["Python"]["geprueft"]
 
@@ -212,8 +213,11 @@ def test_coverage_in_quick_scan_names_the_missing_code_check(tmp_path: Path) -> 
         ("a/b.py", "text", "python", "Python"),
         ("x.tsx", "text", "typescript", "JavaScript und TypeScript"),
         ("run.sh", "script", "shell", "Shell-Skripte"),
-        ("run", "script", "shell", "Anderer Code"),
-        ("x.ps1", "text", "powershell", "Anderer Code"),
+        ("run", "script", "shell", "Shell-Skripte"),
+        ("run", "script", "ruby", "Anderer Code"),
+        ("x.ps1", "text", "powershell", "Weitere Programmiersprachen"),
+        ("main.go", "text", "go", "Weitere Programmiersprachen"),
+        ("x.lua", "text", "lua", "Anderer Code"),
         ("SKILL.md", "text", "markdown", "Anweisungen und Doku"),
         ("mcp.json", "text", "json", "Konfiguration und Daten"),
         ("logo.png", "png", None, "Binärdateien, Bilder und Archive"),
@@ -237,10 +241,7 @@ def test_coverage_names_mcp_checks_for_mcp_servers(tmp_path: Path) -> None:
     mcp = "MCP-Tools: versteckte Anweisungen, Shadowing, Anmeldung, Token"
     assert mcp in a["Python"]["geprueft"] and mcp in a["JavaScript und TypeScript"]["geprueft"]
     assert "MCP-Tools: Beschreibung passt zum Code" in a["Python"]["geprueft"]
-    assert (
-        "MCP-Tools: Beschreibung passt zum Code: bisher nur für Python"
-        in a["JavaScript und TypeScript"]["offen"]
-    )
+    assert "MCP-Tools: Beschreibung passt zum Code" in a["JavaScript und TypeScript"]["geprueft"]
 
 
 def test_coverage_names_dsgvo_checks(tmp_path: Path) -> None:
@@ -248,3 +249,14 @@ def test_coverage_names_dsgvo_checks(tmp_path: Path) -> None:
     ohne = _abdeckung(report_for(tmp_path, {"t.py": "x = 1\n"}, Eingabe.LOKAL, ScanArt.LOKAL, reg))
     assert "DSGVO: Endpunkte und Drittländer" in ohne["Python"]["geprueft"]
     assert any(o.endswith("nur mit luibui.json") for o in ohne["Python"]["offen"])
+
+
+def test_coverage_for_further_languages(tmp_path: Path) -> None:
+    reg = registry(*(Reports(n, []) for n in ("a_dateien", "b_muster", "c_code", "g_dsgvo")))
+    files = {"main.go": "package main\n", "install.ps1": "Write-Host x\n"}
+    a = _abdeckung(report_for(tmp_path, files, Eingabe.LOKAL, ScanArt.LOKAL, reg))
+    weitere = a["Weitere Programmiersprachen"]
+    assert weitere["dateien"] == 2
+    assert any(g.startswith("Was der Code tut: Grundmuster") for g in weitere["geprueft"])
+    assert any("C05, C06, C12" in o for o in weitere["offen"])
+    assert "DSGVO: Endpunkte und Drittländer" in weitere["geprueft"]

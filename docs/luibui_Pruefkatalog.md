@@ -88,6 +88,9 @@ A17 (Keras/TF/ONNX-Struktur) ist reserviert für Sprint 3/4 (modelscan).
 
 Was in Texten steht, vor allem in `SKILL.md`, Prompts, Tool-Beschreibungen und Markdown.
 B01–B07 mit S1-6, B08–B17 mit S1-7, B18–B19 mit S3-3 (LLM-Prüfer), B20 mit S1-8.
+B08–B17 gelten auch für Kommentare und Python-Docstrings in Code-Dateien (ein Coding-Agent liest
+sie mit), dort nur die Regeln mit Schwere K und H; kalibriert an rund 800 echten Code-Dateien, in
+denen die weicheren Regeln (z. B. B15 „loop forever“) nur normale Programmlogik trafen.
 
 ### Versteckte Inhalte (B01–B07)
 
@@ -137,6 +140,10 @@ eine statische Regel derselben Datei mindestens M meldet. Bis dahin ergibt es Ro
 
 Skripte und Serverquellcode, statisch analysiert. Sprint 2 (S2-1, S2-2). Opengrep **nur mit
 eigenen Regeln** (`rules/opengrep/`), dazu Bandit für Python und der Cisco skill-scanner offline.
+Vollständig für Python, JavaScript/TypeScript und Shell (auch Skripte ohne Endung mit Shebang).
+Grundmuster (C01–C04, C07, C08, C10) für Go, Ruby, PHP, Rust, Java, Kotlin, C#, PowerShell und
+Batch (`LB-CXX-andere-sprachen`, `LB-CXX-powershell`); Datenfluss und Pfadprüfung (C05, C06, C12)
+nur für Python und JavaScript/TypeScript.
 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
@@ -182,6 +189,10 @@ Code gelesen (Python über `ast`, JavaScript/TypeScript über Muster) und mit al
 (eigene und ATR) geprüft (`analyzers/e_mcp.py`). Der Cisco mcp-scanner wird nicht eingesetzt
 (Entscheidung Len, 29.09.2026): ohne laufenden Server bleibt nur sein `static`-Modus, der dieselbe
 selbst erzeugte Tool-Liste bräuchte, bei schweren Abhängigkeiten (litellm, MCP-SDK).
+Gelesen werden Tools, Prompts und Resources. E03 vergleicht für Python den Handler und für
+JavaScript/TypeScript den Handler im selben `tool`/`registerTool`-Aufruf mit der Beschreibung
+(Hilfsfunktionen in anderen Dateien werden nicht verfolgt). E06 umfasst auch Tokens, die ohne
+Schlüsselspeicher (keyring, keytar) in eine Datei geschrieben werden; Testdateien zählen nicht.
 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
@@ -225,7 +236,10 @@ einzeiligen Code-Strings (nicht aus Kommentaren, Docstrings, mehrzeiligen Beispi
 Schema-Kennungen), aus Shell-Befehlen und aus SDK-Importen. Entscheidungen Len (29.09.2026): Ein im
 Code gefundener Endpunkt ohne bekanntes Land ergibt nur einen Hinweis (I). Endpunkte in den USA
 ergeben Mittel (Angemessenheitsbeschluss nur für DPF-zertifizierte Empfänger), mit einer
-Rechtsgrundlage im Manifest nur einen Hinweis.
+Rechtsgrundlage im Manifest nur einen Hinweis. Weitere Quellen für Endpunkte: Konfiguration
+(`.env*`, YAML, TOML, JSON, INI) mit Schlüsseln wie `base_url`, `endpoint`, `webhook`, ohne
+Projektlinks (`homepage`, `repository` …) und ohne `package.json`/`pyproject.toml`; Go, Ruby, PHP,
+Rust, Java, Kotlin, C#, PowerShell und Batch, wenn die Datei einen Netzwerk-Client nutzt.
 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|

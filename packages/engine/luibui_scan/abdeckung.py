@@ -20,6 +20,11 @@ SECRETS = "Zugangsdaten im Klartext"
 VERSTECKT = "Versteckte Zeichen und kodierte Inhalte"
 ANWEISUNGEN = "Anweisungen an die KI (Prompt-Injection)"
 CODE = "Was der Code tut"
+CODE_GRUND = (
+    "Was der Code tut: Grundmuster (Nachladen, Zugangsdaten, Autostart, Verschleierung, "
+    "Schadmuster, Shell-Aufrufe)"
+)
+KOMMENTARE = "Anweisungen an die KI in Kommentaren und Docstrings"
 MCP = "MCP-Tools: versteckte Anweisungen, Shadowing, Anmeldung, Token"
 MCP_ABGLEICH = "MCP-Tools: Beschreibung passt zum Code"
 ENDPUNKTE = "DSGVO: Endpunkte und Drittländer"
@@ -32,6 +37,8 @@ ANALYZER: dict[str, str] = {
     VERSTECKT: "b_inhalte",
     ANWEISUNGEN: "b_muster",
     CODE: "c_code",
+    CODE_GRUND: "c_code",
+    KOMMENTARE: "b_muster",
     MCP: "e_mcp",
     MCP_ABGLEICH: "e_mcp",
     ENDPUNKTE: "g_dsgvo",
@@ -46,6 +53,17 @@ _PYTHON = frozenset({".py", ".pyw"})
 _JS = frozenset({".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".mts", ".cts"})
 _SHELL = frozenset({".sh", ".bash", ".zsh"})
 _WEB = frozenset({".html", ".htm", ".css", ".svg", ".xml"})
+_WEITERE = frozenset(
+    {".go", ".rb", ".php", ".rs", ".java", ".kt", ".cs", ".ps1", ".psm1", ".bat", ".cmd"}
+)
+"""Languages with basic rules (rules/opengrep/LB-CXX-*); no data flow or path checks."""
+_SHEBANG_ART = {
+    "python": "Python",
+    "shell": "Shell-Skripte",
+    "javascript": "JavaScript und TypeScript",
+    "typescript": "JavaScript und TypeScript",
+}
+_CODE_ARTEN = ("Python", "JavaScript und TypeScript", "Shell-Skripte")
 
 ARTEN = (
     "Anweisungen und Doku",
@@ -53,6 +71,7 @@ ARTEN = (
     "Python",
     "JavaScript und TypeScript",
     "Shell-Skripte",
+    "Weitere Programmiersprachen",
     "Anderer Code",
     "Web-Dateien",
     "Binärdateien, Bilder und Archive",
@@ -80,8 +99,8 @@ class Abdeckung:
 
 
 def dateiart(entry: InventoryEntry) -> str:
-    """By extension only: the code tools choose files by extension, so a script without one
-    counts as "Anderer Code" and never as checked code."""
+    """By extension, the way the code tools choose files; a script without extension by its
+    shebang (Opengrep reads those too)."""
     path = PurePosixPath(entry.path)
     suffix = path.suffix.lower()
     if entry.kind == "appledouble":
@@ -94,6 +113,10 @@ def dateiart(entry: InventoryEntry) -> str:
         return "JavaScript und TypeScript"
     if suffix in _SHELL:
         return "Shell-Skripte"
+    if not suffix and entry.kind == "script" and entry.sprache in _SHEBANG_ART:
+        return _SHEBANG_ART[entry.sprache]
+    if suffix in _WEITERE:
+        return "Weitere Programmiersprachen"
     if suffix in _WEB:
         return "Web-Dateien"
     if entry.kind == "script" or entry.sprache not in _KEIN_CODE:
@@ -123,18 +146,21 @@ def _vorgesehen(
     )
     if art in ("Anweisungen und Doku", "Konfiguration und Daten") or anweisung:
         checks.append((ANWEISUNGEN, None))
-    else:
-        checks.append((ANWEISUNGEN, "nur im Klartext von Doku- und Konfigurationsdateien"))
-    if art in ("Python", "JavaScript und TypeScript", "Shell-Skripte"):
+    if art in (*_CODE_ARTEN, "Weitere Programmiersprachen"):
+        checks.append((KOMMENTARE, None))
+    if art in _CODE_ARTEN:
         checks.append((CODE, None))
+    elif art == "Weitere Programmiersprachen":
+        checks.append((CODE_GRUND, None))
+        checks.append((CODE, "Datenfluss und Pfadprüfung (C05, C06, C12) nur für Python und JS"))
     elif art == "Anderer Code":
         checks.append((CODE, "für diese Programmiersprache noch nicht"))
     if pakettyp in _MIT_TOOLS and art in ("Python", "JavaScript und TypeScript"):
         checks.append((MCP, None))
-        checks.append((MCP_ABGLEICH, None if art == "Python" else "bisher nur für Python"))
-    elif pakettyp in _MIT_TOOLS and art == "Anderer Code":
+        checks.append((MCP_ABGLEICH, None))
+    elif pakettyp in _MIT_TOOLS and art in ("Weitere Programmiersprachen", "Anderer Code"):
         checks.append((MCP, "für diese Programmiersprache noch nicht"))
-    if art in ("Python", "JavaScript und TypeScript", "Shell-Skripte"):
+    if art in (*_CODE_ARTEN, "Weitere Programmiersprachen", "Konfiguration und Daten"):
         checks.append((ENDPUNKTE, None))
         checks.append((MANIFEST, None if manifest else "nur mit luibui.json"))
     elif art == "Anderer Code":

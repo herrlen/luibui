@@ -1252,3 +1252,33 @@ Beispiel-HTML und XML-Namensräumen, nach Nachschärfung keine.
 - Len: `rules/data/laender.yaml` fachlich freigeben (Stand der Angemessenheitsbeschlüsse, Brasilien).
 - Endpunkte aus Konfigurationsdateien (`.env.example`, YAML) und zur Laufzeit zusammengesetzte URLs
   werden nicht erkannt; andere Programmiersprachen noch nicht.
+
+## 2026-09-29 – Lücken der Ebenen B, C, E und G geschlossen (Auftrag Len: „alles, was nicht erkannt wird, soweit es Sinn macht“)
+
+**Was:**
+- **C, weitere Sprachen (S2-1):** Go, Ruby, PHP, Rust, Java, Kotlin, C# mit Grundmustern in
+  Zeichenketten (C03, C04, C07, C10) und je Sprache Shell- und eval-Aufrufe (C01, C02, C08);
+  PowerShell und Batch als Regex-Regeln (Download-Cradle, `-EncodedCommand`, Aufgabenplanung,
+  Run-Schlüssel, TCPClient-Shell). Skripte ohne Endung werden über das Shebang geprüft.
+  Text-Regeln ohne Konstanten-Weitergabe (sonst doppelte Treffer an späteren Verwendungen).
+- **B in Code (S2-14):** Kommentare und Python-Docstrings werden mit B08–B17 geprüft, nur K- und
+  H-Regeln. Kalibrierung an ca. 800 Code-Dateien (claude-skills-main, MCP-Referenzserver,
+  marketing-skill): 3 Treffer, alle B15 (M) auf normaler Programmlogik → deshalb nur K/H.
+- **E (S2-3):** Prompts und Resources (Python-Dekoratoren, `registerPrompt`/`registerResource`)
+  werden gelesen und geprüft; E03 für JS/TS über den Handler im selben Aufruf; E06 Tokens, die ohne
+  Schlüsselspeicher in Dateien geschrieben werden (`token.json`, `TOKEN_PATH` …), ohne Testdateien.
+- **G (S2-4):** Endpunkte aus Konfiguration (`.env*`, YAML, TOML, JSON, INI, nur Ziel-Schlüssel,
+  keine Projektlinks) und aus den weiteren Sprachen, wenn sie einen Netzwerk-Client nutzen.
+- **Bericht:** neue Dateiart „Weitere Programmiersprachen“, „Anweisungen an die KI in Kommentaren
+  und Docstrings“ als geprüft, MCP-Abgleich auch für JS/TS, Endpunkte auch für Konfiguration.
+
+**Bewusst nicht:** zur Laufzeit zusammengesetzte Texte und URLs (statisch nicht bestimmbar, LLM-
+Abgleich in Sprint 3); Datenfluss und Pfadprüfung (C05, C06, C12) für die weiteren Sprachen;
+MCP-Server in Go/Rust; Hilfsfunktionen von JS-Handlern in anderen Dateien.
+
+**Kalibrierung:** Keine neuen K/H-Befunde durch die Erweiterungen auf claude-skills-main (779 Code-
+Dateien), MCP-Referenzservern und marketing-skill. Aufgefallen, aber älter: B08/B09/B14/ATR-00030
+treffen in claude-skills-main einige Markdown-Stellen, die harmlos wirken (z. B. „Command:
+/cs:ai-act-readiness“ als B08 K). Eigene Kalibrierung der B-Regeln gegen diesen Bestand offen.
+
+**Geprüft:** 1.081 Python-Tests ohne Datenbank, 43 Opengrep-Regeltests, ruff, mypy.

@@ -218,3 +218,7 @@ not match the expected format“: abgewiesene Anfragen mit ungültigem `Next-Act
 Logs ohne Fehler. cgroup nach einem Selbsttest (harmloses Paket mit Manifest, erstmals Grün/Grün,
 Note 100): api 69 MiB (Spitze 121), worker 88 MiB (Spitze 673, überwiegend Seiten-Cache), web
 84 MiB (Spitze 169).
+
+## Nach Deploy `1188de2` (29.09.2026, Erweiterungen B/C/E/G)
+
+Logs ohne Fehler. cgroup nach einem Selbsttest (PowerShell, Go, .env, Code-Kommentar): api 73 MiB (Spitze 125); worker 460 MiB (Spitze 671); web 90 MiB (Spitze 169).

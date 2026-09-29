@@ -143,28 +143,28 @@
 | S2-3 | ✅ **(29.09.2026)** Analyzer **E – MCP**: Tool-Namen, -Beschreibungen und Parameter statisch aus Python (`ast`) und JavaScript/TypeScript gelesen und mit allen B-Regeln geprüft (E01, E02), Beschreibung ↔ Code für Python (E03), Anmeldung, CORS, Token-Weitergabe (E04–E06). Ohne Cisco mcp-scanner (Entscheidung Len) | 4 |
 | S2-4 | ✅ **(29.09.2026)** Analyzer **G – DSGVO und Rechte**: Endpunkte und Rechte aus Code extrahieren, gegen Manifest, Länderzuordnung (gepflegte Liste + Angemessenheitsbeschlüsse, `rules/data/laender.yaml`) | 5 |
 | S2-5 | ✅ **(29.09.2026)** **Korrelation**: Verweise aus Anleitungen (SKILL.md, AGENTS.md, CLAUDE.md, Commands, Agents, Cursor-Regeln, über verlinktes Markdown bis Tiefe 3) auf Code auflösen, Befunde der Ebenen A, C, E dort um eine Stufe hochstufen (M→H, H→K); Fingerprints für jeden Befund | 3 |
-| S2-6 | Auth: E-Mail + Passwort (Argon2), TOTP, Session-Cookie host-only für `app.luibui.com`, API-Tokens | 5 |
-| S2-7 | **Verschlüsselte Dateiablage:** Projekt-Dateien auf `luibui-projects`, pro Projekt ein Datenschlüssel (mit Hauptschlüssel aus ENV verschlüsselt), Kontingent 500 MB / 10 Versionen, Option „nach Prüfung löschen“, Schadsoftware nie ablegen | 5 |
-| S2-8 | **app.luibui.com – Übersicht und Projekte:** Host-Routing in Next.js, Übersicht aller Projekte (Ampel, Note, letzte Prüfung, offene K/H oben), Projekt anlegen (Name, Typ, Quelle), **Upload-Feld für einzelne Dateien, mehrere Dateien, ganze Ordner (Drag & Drop), ZIP und eingefügten Text**, „Schnell eine Datei prüfen“ direkt auf der Übersicht, neue Version hochladen, Prüfungsliste pro Projekt | 7 |
-| S2-9 | **app.luibui.com – Bericht:** zwei Ampeln, Note, Freigabe, Befunde nach Schwere, Belege escaped und maskiert, Fix + Fix-Prompt kopierbar, Fortschritt während der Prüfung | 6 |
-| S2-10 | **app.luibui.com – Konto:** Profil, 2FA, API-Tokens, Speicherverbrauch, Datenexport, Konto löschen | 3 |
-| S2-11 | **luibui.com – Grundgerüst Marketingseite:** Startseite mit „Anmelden“ und „Kostenlos registrieren“ (führen zu app.luibui.com/anmelden bzw. /registrieren, im gleichen Design) | 2 |
-| S2-13 | **Schnellscan** auf luibui.com: öffentliche Git-URL oder eine Datei bis 2 MB, ohne Anmeldung, reduzierte Pipeline (A, B-Regeln, Secrets, D), unter 30 s, Hinweis „eingeschränkter Umfang, ohne Gewähr“, nichts gespeichert, Bericht 7 Tage, Rate-Limit, Button zum Intensivscan | 3 |
-| S2-12 | Download **CSV** (eine Zeile pro Befund, UTF-8 mit BOM, Semikolon, **gegen CSV-Injection abgesichert**), JSON und SARIF 2.1.0; Teilen eines Berichts per Link mit Zufalls-Token | 3 |
+| S2-6 | ✅ **(geprüft 29.09.2026)** Auth: E-Mail + Passwort (Argon2), TOTP, Session-Cookie host-only für `app.luibui.com`, API-Tokens. Offen: „Passwort vergessen“ | 5 |
+| S2-7 | ◐ **(geprüft 29.09.2026)** **Verschlüsselte Dateiablage:** Projekt-Dateien auf `luibui-projects`, pro Projekt ein Datenschlüssel (mit Hauptschlüssel aus ENV verschlüsselt), Kontingent 500 MB / 10 Versionen, Option „nach Prüfung löschen“, Schadsoftware nie ablegen. Offen: Dateiansicht/Download, einzelne Versionen löschen. | 5 |
+| S2-8 | ◐ **(geprüft 29.09.2026)** **app.luibui.com – Übersicht und Projekte:** Host-Routing in Next.js, Übersicht aller Projekte (Ampel, Note, letzte Prüfung, offene K/H oben), Projekt anlegen (Name, Typ, Quelle), **Upload-Feld für einzelne Dateien, mehrere Dateien, ganze Ordner (Drag & Drop), ZIP und eingefügten Text**, „Schnell eine Datei prüfen“ direkt auf der Übersicht, neue Version hochladen, Prüfungsliste pro Projekt. Offen: offene K/H auf der Übersicht und Sortierung danach, Quelle beim Anlegen wählen, Versionsliste. | 7 |
+| S2-9 | ◐ **(geprüft 29.09.2026)** **app.luibui.com – Bericht:** zwei Ampeln, Note, Freigabe, Befunde nach Schwere, Belege escaped und maskiert, Fix + Fix-Prompt kopierbar, Fortschritt während der Prüfung. Offen: Kopier-Knopf für den Fix-Text; Fortschritt nur als Status. | 6 |
+| S2-10 | ◐ **(geprüft 29.09.2026)** **app.luibui.com – Konto:** Profil, 2FA, API-Tokens, Speicherverbrauch, Datenexport, Konto löschen. Offen: Profil ändern, 2FA einrichten in der Oberfläche, Speicherverbrauch, Datenexport, Konto löschen. | 3 |
+| S2-11 | ✅ **(geprüft 29.09.2026)** **luibui.com – Grundgerüst Marketingseite:** Startseite mit „Anmelden“ und „Kostenlos registrieren“ (führen zu app.luibui.com/anmelden bzw. /registrieren, im gleichen Design) | 2 |
+| S2-13 | ◐ **(geprüft 29.09.2026)** **Schnellscan** auf luibui.com: öffentliche Git-URL oder eine Datei bis 2 MB, ohne Anmeldung, reduzierte Pipeline (A, B-Regeln, Secrets, D), unter 30 s, Hinweis „eingeschränkter Umfang, ohne Gewähr“, nichts gespeichert, Bericht 7 Tage, Rate-Limit, Button zum Intensivscan. Offen: Datei bis 2 MB, Knopf zum Intensivscan auf der Ergebnisseite. | 3 |
+| S2-12 | ◐ **(geprüft 29.09.2026)** Download **CSV** (eine Zeile pro Befund, UTF-8 mit BOM, Semikolon, **gegen CSV-Injection abgesichert**), JSON und SARIF 2.1.0; Teilen eines Berichts per Link mit Zufalls-Token. Offen: Teilen per Link. | 3 |
 | S3-15 | ✅ **Guthaben und PayPal (27.09.2026, Len):** E-Mail-Bestätigung, 1 Projekt und 3 Prüfungen gratis, Guthaben 10/4,90 € und 25/9,90 €, Aufladen-Fenster bei 402, Beleg, Nutzungsbedingungen, Widerrufsbelehrung, Datenschutz | – |
 | S2-14 | ✅ **Scanner-Matrix Teil B (27.09.2026):** tar-Annahme, Paketformate eine Ebene tief, Typ nach Inhalt, A13–A21, B21, C14, C15, E08, E09, G07, G08, erweiterte A02/A03/A04/B06/B08–B17, Korpus je Matrixzeile (`corpus/generate.py`). Stand je Zeile in `docs/scanner-abdeckung.md` | – |
 
-**Definition of Done**
-- [ ] luibui.com → Registrieren → Projekt anlegen → Ordner oder ZIP hochladen → Bericht in unter 2 Minuten für ein typisches Skill-Paket
-- [ ] Eine einzelne Datei per Drag & Drop auf der Übersicht → Bericht mit Hinweis „Einzeldatei-Prüfung“
-- [ ] **Nutzer A kommt über keine Route an Projekte, Dateien, Berichte oder Tokens von Nutzer B** (automatisierter Test für jede Route)
-- [ ] Dateien liegen verschlüsselt auf dem Volume (Test liest Rohdatei und findet keinen Klartext)
-- [ ] SARIF lässt sich in GitHub Code Scanning importieren
-- [ ] CSV öffnet sich korrekt in Excel und LibreOffice; ein Beleg, der mit `=`, `+`, `-` oder `@` beginnt, wird nicht als Formel ausgeführt (Test)
-- [ ] Schnellscan eines Beispiel-Repos in unter 30 Sekunden, Bericht trägt den Hinweis „ohne Gewähr“
-- [ ] Ein Beleg mit `<script>`, `<img onerror>` oder Markdown-Bild-Link wird als Text angezeigt (Test)
-- [ ] Session-Cookie wird auf `luibui.com` nicht mitgesendet
-- [ ] Keine externen Ressourcen im Frontend
+**Definition of Done** (geprüft 29.09.2026)
+- [x] luibui.com → Registrieren → Projekt anlegen → Ordner oder ZIP hochladen → Bericht in unter 2 Minuten für ein typisches Skill-Paket (Ablauf von Len am 28./29.09. benutzt; Prüfung des marketing-skill mit 234 Dateien im Worker-Container 47 s)
+- [x] Eine einzelne Datei per Drag & Drop auf der Übersicht → Bericht mit Hinweis „Einzeldatei-Prüfung“ (`Einzelpruefung.tsx`, Hinweis aus `report.py`)
+- [x] **Nutzer A kommt über keine Route an Projekte, Dateien, Berichte oder Tokens von Nutzer B** (`apps/api/tests/test_isolation.py` geht alle Routen mit Ressourcen-ID aus dem OpenAPI-Schema durch; eine Route zum Lesen gespeicherter Dateien gibt es noch nicht)
+- [x] Dateien liegen verschlüsselt auf dem Volume (`test_storage.py::test_no_plaintext_on_disk`, `test_scans.py::test_zip_upload_is_staged_stored_encrypted_and_queued`)
+- [ ] SARIF lässt sich in GitHub Code Scanning importieren — gegen das OASIS-Schema 2.1.0 geprüft (0 Fehler), jedes Ergebnis hat einen Ort; der Import in ein GitHub-Repository ist noch nicht ausprobiert
+- [ ] CSV öffnet sich korrekt in Excel und LibreOffice; ein Beleg, der mit `=`, `+`, `-` oder `@` beginnt, wird nicht als Formel ausgeführt — Test für alle Zeichen vorhanden (`ReportView.test.tsx`); Öffnen in Excel/LibreOffice von Hand noch offen
+- [x] Schnellscan eines Beispiel-Repos in unter 30 Sekunden, Bericht trägt den Hinweis „ohne Gewähr“ (live 29.09.: 5 s)
+- [x] Ein Beleg mit `<script>`, `<img onerror>` oder Markdown-Bild-Link wird als Text angezeigt (Test)
+- [x] Session-Cookie wird auf `luibui.com` nicht mitgesendet (`__Host-`-Präfix, kein Domain-Attribut, Test)
+- [x] Keine externen Ressourcen im Frontend (live geprüft; CSP `default-src 'self'`)
 
 ---
 

@@ -1329,3 +1329,28 @@ die eine SKILL.md ausführen lässt, H→K; zweimal `torch.load`, zweimal CORS `
 marketing-skill: 0.
 
 **Geprüft:** 1.008 Python-Tests (15 neu), 23 Web-Tests, ruff, mypy, eslint.
+
+## 2026-09-29 – Sprint 2: Definition of Done Punkt für Punkt geprüft
+
+**Ergebnis Aufgaben** (Einzelheiten in der Sprintplanung): S2-6 und S2-11 erfüllt; S2-7, S2-8,
+S2-9, S2-10, S2-12, S2-13 weitgehend, mit offenen Teilen. Größte Lücken: Konto (Profil ändern,
+2FA einrichten, Speicherverbrauch, **Datenexport, Konto löschen**), Teilen per Link, Schnellscan
+mit Datei bis 2 MB, offene K/H auf der Übersicht, Passwort vergessen.
+
+**Ergebnis DoD:** 8 von 10 erfüllt. Offen: SARIF-Import in ein echtes GitHub-Repository
+(Schema-Prüfung bestanden) und das Öffnen der CSV in Excel/LibreOffice von Hand.
+
+**Heute dazu gebaut:**
+- `apps/api/tests/test_isolation.py`: alle API-Routen mit Ressourcen-ID aus dem OpenAPI-Schema,
+  Nutzer B bekommt für jede Ressource von A ein 404; neue Parameter lassen den Test scheitern,
+  bis sie aufgenommen sind.
+- SARIF: jedes Ergebnis hat einen Ort (paketweite Befunde an `luibui.json`, Zeile 1), weil GitHub
+  Ergebnisse ohne Ort ablehnt; gegen das OASIS-Schema 2.1.0 geprüft (0 Fehler).
+- Tests für CSV mit `+`, `-`, CR und für Markdown-Bild-Links und `javascript:`-Links als Text.
+- Belege aller Analyzer werden zentral in der Pipeline maskiert (Regel 6); vorher nur bei C und
+  Secrets. Maskiert werden Folgen ab 20 Zeichen mit Ziffer und Buchstabe (Schlüssel, Tokens),
+  lange Bezeichner bleiben lesbar.
+
+**Live geprüft:** keine externen Ressourcen (CSP `default-src 'self'`), Session-Cookie
+`__Host-luibui_session` ohne Domain, `luibui.com/api` erreicht die API nicht, Schnellscan 5 s mit
+„ohne Gewähr“.

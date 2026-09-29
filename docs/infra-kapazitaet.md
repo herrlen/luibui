@@ -278,3 +278,10 @@ cgroup: api 88 MiB (Spitze 131); worker 48 MiB (Spitze 48); web 161 MiB (Spitze 
 PDF im laufenden API-Container erzeugt (Schriften im Image), PDF-Route ohne Anmeldung → 401,
 neue Seiten `/projekte` und `/pruefungen` leiten ohne Anmeldung weiter. Logs ohne Fehler.
 cgroup: api 94 MiB (Spitze 131, ReportLab kaum spürbar); worker 53 MiB (Spitze 53); web 75 MiB (Spitze 90).
+
+## Nach Deploy `4669af9` (29.09.2026, Favicon, Beispielbericht, Schnellscan-Reihenfolge)
+
+Live: Favicon auf beiden Hosts, Beispiel-PDF und -CSV, Datei im Schnellscan vorgewählt, Note 27 im
+Beispiel. Direkt nach dem Ausrollen rund 20 s lang 503 auf luibui.com, während der Web-Container
+neu startete (die Health-Prüfung von `release.sh` fragt nur die API ab). Logs ohne Fehler.
+cgroup: api 87 MiB (Spitze 132); worker 45 MiB (Spitze 45); web 99 MiB (Spitze 99).

@@ -255,3 +255,9 @@ Logs ohne Fehler. cgroup: api 80 MiB (Spitze 126); worker 50 MiB (Spitze 50); we
 ## Nach Deploy `cdc6ad9` (29.09.2026, Bericht per Link teilen)
 
 Logs ohne Fehler. cgroup: api 88 MiB (Spitze 132); worker 46 MiB (Spitze 46); web 122 MiB (Spitze 122).
+
+## Nach Deploy `c4dee0f` (29.09.2026, Schnellscan mit Datei bis 2 MB)
+
+Live geprüft: Datei-Schnellscan fertig in rund 5 s, 2,2 MB → 413. Logs seit der Korrektur ohne
+Fehler (die zwei `EPIPE` stammen aus dem Test vor `c4dee0f`, siehe `docs/log.md`).
+cgroup: api 89 MiB (Spitze 135); worker 45 MiB (Spitze 45); web 130 MiB (Spitze 130).

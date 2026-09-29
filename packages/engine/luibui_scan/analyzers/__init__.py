@@ -15,5 +15,6 @@ from luibui_scan.analyzers import (  # noqa: F401
     c_konfig,
     d_abhaengigkeiten,
     e_konfig,
+    e_mcp,
     secrets,
 )

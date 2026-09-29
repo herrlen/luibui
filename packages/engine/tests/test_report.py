@@ -225,3 +225,19 @@ def test_kind_of_file_goes_by_extension(
 ) -> None:
     entry = InventoryEntry(path, 10, "0" * 64, kind, sprache)
     assert dateiart(entry) == art
+
+
+def test_coverage_names_mcp_checks_for_mcp_servers(tmp_path: Path) -> None:
+    reg = registry(Reports("a_dateien", []), Reports("e_mcp", []))
+    files = {
+        "server.py": "from mcp.server.fastmcp import FastMCP\n",
+        "index.ts": 'import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\n',
+    }
+    a = _abdeckung(report_for(tmp_path, files, Eingabe.LOKAL, ScanArt.LOKAL, reg))
+    mcp = "MCP-Tools: versteckte Anweisungen, Shadowing, Anmeldung, Token"
+    assert mcp in a["Python"]["geprueft"] and mcp in a["JavaScript und TypeScript"]["geprueft"]
+    assert "MCP-Tools: Beschreibung passt zum Code" in a["Python"]["geprueft"]
+    assert (
+        "MCP-Tools: Beschreibung passt zum Code: bisher nur für Python"
+        in a["JavaScript und TypeScript"]["offen"]
+    )

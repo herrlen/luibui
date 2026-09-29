@@ -158,6 +158,10 @@ LITELLM_LOCAL_MODEL_COST_MAP=True mcp-scanner --analyzers yara --format raw \
 ```
 Globale Flags stehen vor dem Subbefehl. Formate: `raw` (JSON), `summary`, `detailed`, `by_tool`, `by_analyzer`, `by_severity`, `table`. **Kein SARIF.** Ob `prompt_defense`/`readiness` auch im `static`-Modus greifen, ist **nicht verifiziert**.
 
+**Entscheidung (Len, 29.09.2026):** nicht eingesetzt. E – MCP liest Tools selbst aus dem Code und
+prüft sie mit den B-Regeln (`analyzers/e_mcp.py`); die YARA-Regeln von mcp-scanner werden vorerst
+nicht übernommen.
+
 **Risiken:** Der Nutzen ist ohne Live-Server begrenzt. Pragmatischer ist es, nur die YARA-Regeln aus `mcpscanner/data/yara_rules/` (Apache-2.0) mit unserer eigenen YARA-Einbindung zu verwenden, mit Namensnennung. Das spart die schwere Abhängigkeit (litellm, mcp, 10 tree-sitter-Grammatiken).
 
 Quellen (abgerufen am 2026-09-26):

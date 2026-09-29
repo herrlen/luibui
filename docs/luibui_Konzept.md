@@ -128,7 +128,7 @@ Den vollständigen Katalog mit rund 80 Prüfungen enthält `luibui_Pruefkatalog.
 | 6 | **Geheimnisse** | gitleaks, Werte im Bericht maskiert | 1 |
 | 7 | **Ebene D – Abhängigkeiten** | OSV-Scanner offline: CVEs und bekannte Schadpakete, Typosquatting, fehlende Lockfiles | 1 |
 | 8 | **Ebene C – Code** | Opengrep mit eigenen Regeln, Bandit, Cisco skill-scanner (Datenfluss, YARA) | 2 |
-| 9 | **Ebene E – MCP** | Cisco mcp-scanner offline, Tool-Beschreibungen, Auth, Transport | 2 |
+| 9 | **Ebene E – MCP** | Tool-Beschreibungen statisch aus dem Code (eigene Umsetzung, kein mcp-scanner, Len 29.09.2026), Auth, Transport | 2 |
 | 10 | **DSGVO und Rechte** | Endpunkte und Rechte im Code gegen Manifest, Länderzuordnung | 2 |
 | 11 | **Korrelation** | Anweisung im Markdown verweist auf eine Datei mit Befund → Befund wird hochgestuft | 2 |
 | 12 | **LLM-Prüfer** | semantische Prüfung von Anweisungen und Tool-Beschreibungen, „Beschreibung ≠ Verhalten“, über mittwald AI Hosting | 3 |
@@ -240,7 +240,7 @@ Ein Paket kann aus einem Bericht heraus veröffentlicht werden, wenn es nicht ge
 |---|---|---|---|
 | `web` | öffentliche Seite (luibui.com) und Entwicklerbereich (app.luibui.com) in einer Next.js-App, getrennt per Host-Routing | Next.js 15, TS, Tailwind | 384 MB |
 | `api` | Auth, Annahme, Git-Clone, Projekte, verschlüsselte Dateiablage, Berichte, Register | FastAPI, SQLAlchemy 2, Alembic | 512 MB |
-| `worker` | Pipeline, eine Prüfung gleichzeitig, Timeout 5 min | Python 3.12 + gitleaks, osv-scanner, opengrep, bandit, skill-scanner, mcp-scanner (+ ClamAV ab Sprint 4) | 1,5 GB (2,5 GB mit ClamAV) |
+| `worker` | Pipeline, eine Prüfung gleichzeitig, Timeout 5 min | Python 3.12 + gitleaks, osv-scanner, opengrep, bandit, skill-scanner (+ ClamAV ab Sprint 4) | 1,5 GB (2,5 GB mit ClamAV) |
 | `postgres` | Nutzer, Scans, Befunde, Pakete, Jobs, Audit-Log | PostgreSQL 17 | 768 MB |
 
 **Monorepo**
@@ -281,7 +281,6 @@ luibui/
 | Werkzeug | Lizenz | Einsatz |
 |---|---|---|
 | Cisco skill-scanner | Apache-2.0 | Skills: statisch, YARA, Datenfluss; LLM-Teil über mittwald statt Cloud |
-| Cisco mcp-scanner | Apache-2.0 | MCP-Server-Code und Tool-Beschreibungen, nur Offline-Analyzer |
 | ATR – Agent Threat Rules | MIT | 818 Regeln für Injection u. a., mit Testfällen |
 | gitleaks | MIT | Secrets |
 | OSV-Scanner + OSV-Offline-DB | Apache-2.0 | CVEs und Schadpakete (`MAL-…`) |

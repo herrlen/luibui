@@ -1178,3 +1178,41 @@ mypy, eslint.
 - Anweisungen an die KI in Kommentaren und Strings von Code-Dateien werden nur erkannt, wenn sie
   kodiert oder unsichtbar sind.
 - S2-2 (Cisco skill-scanner) bleibt offen.
+
+## 2026-09-29 – S2-3: Analyzer E – MCP (ohne Cisco mcp-scanner)
+
+**Entscheidungen Len (29.09.):** Offen dokumentierte Persistenz sperrt weiter (C07 bleibt K auf der
+Sperrliste). E – MCP als eigene Umsetzung, ohne Cisco mcp-scanner (der bräuchte einen laufenden
+Server oder eine selbst erzeugte Tool-Liste, bei litellm und MCP-SDK als Abhängigkeiten).
+
+**Was:**
+- `analyzers/_e_tools.py`: Tools statisch lesen, nichts importieren oder starten. Python über
+  `ast` (FastMCP/SDK `@x.tool`, `@tool`, `Tool(name=…, description=…, inputSchema=…)`, Namen aus
+  Konstanten und Enums, Parameter aus `Field(description=…)` und `inputSchema`), JavaScript/
+  TypeScript über Muster (`server.tool("…", "…")`, jedes Objekt mit `description` und direkt
+  folgendem `inputSchema`, Name aus `registerTool("…")`, `name:`, `const name =`, zod
+  `.describe()`).
+- `analyzers/e_mcp.py`: E01 alle B-Regeln (eigene und ATR) plus unsichtbare Zeichen (gleiche
+  Ausnahmen wie B02 für Emoji und Schriften) auf Name, Beschreibung und Parameter; B16-Treffer
+  werden E02 (Shadowing). E03 für Python: Handler führt Befehle aus oder ändert Dateien, Name und
+  Beschreibung sagen es nicht (H). E04 HTTP/SSE ohne jede Anmeldung im Paket, Schlüssel aus der
+  URL (H). E05 CORS `*` (M). E06 Token des Nutzers an Dritte durchgereicht (H). E04–E06 nur in
+  Paketen mit MCP-Merkmalen. Nur Intensivscan und CLI.
+- Bericht „Was geprüft wurde“: bei MCP-Servern, Plugins und gemischten Paketen die MCP-Prüfung je
+  Code-Art, bei JavaScript/TypeScript „Beschreibung passt zum Code: bisher nur für Python“.
+- Korpus AGT-08 (Tool-Beschreibung mit `<IMPORTANT>` und `~/.ssh/id_rsa`) samt harmloser Fassung.
+- Konzept, Prüfkatalog, Sprintplanung und `scanner-tools.md` nachgezogen.
+
+**Kalibrierung:** offizielle Referenz-Server `modelcontextprotocol/servers` (everything, fetch,
+filesystem, git, memory, sequentialthinking, time; 58 Tools erkannt, Namen korrekt): kein
+E01/E02/E03. Nur `everything` (Demo): SSE und Streamable HTTP ohne Anmeldung (E04) und CORS `*`
+(E05, im Code selbst mit „use with caution“ kommentiert) – zutreffend. Harmloser Korpus: keine
+Befunde.
+
+**Geprüft:** 1.008 Python-Tests (22 neu für E, 1 für die Abdeckung), ruff, mypy.
+
+**Offen:**
+- E03 für JavaScript/TypeScript (Handler-Code den Tools zuordnen), E06 Klartext-Speicherung von
+  Tokens, Prompts und Resources (Beschreibungen) noch nicht geprüft.
+- Nur wörtlicher Text wird gelesen; zur Laufzeit zusammengesetzte Beschreibungen bleiben
+  unbekannt. Ein LLM-Abgleich Beschreibung ↔ Code ist für Sprint 3 geplant.

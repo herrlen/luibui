@@ -177,12 +177,15 @@ aktualisierter Datenbank. Sprint 1 (S1-9).
 ## 6. Ebene E – MCP
 
 MCP-Server-Code, Tool-Beschreibungen und Konfiguration. Sprint 2 (S2-3), E07 in Sprint 5.
-Der Cisco mcp-scanner läuft nur offline (`static`, `--analyzers yara`). **Server werden nie
-gestartet**, Tool-Listen werden aus dem Code abgeleitet.
+**Server werden nie gestartet.** Tool-Namen, -Beschreibungen und Parameter werden statisch aus dem
+Code gelesen (Python über `ast`, JavaScript/TypeScript über Muster) und mit allen B-Regeln
+(eigene und ATR) geprüft (`analyzers/e_mcp.py`). Der Cisco mcp-scanner wird nicht eingesetzt
+(Entscheidung Len, 29.09.2026): ohne laufenden Server bleibt nur sein `static`-Modus, der dieselbe
+selbst erzeugte Tool-Liste bräuchte, bei schweren Abhängigkeiten (litellm, MCP-SDK).
 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
-| E01 | **Tool Poisoning:** versteckte Anweisungen in Tool-Namen, -Beschreibungen oder Parameter-Beschreibungen (inkl. B01–B17 auf diese Texte) | K | ● | ✓ ✓ ✓ – | mcp-scanner (YARA), ATR (tool-poisoning) | ASI02, LLM01 |
+| E01 | **Tool Poisoning:** versteckte Anweisungen in Tool-Namen, -Beschreibungen oder Parameter-Beschreibungen (inkl. B01–B17 auf diese Texte) | K | ● | ✓ ✓ ✓ – | B-Regeln und ATR auf Tool-Texte (`e_mcp`) | ASI02, LLM01 |
 | E02 | **Tool-Shadowing:** Beschreibung bezieht sich auf andere Tools oder Server und will deren Verhalten ändern | K | ● | ✓ ✓ ✓ – | eigene Regeln, ATR | ASI02 |
 | E03 | **Gefährliche Tool-Fähigkeiten ohne Kennzeichnung:** Tool führt Shell-Befehle aus oder schreibt Dateien, Beschreibung sagt es nicht | H | – | ✓ ✓ – – | Code + Beschreibung | ASI02, LLM06 |
 | E04 | **Fehlende Authentifizierung** bei HTTP/SSE-Transport oder Auth nur über Query-Parameter | H | – | ✓ ✓ – – | eigene Regeln | ASI03, ASI07 |

@@ -9,10 +9,10 @@ Erzeugt mit `scripts/vendor_atr.py`. Übernommen werden nur Regeln mit Reifegrad
 `stable` oder `experimental`, reinen Regex-Bedingungen auf Textfeldern und bestandenen
 eigenen Testfällen unter unserer Regex-Engine.
 
-- übernommen: 156
+- übernommen: 155
 - nicht geeignet (Reifegrad, Status, Felder, Operatoren): 615
 - eigene Testfälle nicht bestanden: 8
-- Fehlalarm im gutartigen Vergleichsbestand: 6
+- Fehlalarm im gutartigen Vergleichsbestand: 7
 
 ## Gutartiger Vergleichsbestand
 
@@ -41,3 +41,4 @@ eigenen Testfällen unter unserer Regex-Engine.
 - ATR-2026-00061: schlägt an in `anthropics_skills/THIRD_PARTY_NOTICES.md`
 - ATR-2026-00576: schlägt an in `anthropics_skills/skills/claude-api/curl/managed-agents.md`
 - ATR-2026-00443: schlägt an in `corpus/benign/seo-skill/SKILL.md` („Underscores join words“, nachgetragen 2026-09-28)
+- ATR-2026-00030: schlägt an in `corpus/benign/beratungs-skill/SKILL.md` („acting on behalf of an organization“, fünfmal in claude-skills-main, nachgetragen 2026-09-29)

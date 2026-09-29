@@ -9,7 +9,7 @@ erklaerung: >
 fix: Die Anweisung entfernen; alle Aktionen müssen für den Nutzer sichtbar sein.
 normbezug: [OWASP-ASI09, OWASP-LLM01]
 muster:
-  - '(?i)\b(do\s+not|don''?t|never)\s+(tell|inform|mention\s+(this\s+|it\s+)?to|reveal\s+(this\s+|it\s+)?to|notify|alert|show)\s+(the\s+)?(user|human|operator|owner)'
+  - '(?i)\b(do\s+not|don''?t|never)\s+(tell|inform|mention\s+(this\s+|it\s+)?to|reveal\s+(this\s+|it\s+)?to|notify|alert|show)\s+(the\s+)?(user|human|operator|owner)\b(?!\s+(whether|if|how|which|what\s+to|to\b))'
   - '(?i)\bwithout\s+(the\s+)?(user|human|operator)(''s)?\s+(knowing|knowledge|noticing|awareness|being\s+aware)'
   - '(?i)\b(hide|conceal|keep)\s+(this|it|these\s+\w+|the\s+\w+)\s+(secret\s+)?from\s+(the\s+)?(user|human)'
   - '(?i)\b(sag|sage|erzähle?|verrate|zeige?)\s+(dem|der)\s+(nutzer|nutzerin|anwender|benutzer)\w*\s+(nichts|nicht)'
@@ -26,3 +26,5 @@ tests:
     - "Tell the user which files were changed."
     - "Do not tell anyone your password."
     - "Zeige dem Nutzer eine Zusammenfassung."
+    - "Do not tell the user whether to apply — that is a personalised investment decision."
+    - "Never tell the user to buy a specific stock."

@@ -1282,3 +1282,27 @@ treffen in claude-skills-main einige Markdown-Stellen, die harmlos wirken (z. B.
 /cs:ai-act-readiness“ als B08 K). Eigene Kalibrierung der B-Regeln gegen diesen Bestand offen.
 
 **Geprüft:** 1.081 Python-Tests ohne Datenbank, 43 Opengrep-Regeltests, ruff, mypy.
+
+## 2026-09-29 – S1-7: B08, B09, B14 an echten Skills kalibriert, ATR-2026-00030 entfernt
+
+**Anlass:** In claude-skills-main (Markdown) trafen 12 Stellen mit K/H, alle harmlos, zwei davon
+sperrend.
+
+**Was:**
+- B08: `<system>` zählt nur am Zeilenanfang oder als schließendes `</system>`; ChatML-Marker
+  brauchen den senkrechten Strich (`<|system|>`). Vorher sperrte der Platzhalter in
+  „Command: /cs:ai-act-readiness <system>“.
+- B09: „Do not tell the user whether/if/how/which/to …“ ist eine Beratungsgrenze, kein
+  Verschweigen („Do not tell the user whether to apply — that is a personal investment
+  decision“). „Do not tell the user that …“ bleibt K.
+- B14: Redewendungen „safety net“, „safety wheels“, „safety alignment/training“ ausgenommen;
+  „skip the security checks“ bleibt H.
+- ATR-2026-00030 (Cross-Agent Attack) nach dem Verfahren aus S1-7 entfernt: trifft „acting on
+  behalf of an organization“. 155 statt 156 ATR-Regeln.
+- Neues harmloses Korpuspaket `corpus/benign/beratungs-skill` mit sinngemäß umformulierten
+  Fundstellen; die Korpustests halten sie dauerhaft ruhig. Regeltests je Regel ergänzt.
+
+**Ergebnis:** claude-skills-main, MCP-Referenzserver, marketing-skill: 0 K/H aus den B-Regeln
+(vorher 12). Es bleiben 27 M, überwiegend zitierte Beispiele in Sicherheitsdokumentation.
+
+**Geprüft:** 993 Python-Tests, Regeltests B08–B17.

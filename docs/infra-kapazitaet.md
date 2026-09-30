@@ -320,3 +320,6 @@ cgroup nach `cec5efa`: api 98 MiB (Spitze 140); worker 44 MiB (Spitze 45); web 1
 Logs ohne Fehler, keine `vorladen-`-Container übrig. Unterbrechung Web 4,2 s, API 6,1 s.
 Das Release endete trotzdem mit Exit-Code 1: Unter macOS-bash 3.2 bricht `set -e` im EXIT-Trap ab,
 wenn `kill` den schon beendeten Messprozess nicht mehr findet. Behoben mit `|| true`.
+
+cgroup nach `8ee4840` (S3-6): api 84 MiB (Spitze 122); worker 64 MiB (Spitze 64); web 113 MiB
+(Spitze 113). Logs ohne Fehler, keine `vorladen-`-Container übrig. Unterbrechung Web 7,2 s, API 9,4 s.

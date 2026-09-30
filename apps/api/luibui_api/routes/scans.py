@@ -192,7 +192,11 @@ async def bericht_pdf(
             status.HTTP_409_CONFLICT,
             {"code": "nicht_fertig", "text": "Die Prüfung ist noch nicht fertig."},
         )
-    report = scan.report
+    return await pdf_antwort(scan.report, umfang)
+
+
+async def pdf_antwort(report: dict[str, Any], umfang: Literal["standard", "detail"]) -> Response:
+    """The PDF download of a finished report, shared with the public quick scan route."""
     pdf = await run_in_threadpool(bericht_als_pdf, report, umfang)
     return Response(
         pdf,

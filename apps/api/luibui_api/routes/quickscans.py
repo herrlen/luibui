@@ -5,8 +5,9 @@ key to the report."""
 import uuid
 from datetime import UTC, datetime
 from functools import lru_cache
+from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import func, select
 from starlette.concurrency import run_in_threadpool
@@ -15,7 +16,7 @@ from starlette.datastructures import UploadFile
 from luibui_api.auth import AnnahmeOffen, DbSession
 from luibui_api.models import Job, Scan
 from luibui_api.ratelimit import RateLimiter
-from luibui_api.routes.scans import ScanStatus, scan_status_of
+from luibui_api.routes.scans import ScanStatus, pdf_antwort, scan_status_of
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, ablesen, create_scan
 from luibui_scan.intake.safe_git import canonical_url
@@ -122,8 +123,8 @@ async def starten(request: Request, db: DbSession) -> ScanStatus:
     return scan_status_of(scan)
 
 
-@router.get("/{scan_id}")
-def status_(scan_id: uuid.UUID, db: DbSession) -> ScanStatus:
+def _schnellscan(scan_id: uuid.UUID, db: DbSession) -> Scan:
+    """Only a quick scan that has not expired; account scans and old ones give the same 404."""
     scan = db.get(Scan, scan_id)
     now = datetime.now(UTC)
     if (
@@ -134,4 +135,27 @@ def status_(scan_id: uuid.UUID, db: DbSession) -> ScanStatus:
         or scan.expires_at <= now
     ):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
-    return scan_status_of(scan)
+    return scan
+
+
+@router.get("/{scan_id}")
+def status_(scan_id: uuid.UUID, db: DbSession) -> ScanStatus:
+    return scan_status_of(_schnellscan(scan_id, db))
+
+
+@router.get(
+    "/{scan_id}/bericht.pdf",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def bericht_pdf(
+    scan_id: uuid.UUID, db: DbSession, umfang: Literal["standard", "detail"] = "standard"
+) -> Response:
+    """The quick scan report as PDF; every page says "ohne Gewähr" (CLAUDE.md rule 12)."""
+    scan = _schnellscan(scan_id, db)
+    if scan.report is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {"code": "nicht_fertig", "text": "Die Prüfung ist noch nicht fertig."},
+        )
+    return await pdf_antwort(scan.report, umfang)

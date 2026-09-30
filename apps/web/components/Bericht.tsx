@@ -14,14 +14,21 @@ const DOWNLOADS = [
   { format: "sarif", text: "SARIF", titel: "Für GitHub Code Scanning und andere SARIF-Werkzeuge" },
 ] as const;
 
-function downloadUrl(scanId: string, d: (typeof DOWNLOADS)[number]): string {
+/** Where the downloads live: the developer area, or the public quick scan page (PDF and CSV only). */
+export type Downloads = "bereich" | "schnellscan";
+
+const IM_SCHNELLSCAN = new Set(["PDF", "PDF mit Details", "CSV"]);
+
+export function downloadUrl(scanId: string, d: (typeof DOWNLOADS)[number], wo: Downloads): string {
   const id = encodeURIComponent(scanId);
-  if ("format" in d) return `/pruefungen/${id}/bericht.${d.format}`;
-  return `/api/v1/scans/${id}/bericht.pdf${d.pfad === "pdf-detail" ? "?umfang=detail" : ""}`;
+  const seite = wo === "bereich" ? "/pruefungen" : "/schnellscan";
+  const api = wo === "bereich" ? "/api/v1/scans" : "/api/v1/quickscans";
+  if ("format" in d) return `${seite}/${id}/bericht.${d.format}`;
+  return `${api}/${id}/bericht.pdf${d.pfad === "pdf-detail" ? "?umfang=detail" : ""}`;
 }
 
-/** `downloads`: only in the developer area, where /pruefungen/<id>/bericht.* exists. */
-export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloads?: boolean }) {
+/** `downloads`: only where /pruefungen/<id>/bericht.* or /schnellscan/<id>/bericht.csv exists. */
+export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Downloads }) {
   const laeuft = scan.status === "wartend" || scan.status === "laeuft";
   const b = scan.bericht;
   return (
@@ -50,10 +57,10 @@ export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloa
           {downloads ? (
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-muted">Herunterladen:</span>
-              {DOWNLOADS.map((d) => (
+              {DOWNLOADS.filter((d) => downloads === "bereich" || IM_SCHNELLSCAN.has(d.text)).map((d) => (
                 <a
                   key={d.text}
-                  href={downloadUrl(scan.id, d)}
+                  href={downloadUrl(scan.id, d, downloads)}
                   download
                   title={d.titel}
                   className="inline-flex h-10 items-center rounded-[10px] border border-linie-stark bg-surface px-4 text-[15px] font-medium text-ink hover:border-petrol"
@@ -63,7 +70,7 @@ export function Bericht({ scan, downloads = false }: { scan: ScanStatus; downloa
               ))}
             </div>
           ) : null}
-          {downloads ? <Teilen scanId={scan.id} geteilt={scan.geteilt ?? false} /> : null}
+          {downloads === "bereich" ? <Teilen scanId={scan.id} geteilt={scan.geteilt ?? false} /> : null}
         </>
       ) : null}
     </div>

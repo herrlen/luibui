@@ -77,6 +77,13 @@ describe("Quick scan disclaimer in every format", () => {
     expect(inhalt(schnell(), "csv")).toContain("ohne Gewähr");
   });
 
+  it("is in the CSV even without findings", () => {
+    const zeilen = inhalt({ ...schnell(), befunde: [] }, "csv").trim().split("\r\n");
+    expect(zeilen).toHaveLength(2);
+    expect(zeilen[1]).toMatch(/^"schnell \(ohne Gewähr\)";/);
+    expect(zeilen[1].split(";")).toHaveLength(zeilen[0].split(";").length);
+  });
+
   it("is not added to an intensive scan", () => {
     const b = { ...beispielbericht(), scan_art: "intensiv" as const };
     expect((JSON.parse(inhalt(b, "json")) as Bericht).hinweise).not.toContain(OHNE_GEWAEHR);

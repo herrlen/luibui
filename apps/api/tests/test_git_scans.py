@@ -174,6 +174,54 @@ def test_quickscan_end_to_end_says_ohne_gewaehr(
     assert s["bericht"]["paket"]["quelle"] == "git"
 
 
+def test_quickscan_pdf_for_anyone_with_the_link(
+    api: Api, fake_clone: list[str], tmp_path: Path, _migrated: str
+) -> None:
+    from luibui_worker.main import Worker
+    from luibui_worker.settings import WorkerSettings
+
+    scan_id = quick(api).json()["id"]
+    anyone = api.client("https://luibui.com")
+    pdf = f"/api/v1/quickscans/{scan_id}/bericht.pdf"
+    assert anyone.get(pdf).status_code == 409  # not finished
+    engine = create_engine(_migrated)
+    Worker(
+        WorkerSettings(database_url=_migrated, scratch_root=tmp_path / "scratch"),  # type: ignore[arg-type]
+        engine=engine,
+    ).run_once()
+    engine.dispose()
+    for umfang, endung in (("standard", '.pdf"'), ("detail", '-detail.pdf"')):
+        r = anyone.get(pdf, params={"umfang": umfang})
+        assert r.status_code == 200, r.text
+        assert r.headers["content-type"] == "application/pdf"
+        assert r.headers["cache-control"] == "private, no-store"
+        assert r.headers["content-disposition"].startswith(
+            'attachment; filename="luibui-github.com-a-b-'
+        )
+        assert r.headers["content-disposition"].endswith(endung)
+        assert r.content.startswith(b"%PDF-")
+    assert anyone.get(pdf, params={"umfang": "alles"}).status_code == 422
+
+
+def test_quickscan_pdf_never_shows_account_or_expired_scans(
+    api: Api, fake_clone: list[str], _migrated: str
+) -> None:
+    c = api.user("anna@example.org")
+    konto = git_scan(c, project(c), git_url="https://github.com/a/b").json()["id"]
+    alt = quick(api).json()["id"]
+    engine = create_engine(_migrated)
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE scans SET status = 'fertig', report = '{\"paket\": {}}'::jsonb"))
+        conn.execute(
+            text("UPDATE scans SET expires_at = now() - interval '1 second' WHERE id = :i"),
+            {"i": alt},
+        )
+    engine.dispose()
+    for scan_id in (konto, alt, "00000000-0000-0000-0000-000000000000"):
+        assert api.client().get(f"/api/v1/quickscans/{scan_id}/bericht.pdf").status_code == 404
+        assert c.get(f"/api/v1/quickscans/{scan_id}/bericht.pdf").status_code == 404
+
+
 # --- quick scan with one file (S2-13) ------------------------------------------------------------
 
 

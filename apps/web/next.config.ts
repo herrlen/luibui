@@ -48,6 +48,10 @@ const config: NextConfig = {
         },
         { source: "/api/v1/quickscans", destination: `${API}/api/v1/quickscans` },
         { source: "/api/v1/quickscans/:id", destination: `${API}/api/v1/quickscans/:id` },
+        {
+          source: "/api/v1/quickscans/:id/bericht.pdf",
+          destination: `${API}/api/v1/quickscans/:id/bericht.pdf`,
+        },
         { source: "/api/v1/kontakt", destination: `${API}/api/v1/kontakt` },
       ],
       afterFiles: [],

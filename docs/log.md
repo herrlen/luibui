@@ -1581,3 +1581,29 @@ Server, wartet danach, bis api und web das neue Image-Tag melden (`version` in `
 antwortete.
 
 **Offen:** Ganz ohne Lücke nur mit Proxy-Container und zwei Web-Instanzen (Entscheidung Len).
+
+## 2026-09-30 – S3-11: PDF und CSV auf der öffentlichen Schnellscan-Seite
+
+**Was:** Offener Punkt aus S3-11. Unter dem Schnellscan-Bericht auf luibui.com stehen jetzt
+„PDF“, „PDF mit Details“ und „CSV“ (JSON, SARIF und Teilen bleiben im Entwicklerbereich).
+- API: `GET /api/v1/quickscans/{id}/bericht.pdf` (standard/detail), ohne Anmeldung. Die zufällige
+  Scan-ID ist der Schlüssel wie bei der Berichtsseite; dieselbe Prüfung wie dort
+  (`_schnellscan`: nur Schnellscans ohne Eigentümer und nicht abgelaufen, sonst 404; nicht fertig
+  409). Die PDF-Antwort teilen sich beide Routen (`pdf_antwort` in `routes/scans.py`); „ohne Gewähr“
+  steht wie bisher im Kopf jeder Seite.
+- Web: Weiterleitung nur für diese eine PDF-Route auf dem öffentlichen Host (`next.config.ts`),
+  CSV unter `luibui.com/schnellscan/<id>/bericht.csv` (holt den Bericht ohne Cookie).
+  `Bericht` bekommt `downloads="bereich" | "schnellscan"`.
+- CSV ohne Befunde: bisher nur die Kopfzeile, damit fehlte auch „ohne Gewähr“ in `scan_art`
+  (CLAUDE.md Regel 12). Jetzt eine Zeile mit dem Ergebnis und leeren Befund-Spalten; gilt auch für
+  den Entwicklerbereich.
+
+**Geprüft:** 2 neue API-Tests (PDF für jeden mit Link nach echtem Worker-Lauf, 409 vorher, 422 bei
+falschem Umfang; Konto-Scans, abgelaufene und unbekannte IDs geben 404, auch angemeldet), der
+Isolationstest deckt die neue Route automatisch ab; 4 neue Web-Tests (Knöpfe je Bereich, CSV ohne
+Befunde). Lokal mit API, Worker und `next start`: PDF, PDF mit Details und CSV über den Host
+luibui.com geladen, unbekannte ID 404, CSV-Route auf app.luibui.com 404, Seite angesehen.
+Python 1237 Tests grün; `test_timeout_kills_the_whole_process_group` scheitert in der
+Cloud-Sitzung auch ohne diese Änderung (Umgebung, als root), ruff/mypy/eslint/tsc sauber.
+
+**Offen:** Ausrollen mit `scripts/release.sh` (Len, Docker Desktop).

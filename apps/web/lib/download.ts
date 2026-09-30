@@ -1,7 +1,7 @@
 import "server-only";
 
 import { dateiname, type Format, inhalt, TYP } from "./export";
-import { apiGet } from "./server-api";
+import { type Antwort, apiGet } from "./server-api";
 import type { ScanStatus } from "./types";
 
 /**
@@ -9,7 +9,15 @@ import type { ScanStatus } from "./types";
  * unfinished scan gives the same 404 as the report page.
  */
 export async function berichtDownload(id: string, format: Format): Promise<Response> {
-  const scan = await apiGet<ScanStatus>(`/api/v1/scans/${encodeURIComponent(id)}`);
+  return antwort(await apiGet<ScanStatus>(`/api/v1/scans/${encodeURIComponent(id)}`), format);
+}
+
+/** Download of a quick scan report: public, the random scan ID is the key; no cookie goes along. */
+export async function schnellscanDownload(id: string, format: Format): Promise<Response> {
+  return antwort(await apiGet<ScanStatus>(`/api/v1/quickscans/${encodeURIComponent(id)}`, false), format);
+}
+
+function antwort(scan: Antwort<ScanStatus>, format: Format): Response {
   if (!scan.ok || !scan.data.bericht) {
     const status = !scan.ok && (scan.status === 401 || scan.status === 503) ? scan.status : 404;
     const text =

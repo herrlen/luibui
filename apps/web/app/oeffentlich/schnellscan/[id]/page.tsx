@@ -19,7 +19,7 @@ export default async function SchnellscanErgebnis({ params }: { params: Promise<
       <p className="text-sm text-muted">
         Dieser Bericht ist 7 Tage unter diesem Link abrufbar. Wer den Link hat, kann ihn sehen.
       </p>
-      <Bericht scan={scan.data} />
+      <Bericht scan={scan.data} downloads="schnellscan" />
       <section
         aria-labelledby="intensivscan"
         className="mt-4 flex flex-col gap-3 rounded-[14px] border border-petrol bg-surface p-6 sm:flex-row sm:items-center sm:justify-between"

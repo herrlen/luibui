@@ -32,7 +32,7 @@ export default async function PruefungSeite({ params }: { params: Promise<{ id: 
       <h1 className="font-display text-3xl font-bold">
         Prüfbericht{s.bericht?.paket.name ? <span className="text-ink-2">: {s.bericht.paket.name}</span> : null}
       </h1>
-      <Bericht scan={s} downloads />
+      <Bericht scan={s} downloads="bereich" />
     </div>
   );
 }

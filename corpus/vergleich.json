@@ -1,0 +1,305 @@
+{
+  "_hinweis": "Gutartiger Vergleichsbestand für den Benchmark (S3-1). Wird beim Lauf über safe_git geholt, nie ins Repo kopiert. 'berechtigt' nimmt einzelne K/H-Regeln eines Pakets nach Prüfung aus der Fehlalarm-Zählung, immer mit Grund.",
+  "pakete": [
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/algorithmic-art",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/brand-guidelines",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/canvas-design",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/frontend-design",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/internal-comms",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/mcp-builder",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/skill-creator",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/slack-gif-creator",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/theme-factory",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/web-artifacts-builder",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "pfad": "skills/webapp-testing",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/agent-sdk-dev",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/claude-md-management",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/code-review",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/code-simplifier",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/commit-commands",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/explanatory-output-style",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/feature-dev",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/hookify",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/mcp-server-dev",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/plugin-dev",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/pr-review-toolkit",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/ralph-loop",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/anthropics/claude-plugins-official",
+      "pfad": "plugins/security-guidance",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/brainstorming",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/executing-plans",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/finishing-a-development-branch",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/receiving-code-review",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/requesting-code-review",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/subagent-driven-development",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/systematic-debugging",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/test-driven-development",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/using-git-worktrees",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "pfad": "skills/writing-plans",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-auth",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-pagination",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-prompt",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-resource",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-streamablehttp",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-streamablehttp-stateless",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/simple-tool",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/python-sdk",
+      "pfad": "examples/servers/structured-output-lowlevel",
+      "lizenz": "MIT"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/everything",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/fetch",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/filesystem",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/git",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/memory",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/sequentialthinking",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/modelcontextprotocol/servers",
+      "pfad": "src/time",
+      "lizenz": "MIT/Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/microsoft/playwright-mcp",
+      "pfad": "",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/aws-documentation-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/aws-pricing-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/cloudwatch-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/dynamodb-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/ecs-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/eks-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/iam-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/lambda-tool-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/postgres-mcp-server",
+      "lizenz": "Apache-2.0"
+    },
+    {
+      "repo": "https://github.com/awslabs/mcp",
+      "pfad": "src/s3-tables-mcp-server",
+      "lizenz": "Apache-2.0"
+    }
+  ]
+}

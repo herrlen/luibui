@@ -147,7 +147,7 @@ vorladen_weg
 # Measure the gap: one request every half second to web and api until both run the new version.
 PROBE="$(mktemp)"
 PROBE_PID=""
-trap 'touch "$PROBE.stop"; [[ -n "$PROBE_PID" ]] && kill "$PROBE_PID" 2>/dev/null; rm -rf "$BUILD"; rm -f "$ENVFILE" "$PROBE" "$PROBE.stop"' EXIT
+trap 'touch "$PROBE.stop"; [[ -n "$PROBE_PID" ]] && kill "$PROBE_PID" 2>/dev/null || true; rm -rf "$BUILD"; rm -f "$ENVFILE" "$PROBE" "$PROBE.stop"' EXIT
 (
   while [[ ! -f "$PROBE.stop" ]]; do
     printf '%s %s %s\n' "$(perl -MTime::HiRes=time -e 'printf "%.2f", time')" \

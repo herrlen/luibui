@@ -315,3 +315,8 @@ zweites Ziel pro Host gibt es nicht). Kosten: ein weiteres Image, eine zweite We
 
 cgroup nach `657e5e9`: api 91 MiB (Spitze 122); worker 65 MiB (Spitze 65); web 128 MiB (Spitze 128).
 Logs ohne Fehler, keine `vorladen-`-Container übrig.
+
+cgroup nach `cec5efa`: api 98 MiB (Spitze 140); worker 44 MiB (Spitze 45); web 137 MiB (Spitze 137).
+Logs ohne Fehler, keine `vorladen-`-Container übrig. Unterbrechung Web 4,2 s, API 6,1 s.
+Das Release endete trotzdem mit Exit-Code 1: Unter macOS-bash 3.2 bricht `set -e` im EXIT-Trap ab,
+wenn `kill` den schon beendeten Messprozess nicht mehr findet. Behoben mit `|| true`.

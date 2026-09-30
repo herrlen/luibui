@@ -111,3 +111,13 @@ def test_reference_list_has_60_unique_packages_on_allowed_hosts() -> None:
         assert p["lizenz"]
         for b in p.get("berechtigt", []):
             assert b["regel"] and b["grund"]
+
+
+def test_render_shows_the_rate_without_accepted_exceptions() -> None:
+    frei = benchmark.Treffer("a", "g", "gelb")
+    ausgenommen = benchmark.Treffer("b", "g", "rot", berechtigt=["H LB-E09-x .mcp.json"])
+    text = benchmark.render(
+        benchmark.Lauf(gutartig_echt=[frei, ausgenommen]), stand="abc", datum="2026-09-30"
+    )
+    assert "| Fehlalarme, echte Pakete | 0/2 (0 %) |" in text
+    assert "| … ohne Ausnahmen (`berechtigt`) | 1/2 (50 %) |" in text

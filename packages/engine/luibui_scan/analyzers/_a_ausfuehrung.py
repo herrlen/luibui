@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Iterator
+from pathlib import PurePosixPath
 from typing import Any
 
 from luibui_scan.analyzers._common import (
@@ -78,12 +79,40 @@ _PYTHON_RISK = re.compile(
 )
 
 
+_PLUGIN_SKRIPT = r"""["']?\$\{?CLAUDE_PLUGIN_ROOT\}?/([^\s"';|&`$()<>\\]+)["']?"""
+_NUR_PAKETSKRIPT = re.compile(
+    r"^\s*(?:(?:python[0-9.]*|bash|sh|node|uv\s+run|bun|deno\s+run|npx\s+tsx)\s+)?"
+    rf"{_PLUGIN_SKRIPT}(?:\s+{_PLUGIN_SKRIPT})*\s*$"
+)
+"""A hook that only starts files of the plugin, e.g. ``python3 "${CLAUDE_PLUGIN_ROOT}/x.py"``.
+Their code is checked like any other file, and the correlation raises its findings."""
+
+
+def plugin_root(hooks_json: str) -> PurePosixPath:
+    """``${CLAUDE_PLUGIN_ROOT}`` for a ``hooks.json``: its folder, or the parent of ``hooks/``."""
+    basis = PurePosixPath(hooks_json).parent
+    return basis.parent if basis.name == "hooks" else basis
+
+
+def nur_paketskripte(commands: list[str], hooks_json: str, dateien: set[str]) -> bool:
+    """Every command starts only scripts that exist in the package (benchmark S3-6)."""
+    basis = plugin_root(hooks_json)
+    for c in commands:
+        if _NUR_PAKETSKRIPT.match(c) is None:
+            return False
+        ziele = [str(basis / z) for z in re.findall(_PLUGIN_SKRIPT, c)]
+        if not ziele or any(".." in z.split("/") or z not in dateien for z in ziele):
+            return False
+    return bool(commands)
+
+
 def _autostart(
     entry: InventoryEntry,
     art: str,
     commands: list[str],
     erklaerung: str,
     risk: re.Pattern[str] = _DANGEROUS_COMMAND,
+    paketskripte: bool = False,
 ) -> Finding | None:
     if not commands:
         return None
@@ -93,19 +122,25 @@ def _autostart(
     if m and len(shown) > 300:
         line_start = shown.rfind("\n", 0, m.start()) + 1
         shown = shown[line_start : line_start + 300]
+    lokal = paketskripte and not dangerous
     return finding(
         rule_id=f"LB-A02-{art}",
         ebene=Ebene.A,
-        schwere=Schwere.K if dangerous else Schwere.H,
+        schwere=Schwere.K if dangerous else Schwere.M if lokal else Schwere.H,
         titel=(
             "Automatisch startender Befehl lädt Code nach oder verschleiert ihn"
             if dangerous
+            else "Hooks starten Skripte aus dem Paket"
+            if lokal
             else "Befehle, die ohne Zutun des Nutzers laufen"
         ),
         erklaerung=erklaerung
         + (
             " Mindestens ein Befehl lädt etwas herunter und führt es aus oder dekodiert Code."
             if dangerous
+            else " Jeder Befehl startet nur ein Skript aus dem Paket. Dessen Code ist mitgeprüft; "
+            "Befunde darin sind eine Stufe höher eingestuft, weil der Hook es selbsttätig startet."
+            if lokal
             else " Prüfe, ob jeder dieser Befehle nötig und harmlos ist."
         ),
         datei=entry.path,
@@ -130,12 +165,15 @@ def _a02(ctx: ScanContext) -> Iterator[Finding]:
         ):
             data = read_json(ctx, entry)
             hooks = data.get("hooks") if isinstance(data, dict) else None
+            commands = list(_commands(hooks))
             f = _autostart(
                 entry,
                 "claude-hooks",
-                list(_commands(hooks)),
+                commands,
                 "Hooks von Claude Code führen Befehle bei Ereignissen automatisch aus, etwa bei "
                 "jedem Tool-Aufruf oder Sitzungsstart.",
+                paketskripte=name == "hooks.json"
+                and nur_paketskripte(commands, entry.path, {e.path for e in ctx.inventory}),
             )
         elif path.endswith(".vscode/tasks.json"):
             data = read_json(ctx, entry)

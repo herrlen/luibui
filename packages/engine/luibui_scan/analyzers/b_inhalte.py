@@ -238,6 +238,7 @@ _STYLED_ELEMENT = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _HTML_COMMENT = re.compile(r"<!--(.*?)-->", re.DOTALL)
+_FENCE = re.compile(r"^\s*(```|~~~)", re.MULTILINE)
 _INSTRUCTION_WORDS = re.compile(
     r"\b(ignore|disregard|instead|you must|do not tell|don't tell|never mention|execute|run the|"
     r"curl|wget|send|upload|exfiltrat|system prompt|password|secret|token|api[_ -]?key|\.ssh|"
@@ -258,6 +259,8 @@ def _b05(f: TextFile) -> Iterator[Finding]:
         return
     for m in _HTML_COMMENT.finditer(f.text):
         body = m.group(1)
+        if len(_FENCE.findall(f.text, 0, m.start())) % 2 == 1:
+            continue  # inside a code block: shown as code in the preview, not hidden
         if len(body.split()) >= 4 and _INSTRUCTION_WORDS.search(body):
             yield _b05_finding(f, m.start(), "HTML-Kommentar mit Anweisung", body)
             return

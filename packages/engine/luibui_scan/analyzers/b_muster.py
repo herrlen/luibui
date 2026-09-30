@@ -89,6 +89,10 @@ def _in_code_block(text: str, offset: int) -> bool:
     return len(_FENCE.findall(text, 0, offset)) % 2 == 1
 
 
+_OPTION_ROW = re.compile(r"^\s*\|\s*`?-{1,2}[A-Za-z][\w-]*")
+"""A Markdown table row that documents a command-line option (``| --no-sandbox | … |``)."""
+
+
 def _quoted(f: TextFile, start: int, end: int) -> bool:
     if _in_code_block(f.text, start):
         return True
@@ -96,6 +100,8 @@ def _quoted(f: TextFile, start: int, end: int) -> bool:
     line_end = f.text.find("\n", end)
     before = f.text[line_start:start]
     after = f.text[end : line_end if line_end != -1 else len(f.text)]
+    if _OPTION_ROW.match(before + f.text[start:end] + after):
+        return True
     for open_q, close_q in _QUOTES:
         if open_q == close_q:
             if before.count(open_q) % 2 == 1 and close_q in after:
@@ -196,11 +202,13 @@ def _comments(f: TextFile) -> list[tuple[int, str]]:
 
 _KOMMENTAR_SCHWERE = frozenset({Schwere.K, Schwere.H})
 """Only injection-type rules apply to comments. Softer ones (B15 autonomy: "loop forever",
-"never stop") describe ordinary program logic; calibrated on about 800 real code files."""
+"never stop") describe ordinary program logic; calibrated on about 800 real code files. ATR rules
+are written for prompts and tool arguments and do not apply to comments either: in code they hit
+regex literals and examples (benchmark S3-6, ``ATR-2026-02106`` on a ReDoS comment)."""
 
 
 def _comment_finding(rule: TextRule, f: TextFile, offset: int, text: str) -> Finding | None:
-    if rule.schwere not in _KOMMENTAR_SCHWERE:
+    if rule.schwere not in _KOMMENTAR_SCHWERE or rule.quelle == "atr":
         return None
     span = _search(rule, text)
     if span is None:

@@ -12,7 +12,14 @@ import re
 from collections.abc import Iterator
 from pathlib import PurePosixPath
 
-from luibui_scan.analyzers._common import TextFile, finding, rules_dir, text_files, visible
+from luibui_scan.analyzers._common import (
+    TESTDATEI,
+    TextFile,
+    finding,
+    rules_dir,
+    text_files,
+    visible,
+)
 from luibui_scan.analyzers._decode import tag_text
 from luibui_scan.analyzers._e_tools import Text, Tool, tools
 from luibui_scan.analyzers.b_inhalte import _VS_RUN, _suspicious_invisible
@@ -188,7 +195,12 @@ _KLARTEXT_TOKEN = re.compile(
     rf"""writeFile(Sync)?\([^\n]{{0,120}}?{_ABLAGE_MUSTER}"""
 )
 """Where a server writes OAuth tokens or credential files, not any variable named "secret"."""
-_TESTDATEI = re.compile(r"(^|/)(tests?|__tests__|spec)/|[._-](test|spec)\.\w+$|(^|/)test_\w+\.py$")
+_LOOPBACK = re.compile(
+    r"""\bhost\s*[=:]\s*["'](127\.0\.0\.1|localhost|::1)["']|"""
+    r"""\.listen\(\s*[\w.]+\s*,\s*["'](127\.0\.0\.1|localhost|::1)["']"""
+)
+_ALLE_SCHNITTSTELLEN = re.compile(r"""["'](0\.0\.0\.0|::)["']""")
+"""Express ``app.listen(PORT)`` without a host binds to all interfaces and stays H."""
 _GESCHUETZT = re.compile(r"(?i)\bkeyring\b|\bkeytar\b|safeStorage|Fernet|encrypt|cryptography")
 
 
@@ -197,18 +209,31 @@ def _line(text: str, m: re.Match[str]) -> tuple[int, str]:
     return start, text.split("\n")[start - 1]
 
 
+def nur_lokal(text: str) -> bool:
+    """The file binds its server to the loopback address only, and nowhere to all interfaces."""
+    return bool(_LOOPBACK.search(text)) and not _ALLE_SCHNITTSTELLEN.search(text)
+
+
 def _server(files: list[TextFile], package_has_auth: bool) -> Iterator[Finding]:
     for f in files:
         if (m := _HTTP_TRANSPORT.search(f.text)) and not package_has_auth:
             zeile, code = _line(f.text, m)
+            lokal = nur_lokal(f.text)
             yield finding(
                 rule_id="LB-E04-ohne-anmeldung",
                 ebene=Ebene.E,
-                schwere=Schwere.H,
-                titel="MCP-Server über HTTP ohne Anmeldung",
+                schwere=Schwere.M if lokal else Schwere.H,
+                titel="MCP-Server über HTTP ohne Anmeldung"
+                + (" (nur lokal erreichbar)" if lokal else ""),
                 erklaerung=(
                     "Der Server ist über HTTP oder SSE erreichbar, und im Paket findet sich keine "
-                    "Prüfung von Zugangsdaten. Wer die Adresse kennt, kann jedes Tool aufrufen."
+                    "Prüfung von Zugangsdaten. "
+                    + (
+                        "Er lauscht nur auf 127.0.0.1; andere Programme auf dem Rechner und "
+                        "Websites über DNS-Rebinding können die Tools trotzdem aufrufen."
+                        if lokal
+                        else "Wer die Adresse kennt, kann jedes Tool aufrufen."
+                    )
                 ),
                 datei=f.path,
                 zeile=zeile,
@@ -279,7 +304,7 @@ def _server(files: list[TextFile], package_has_auth: bool) -> Iterator[Finding]:
                 normbezug=("OWASP-ASI03", "OWASP-LLM02"),
             )
             break
-        klartext = not _TESTDATEI.search(f.path) and not _GESCHUETZT.search(f.text)
+        klartext = not TESTDATEI.search(f.path) and not _GESCHUETZT.search(f.text)
         if klartext and (m := _KLARTEXT_TOKEN.search(f.text)):
             zeile, code = _line(f.text, m)
             yield finding(

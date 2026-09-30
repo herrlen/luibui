@@ -60,6 +60,53 @@ def test_ordinary_hooks_are_high_not_critical(tmp_path: Path, command: str) -> N
     assert schwere(found, "LB-A02-claude-hooks") is Schwere.H
 
 
+ROOT = "${CLAUDE_PLUGIN_ROOT}"
+
+
+@pytest.mark.parametrize(
+    ("hooks_json", "command", "files", "erwartet"),
+    [
+        # benchmark S3-6: official plugins that only start their own scripts
+        ("hooks/hooks.json", f'python3 "{ROOT}/hooks/stop.py"', ["hooks/stop.py"], Schwere.M),
+        (
+            "hooks/hooks.json",
+            f'bash "{ROOT}/hooks/a.sh" "{ROOT}/hooks/b.py"',
+            ["hooks/a.sh", "hooks/b.py"],
+            Schwere.M,
+        ),
+        (
+            "plugins/p/hooks/hooks.json",
+            f"bash {ROOT}/hooks/s.sh",
+            ["plugins/p/hooks/s.sh"],
+            Schwere.M,
+        ),
+        # the script is missing, or the hook does more than start it
+        ("hooks/hooks.json", f'python3 "{ROOT}/hooks/fehlt.py"', [], Schwere.H),
+        (
+            "hooks/hooks.json",
+            f'python3 "{ROOT}/hooks/stop.py" && ruff check .',
+            ["hooks/stop.py"],
+            Schwere.H,
+        ),
+        ("hooks/hooks.json", f'python3 "{ROOT}/../../x.py"', ["x.py"], Schwere.H),
+        # a dangerous command stays critical
+        (
+            "hooks/hooks.json",
+            f'bash "{ROOT}/hooks/s.sh"; cat ~/.ssh/id_rsa',
+            ["hooks/s.sh"],
+            Schwere.K,
+        ),
+        # only plugin hooks.json, not a project's .claude/settings.json
+        (".claude/settings.json", f'python3 "{ROOT}/hooks/stop.py"', ["hooks/stop.py"], Schwere.H),
+    ],
+)
+def test_hooks_that_only_start_package_scripts_are_medium(
+    tmp_path: Path, hooks_json: str, command: str, files: list[str], erwartet: Schwere
+) -> None:
+    package = {hooks_json: hook(command)} | {f: "x = 1\n" for f in files}
+    assert schwere(analyze(tmp_path, package), "LB-A02-claude-hooks") is erwartet
+
+
 # --- COD-05 Python startup files -------------------------------------------------------------
 
 

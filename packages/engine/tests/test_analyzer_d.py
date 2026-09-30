@@ -68,6 +68,16 @@ def test_lookalike(name: str, target: str) -> None:
     assert lookalike(name, popular("pypi", rules_dir())) == target
 
 
+def test_lookalike_compares_scoped_names_in_full() -> None:
+    from luibui_scan.analyzers.a_dateien import rules_dir
+    from luibui_scan.analyzers.d_abhaengigkeiten import popular
+
+    known = popular("npm", rules_dir())
+    assert "jest" in known
+    assert lookalike("@playwright/test", known) is None  # benchmark: playwright-mcp
+    assert lookalike("@types/nodd", known) == "@types/node"
+
+
 def test_d03_in_requirements_and_package_json(tmp_path: Path) -> None:
     files = {
         "requirements.txt": "reqeusts==2.0\nnumpy==2.1\n",

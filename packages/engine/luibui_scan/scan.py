@@ -15,7 +15,13 @@ from luibui_scan.analyzers.registry import AnalyzerRegistry, default_registry
 from luibui_scan.context import ScanContext
 from luibui_scan.intake.nested import expand_packages
 from luibui_scan.inventory import Inventory, build_inventory
-from luibui_scan.korrelation import ist_code, korreliere, mit_fingerprints, verweise
+from luibui_scan.korrelation import (
+    in_testdateien,
+    ist_code,
+    korreliere,
+    mit_fingerprints,
+    verweise,
+)
 from luibui_scan.models import Pruefumfang, ScanArt
 from luibui_scan.pipeline import PipelineResult, run_pipeline
 from luibui_scan.scoring import Bewertung, bewerte
@@ -105,7 +111,7 @@ def scan_prepared(
         nicht_entpackt=nested.abgelehnt,
     )
     pipeline = run_pipeline(ctx, registry)
-    pipeline.findings[:] = mit_fingerprints(pipeline.findings)
+    pipeline.findings[:] = in_testdateien(mit_fingerprints(pipeline.findings))
     if umfang is not Pruefumfang.EINZELDATEI and scan_art is not ScanArt.SCHNELL:
         ziele = verweise(list(text_files(ctx)), {e.path for e in inventory.entries})
         code = {e.path for e in inventory.entries if ist_code(e)}

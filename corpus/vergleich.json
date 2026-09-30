@@ -54,7 +54,13 @@
     {
       "repo": "https://github.com/anthropics/skills",
       "pfad": "skills/webapp-testing",
-      "lizenz": "Apache-2.0"
+      "lizenz": "Apache-2.0",
+      "berechtigt": [
+        {
+          "regel": "bandit:B602",
+          "grund": "scripts/with_server.py startet die Serverbefehle, die der Agent übergibt, mit shell=True (für cd und &&). Das ist der Zweck des Skripts; es kommt nichts herein, was der Agent nicht ohnehin in der Shell ausführen könnte. Befund bleibt als Hinweis sinnvoll, ist aber kein Fehlalarm der Regel."
+        }
+      ]
     },
     {
       "repo": "https://github.com/anthropics/claude-plugins-official",
@@ -124,7 +130,13 @@
     {
       "repo": "https://github.com/obra/superpowers",
       "pfad": "skills/brainstorming",
-      "lizenz": "MIT"
+      "lizenz": "MIT",
+      "berechtigt": [
+        {
+          "regel": "LB-C01",
+          "grund": "scripts/server.cjs ruft exec mit dem vom Nutzer gesetzten BRAINSTORM_OPEN_CMD und einer mit JSON.stringify gequoteten lokalen URL auf, um den Browser zu öffnen. Keine Eingabe aus Tools oder Netz; das Muster (exec ohne festen Text) trifft zu."
+        }
+      ]
     },
     {
       "repo": "https://github.com/obra/superpowers",
@@ -214,7 +226,13 @@
     {
       "repo": "https://github.com/modelcontextprotocol/servers",
       "pfad": "src/everything",
-      "lizenz": "MIT/Apache-2.0"
+      "lizenz": "MIT/Apache-2.0",
+      "berechtigt": [
+        {
+          "regel": "LB-E04",
+          "grund": "Zutreffend: der Referenz-Testserver lauscht mit app.listen(PORT) auf allen Schnittstellen und prüft keine Zugangsdaten. Kein Fehlalarm, sondern ein echter Befund an einem Testserver."
+        }
+      ]
     },
     {
       "repo": "https://github.com/modelcontextprotocol/servers",
@@ -264,7 +282,13 @@
     {
       "repo": "https://github.com/awslabs/mcp",
       "pfad": "src/cloudwatch-mcp-server",
-      "lizenz": "Apache-2.0"
+      "lizenz": "Apache-2.0",
+      "berechtigt": [
+        {
+          "regel": "LB-E09",
+          "grund": "Zutreffend: die mitgelieferte .mcp.json startet uvx awslabs.…@latest, also ungepinnt. Kein Fehlalarm."
+        }
+      ]
     },
     {
       "repo": "https://github.com/awslabs/mcp",
@@ -294,7 +318,13 @@
     {
       "repo": "https://github.com/awslabs/mcp",
       "pfad": "src/postgres-mcp-server",
-      "lizenz": "Apache-2.0"
+      "lizenz": "Apache-2.0",
+      "berechtigt": [
+        {
+          "regel": "LB-E09",
+          "grund": "Zutreffend: kiro_power/mcp.json startet ein ungepinntes Paket über uvx. Kein Fehlalarm."
+        }
+      ]
     },
     {
       "repo": "https://github.com/awslabs/mcp",

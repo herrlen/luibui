@@ -20,7 +20,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
-from luibui_scan.analyzers._common import TextFile
+from luibui_scan.analyzers._common import TESTDATEI, TextFile
 from luibui_scan.context import InventoryEntry
 from luibui_scan.models import Achse, Ebene, Finding, Schwere
 
@@ -41,6 +41,8 @@ _BEFEHL = re.compile(
     r"([^\s;|&\"'`<>()]+)"
 )
 _DIREKT = re.compile(r"(?<![\w/.])\./([^\s;|&\"'`<>()]+)")
+_PLUGIN_ROOT = re.compile(r"\$\{?CLAUDE_PLUGIN_ROOT\}?/([^\s;|&\"'`<>()\\]+)")
+"""``${CLAUDE_PLUGIN_ROOT}/hooks/stop.py`` in hooks.json, also inside escaped JSON quotes."""
 _PLATZHALTER = re.compile(
     r"^(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|\{[A-Za-z_]+\}|~|<[^>]+>)/"
 )  # ${CLAUDE_PLUGIN_ROOT}/, $SKILL_DIR/, {baseDir}/, <skill>/
@@ -61,9 +63,11 @@ def mit_fingerprints(findings: Iterable[Finding]) -> list[Finding]:
 
 
 def ist_anleitung(path: str) -> bool:
+    """Instruction files, plus plugin ``hooks.json``: Claude Code starts what it names by itself."""
     p = PurePosixPath(path.lower())
     return (
         p.name in _ANLEITUNG_NAMEN
+        or p.name == "hooks.json"
         or p.suffix == ".mdc"
         or (p.suffix in _MARKDOWN and bool(_ANLEITUNG_ORDNER & set(p.parts[:-1])))
     )
@@ -90,6 +94,8 @@ def _kandidaten(text: str) -> Iterable[tuple[int, str]]:
     for pattern in (_LINK, _BACKTICK, _BEFEHL, _DIREKT):
         for m in pattern.finditer(text):
             yield m.start(1), m.group(1)
+    for m in _PLUGIN_ROOT.finditer(text):
+        yield m.start(1), "${CLAUDE_PLUGIN_ROOT}/" + m.group(1)
 
 
 def _aufloesen(roh: str, quelle: str, dateien: set[str]) -> str | None:
@@ -99,7 +105,10 @@ def _aufloesen(roh: str, quelle: str, dateien: set[str]) -> str | None:
     if pfad.startswith("./"):
         pfad = pfad[2:]
     basis = PurePosixPath(quelle).parent
-    for kandidat in (basis / pfad, PurePosixPath(pfad)):
+    kandidaten = [basis / pfad, PurePosixPath(pfad)]
+    if roh.startswith("${CLAUDE_PLUGIN_ROOT}/") and basis.name == "hooks":
+        kandidaten.insert(0, basis.parent / pfad)  # the plugin folder above hooks/hooks.json
+    for kandidat in kandidaten:
         teile: list[str] = []
         for teil in kandidat.parts:
             if teil == "..":
@@ -166,4 +175,32 @@ def korreliere(findings: list[Finding], ziele: dict[str, Verweis], code: set[str
                 }
             )
         )
+    return out
+
+
+_TEST_EBENEN = frozenset({Ebene.C, Ebene.E})
+
+
+def in_testdateien(findings: list[Finding]) -> list[Finding]:
+    """Code findings in test files count at most M (Len, 30.09.2026, benchmark S3-6).
+
+    Tests do not run when an agent uses the package, and they often hold the very paths a
+    server must reject (``~/.ssh`` in ``test_path_validation.py``). Runs before the correlation:
+    an instruction that points to the test file raises the finding again.
+    """
+    out = []
+    for f in findings:
+        ernst = f.schwere in (Schwere.K, Schwere.H) and f.ebene in _TEST_EBENEN
+        if ernst and f.datei and TESTDATEI.search(f.datei):
+            f = f.model_copy(
+                update={
+                    "schwere": Schwere.M,
+                    "titel": f"{f.titel} (in einer Testdatei)"[:200],
+                    "erklaerung": (
+                        f"{f.erklaerung} Die Stelle steht in Testcode, der bei der Nutzung "
+                        f"des Pakets nicht läuft; deshalb M statt {f.schwere.value}."
+                    )[:4000],
+                }
+            )
+        out.append(f)
     return out

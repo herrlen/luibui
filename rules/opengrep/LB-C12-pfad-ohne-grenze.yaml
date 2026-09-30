@@ -35,11 +35,26 @@ rules:
           - pattern: $X.resolve(...)
           - pattern: $X.name
           - pattern: secure_filename(...)
+          # A fixed file name inside the given folder: at most that one name can be reached
+          # (benchmark S3-6, awslabs dynamodb: os.path.join(workspace_dir, DATA_MODEL_JSON_FILE)).
+          - pattern: os.path.join($X, "...")
+          - patterns:
+              - pattern: os.path.join($X, $C)
+              - metavariable-regex:
+                  metavariable: $C
+                  regex: ^[A-Z][A-Z0-9_]*$
     pattern-sinks:
       - pattern-either:
           - pattern: open($S, ...)
-          - pattern: Path($S, ...)
-          - pattern: pathlib.Path($S, ...)
+          # Path(x) alone reads nothing; only file operations on it do (benchmark S3-6:
+          # Path(p).resolve() and Path(p).exists() were reported).
+          - patterns:
+              - pattern-either:
+                  - pattern: Path($S, ...).$M(...)
+                  - pattern: pathlib.Path($S, ...).$M(...)
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(read_text|read_bytes|write_text|write_bytes|open|unlink|rmdir|iterdir|glob|rglob|touch|mkdir|rename|replace|symlink_to|chmod)$
           - pattern: os.remove($S)
           - pattern: os.unlink($S)
           - pattern: shutil.rmtree($S, ...)

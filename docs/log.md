@@ -1654,3 +1654,37 @@ Docker-Volume `luibui-benchmark-osv` und wird höchstens täglich mit dem Code d
 - S3-6: die Fehlalarme oben einzeln bewerten, Regeln anpassen oder begründet in `berechtigt`
   aufnehmen. Keine Schwelle senken, nur weil Rot schlecht aussieht (E3).
 - „Läuft in CI": das Skript ist bereit, die CI startet derzeit nicht (GitHub-Abrechnung).
+
+## 2026-09-30 — S3-6: erste Kalibrierung mit dem Benchmark
+
+**Ausgang:** 21 von 60 echten Paketen mit K/H. Jede Ursache am Quelltext nachvollzogen
+(Repos lokal über `--holen`), dann behoben. Begründungen stehen im Prüfkatalog §14.
+
+**Regelfehler (je mit Negativtest aus dem echten Fall):**
+- D03 verglich bei scoped npm-Paketen nur den Teil nach `/` (`@playwright/test` ≈ `jest`).
+- B09 und B14 griffen bei beschreibenden Sätzen („… without user awareness is hiding problems“,
+  „skip security group deletion“, „bypassPermissions is unnecessary“). Optionstabellen
+  (`| --no-sandbox | … |`) gelten als zitiert (M).
+- B05 meldete HTML-Kommentare in Code-Blöcken.
+- ATR-Regeln liefen über Code-Kommentare und trafen Regex-Literale; dort gelten nur eigene Regeln.
+- C12 zählte `Path(x)` als Dateizugriff, auch vor `.resolve()`/`.exists()`; jetzt nur echte
+  Dateioperationen. `os.path.join(ordner, FESTER_NAME)` gilt als begrenzt. Opengrep-Regeltests
+  im Worker-Image: 43/43.
+
+**Entscheidungen Len (per Rückfrage):** C/E-Befunde in Testdateien höchstens M; Plugin-Hooks, die
+nur eigene Skripte starten, M statt H, und `hooks.json` wird Quelle der Korrelation (das Skript
+steigt eine Stufe, auch in Marketplace-Unterordnern über `${CLAUDE_PLUGIN_ROOT}`); E04 bei
+Bindung nur an 127.0.0.1/localhost M statt H.
+
+**Bewusst nicht geändert:** Bandit bleibt für Python die einzige C01-Quelle und wird nicht
+gedeckelt. Fünf zutreffende Befunde an gutartigen Paketen stehen mit Grund unter `berechtigt` in
+`corpus/vergleich.json` (webapp-testing `shell=True` für Serverbefehle, brainstorming `exec` mit
+Nutzer-Umgebungsvariable, `everything` ohne Anmeldung auf allen Schnittstellen, zweimal
+ungepinntes `uvx …@latest`). **Len bitte gegenlesen.** Der Benchmark zeigt jetzt beide Quoten.
+
+**Ergebnis:** Fehlalarme echte Pakete 0/60, ohne Ausnahmen 5/60 (8 %); Erkennung unverändert
+36/36; eigener Korpus 0/34. 1018 Engine-Tests grün. Viele echte Pakete bleiben rot, aber nur
+wegen bekannter Lücken aus OSV (gesondert gezählt).
+
+**Offen:** Die Erkennungsquote ist mit 36 Einzeldateien wenig aussagekräftig (S3-1 bösartige
+Seite). Nicht ausgerollt: die Änderungen betreffen die Engine in Produktion, Ausrollen auf Lens Wort.

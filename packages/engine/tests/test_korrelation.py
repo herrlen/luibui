@@ -8,7 +8,7 @@ from luibui_scan.analyzers import AnalyzerInfo, AnalyzerRegistry
 from luibui_scan.analyzers._common import text_files
 from luibui_scan.context import ScanContext
 from luibui_scan.inventory import build_inventory
-from luibui_scan.korrelation import fingerprint, verweise
+from luibui_scan.korrelation import fingerprint, in_testdateien, verweise
 from luibui_scan.models import Achse, Ebene, Finding, Nachweisgrad, Pruefumfang, ScanArt, Schwere
 from luibui_scan.scan import Eingabe, scan_prepared
 
@@ -159,3 +159,45 @@ def test_references_never_leave_the_package(tmp_path: Path) -> None:
         inventory=inv.entries,
     )  # fmt: skip
     assert verweise(list(text_files(ctx)), {e.path for e in inv.entries}) == {}
+
+
+HOOKS = (
+    '{"hooks": {"Stop": [{"hooks": [{"type": "command", '
+    '"command": "python3 \\"${CLAUDE_PLUGIN_ROOT}/hooks/stop.py\\""}]}]}}'
+)
+
+
+@pytest.mark.parametrize("wo", ["", "plugins/p/"])
+def test_scripts_started_by_plugin_hooks_are_raised(tmp_path: Path, wo: str) -> None:
+    """Benchmark S3-6: a hook runs its script by itself, like an instruction the agent follows."""
+    files = {f"{wo}hooks/hooks.json": HOOKS, f"{wo}hooks/stop.py": "x = 1\n"}
+    found = scan(tmp_path, files, [befund(f"{wo}hooks/stop.py", Schwere.H)])
+    f = found[f"{wo}hooks/stop.py"]
+    assert f.schwere is Schwere.K and f"{wo}hooks/hooks.json" in f.erklaerung
+
+
+@pytest.mark.parametrize(
+    ("datei", "ebene", "schwere", "erwartet"),
+    [
+        ("tests/unit/test_path_validation.py", Ebene.C, Schwere.K, Schwere.M),
+        ("tests/cli.spec.ts", Ebene.C, Schwere.H, Schwere.M),
+        ("src/__tests__/a.js", Ebene.E, Schwere.H, Schwere.M),
+        ("tests/test_x.py", Ebene.C, Schwere.M, Schwere.M),
+        ("tests/test_x.py", Ebene.B, Schwere.K, Schwere.K),  # instructions still count
+        ("tests/test_x.py", Ebene.A, Schwere.H, Schwere.H),
+        ("src/server.py", Ebene.C, Schwere.K, Schwere.K),
+        ("contest/run.py", Ebene.C, Schwere.K, Schwere.K),
+    ],
+)
+def test_code_findings_in_test_files_count_at_most_medium(
+    datei: str, ebene: Ebene, schwere: Schwere, erwartet: Schwere
+) -> None:
+    (f,) = in_testdateien([befund(datei, schwere, ebene)])
+    assert f.schwere is erwartet
+    assert ("Testdatei" in f.titel) is (erwartet is not schwere)
+
+
+def test_referenced_test_file_is_raised_again(tmp_path: Path) -> None:
+    files = {"SKILL.md": "Run `python tests/check.py` first.\n", "tests/check.py": "x = 1\n"}
+    f = scan(tmp_path, files, [befund("tests/check.py", Schwere.K)])["tests/check.py"]
+    assert f.schwere is Schwere.H and f.hochgestuft_von is Schwere.M

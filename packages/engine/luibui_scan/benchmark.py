@@ -279,8 +279,8 @@ def render(lauf: Lauf, *, stand: str, datum: str) -> str:
     w("# Benchmark\n")
     w(
         f"Stand `{stand}`, gemessen am {datum} mit `python -m luibui_scan.benchmark` "
-        "(S3-2). Erzeugt, nicht von Hand ändern; Erklärungen und Kalibrierung stehen in "
-        "`docs/log.md`.\n"
+        "(S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im "
+        "Prüfkatalog §14, der Verlauf in `docs/log.md`.\n"
     )
     b, ge, ec = lauf.boesartig, lauf.gutartig_eigen, lauf.gutartig_echt
     code = [t for t in b if ebene_von(t.erwartet) == "C"]
@@ -299,6 +299,11 @@ def render(lauf: Lauf, *, stand: str, datum: str) -> str:
         w(
             f"| Fehlalarme, echte Pakete | {_quote(sum(t.fehlalarm for t in ec), len(ec))} "
             f"| ≤ 5 % | {_ziel(_rate(ec, 'fehlalarm'), ZIEL_FEHLALARM, hoechstens=True)} |"
+        )
+        roh = sum(bool(t.ernst or t.berechtigt) for t in ec)
+        w(
+            f"| … ohne Ausnahmen (`berechtigt`) | {_quote(roh, len(ec))} | – | "
+            "zutreffende Befunde, nach Prüfung ausgenommen |"
         )
     else:
         grund = "siehe „Nicht geholt“" if lauf.nicht_geholt else "ohne `--vergleich`"

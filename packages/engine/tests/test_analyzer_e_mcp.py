@@ -157,6 +157,36 @@ def test_e04_http_with_auth_is_fine(tmp_path: Path) -> None:
     assert "LB-E04-ohne-anmeldung" not in rules(analyze(tmp_path, {"s.py": code}))
 
 
+@pytest.mark.parametrize(
+    ("serve", "erwartet"),
+    [
+        # benchmark S3-6: python-sdk examples bind to 127.0.0.1 explicitly
+        ("uvicorn.run(mcp.streamable_http_app(), host='127.0.0.1', port=8000)\n", "M"),
+        ('uvicorn.run(mcp.streamable_http_app(), host="localhost")\n', "M"),
+        ("uvicorn.run(mcp.streamable_http_app(), host='0.0.0.0')\n", "H"),
+        ("uvicorn.run(mcp.streamable_http_app())\n", "H"),
+        # a second, public binding in the same file outweighs the local one
+        ("uvicorn.run(mcp.sse_app(), host='127.0.0.1')\nuvicorn.run(a, host='0.0.0.0')\n", "H"),
+    ],
+)
+def test_e04_local_only_server_is_m(tmp_path: Path, serve: str, erwartet: str) -> None:
+    found = analyze(tmp_path, {"s.py": py_tool("Wetter.") + serve})
+    f = next(f for f in found if f.rule_id == "LB-E04-ohne-anmeldung")
+    assert f.schwere.value == erwartet
+    assert ("nur lokal" in f.titel) is (erwartet == "M")
+
+
+def test_e04_express_listen_without_host_is_h(tmp_path: Path) -> None:
+    """benchmark S3-6: servers/src/everything, ``app.listen(PORT)`` binds to all interfaces."""
+    head = JS_MARK + 'import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\n'
+    head += "const t = new SSEServerTransport('/m', res);\n"
+    alle, lokal = "app.listen(PORT, () => {});\n", "app.listen(PORT, '127.0.0.1');\n"
+    for code, erwartet in ((head + alle, "H"), (head + lokal, "M")):
+        found = analyze(tmp_path / erwartet, {"server.ts": code})
+        f = next(f for f in found if f.rule_id == "LB-E04-ohne-anmeldung")
+        assert f.schwere.value == erwartet
+
+
 def test_e04_token_in_url(tmp_path: Path) -> None:
     code = py_tool("Wetter.") + "key = request.query_params.get('api_key')\n"
     assert "LB-E04-anmeldung-in-url" in rules(analyze(tmp_path, {"s.py": code}))

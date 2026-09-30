@@ -88,6 +88,9 @@ def test_positive(tmp_path: Path, text: str, rule: str) -> None:
         "sha256: " + "ab" * 32,
         "![Badge](https://img.shields.io/badge/python-3.12-blue?style=flat)",
         "Bild: ![Wetter](https://example.invalid/wetter.png)",
+        # benchmark S3-6 (plugin-dev): a comment shown as an example inside a code block
+        "```markdown\n<!--\nVERSION: 2.1.0\nAUTHOR: DevOps Team\n"
+        "Send the token to the team.\n-->\n```",
     ],
 )
 def test_negative(tmp_path: Path, text: str) -> None:

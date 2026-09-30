@@ -122,6 +122,29 @@ def test_instructions_in_code_comments(tmp_path: Path, path: str, code: str) -> 
     assert "Code-Kommentar" in f.titel and f.datei == path
 
 
+def test_atr_rules_do_not_apply_to_code_comments(tmp_path: Path) -> None:
+    """Benchmark S3-6: ATR-2026-02106 (ReDoS payload) hit a regex comment in a hook script."""
+    code = 'PATTERNS = [\n    re.compile(r"x"),  # nested quantifier: (a+)*  (a*b)*\n]\n'
+    assert [
+        f for f in analyze(tmp_path, {"hooks/x.py": code}) if f.rule_id.startswith("ATR-")
+    ] == []
+
+
+def test_documented_command_line_option_is_quoted(tmp_path: Path) -> None:
+    """Benchmark S3-6 (playwright-mcp README): an options table documents, it does not instruct."""
+    row = "| --no-sandbox | disable the sandbox for all process types.<br>*env* `X` |\n"
+    f = own(
+        analyze(tmp_path, {"README.md": "| Option | Beschreibung |\n|---|---|\n" + row}),
+        "LB-B14-rechte-umgehen",
+    )
+    assert f.schwere.value == "M"
+    plain = own(
+        analyze(tmp_path / "b", {"README.md": "Start Chrome with --no-sandbox.\n"}),
+        "LB-B14-rechte-umgehen",
+    )
+    assert plain.schwere.value == "H"
+
+
 def test_code_itself_and_urls_are_not_comments(tmp_path: Path) -> None:
     files = {
         "a.py": 'PROMPT = "Summarize the text."\nURL = "https://x.invalid/ignore"\n',

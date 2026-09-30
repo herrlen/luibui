@@ -64,7 +64,7 @@ Was im Paket liegt, unabhängig vom Inhalt der Dateien. Sprint 1 (A01 mit S1-2, 
 | ID | Prüfung | Schwere | ● | P W E S | Quelle | Normbezug |
 |---|---|---|---|---|---|---|
 | A01 | **Annahme abgelehnt:** Pfad außerhalb, ungültiger oder zu langer Name, doppelter Name, zu tief, Verknüpfung, verschlüsselt, zu groß, zu viele Dateien, Kompressionsrate, defektes Archiv (Kurzname = Ablehnungsgrund, siehe §11) | H | – | ✓ ✓ ✓ ✓ | `intake/` | ASI04 |
-| A02 | **Autostart-Dateien mit Befehlen:** `.claude/settings.json`- und `hooks.json`-Hooks, `.vscode/tasks.json` mit `runOn: folderOpen`, `task.allowAutomaticTasks`, `devcontainer.json`-Befehle, `.envrc`, `.git/hooks`, `package.json`-Skripte `preinstall`/`install`/`postinstall` (`prepare` nur mit gefährlichem Befehl), Python-`.pth` mit `import`, `sitecustomize.py`/`usercustomize.py`, `setup.py`, das herunterlädt und ausführt. K bei Nachladen, Verschleiern, Löschen des Home-Ordners, Lesen von Zugangsdaten, Hochladen von Dateien oder Persistenz, sonst H | K | ● | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
+| A02 | **Autostart-Dateien mit Befehlen:** `.claude/settings.json`- und `hooks.json`-Hooks, `.vscode/tasks.json` mit `runOn: folderOpen`, `task.allowAutomaticTasks`, `devcontainer.json`-Befehle, `.envrc`, `.git/hooks`, `package.json`-Skripte `preinstall`/`install`/`postinstall` (`prepare` nur mit gefährlichem Befehl), Python-`.pth` mit `import`, `sitecustomize.py`/`usercustomize.py`, `setup.py`, das herunterlädt und ausführt. K bei Nachladen, Verschleiern, Löschen des Home-Ordners, Lesen von Zugangsdaten, Hochladen von Dateien oder Persistenz, sonst H; Plugin-`hooks.json`, die nur Skripte des Plugins starten, M (§14) | K | ● | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
 | A03 | **Install- und Hilfsskripte:** `setup.py` mit Code außerhalb von `setup()`, `install.sh`/`install.ps1`, `Makefile`/`Justfile`-Ziele und alle Shell-/PowerShell-Skripte, die herunterladen und ausführen oder eine Reverse Shell öffnen, `conftest.py` mit Netzwerk, Build-Backend im Paket (`backend-path`), Notebook-Shell-Zellen, die nachladen | H | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
 | A04 | **Ausführbare Binärdateien:** ELF, Mach-O, PE, WASM, Java-Class, deb, rpm im Paket (Inventar); Installationspakete `.msi`, `.apk`, `.dmg`, `.pkg` | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04, LLM03 |
 | A05 | **Endung passt nicht zum Typ:** z. B. `bild.png` ist ein ELF, `notes.md` ist ein ZIP | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
@@ -203,7 +203,7 @@ Schlüsselspeicher (keyring, keytar) in eine Datei geschrieben werden; Testdatei
 | E01 | **Tool Poisoning:** versteckte Anweisungen in Tool-Namen, -Beschreibungen oder Parameter-Beschreibungen (inkl. B01–B17 auf diese Texte) | K | ● | ✓ ✓ ✓ – | B-Regeln und ATR auf Tool-Texte (`e_mcp`) | ASI02, LLM01 |
 | E02 | **Tool-Shadowing:** Beschreibung bezieht sich auf andere Tools oder Server und will deren Verhalten ändern | K | ● | ✓ ✓ ✓ – | eigene Regeln, ATR | ASI02 |
 | E03 | **Gefährliche Tool-Fähigkeiten ohne Kennzeichnung:** Tool führt Shell-Befehle aus oder schreibt Dateien, Beschreibung sagt es nicht | H | – | ✓ ✓ – – | Code + Beschreibung | ASI02, LLM06 |
-| E04 | **Fehlende Authentifizierung** bei HTTP/SSE-Transport oder Auth nur über Query-Parameter | H | – | ✓ ✓ – – | eigene Regeln | ASI03, ASI07 |
+| E04 | **Fehlende Authentifizierung** bei HTTP/SSE-Transport oder Auth nur über Query-Parameter; nur an 127.0.0.1/localhost gebunden M (§14) | H | – | ✓ ✓ – – | eigene Regeln | ASI03, ASI07 |
 | E05 | **Unsicherer Transport:** `http://` statt `https://`, gebunden an `0.0.0.0`, CORS `*` | M | – | ✓ ✓ – – | eigene Regeln | ASI07 |
 | E06 | **Token-Weitergabe:** Server reicht Nutzer-Token an Dritte durch (Token Passthrough) oder speichert sie im Klartext | H | – | ✓ ✓ – – | eigene Regeln | ASI03, LLM02 |
 | E07 | **Entfernter MCP-Server:** Befunde der Außenprüfung einer Remote-MCP-URL (websecureaudit) | wie Quelle | – | ✓ – – – | websecureaudit (S5-6) | ASI07 |
@@ -370,3 +370,46 @@ entscheiden, damit es funktioniert“). Entschieden wurde so:
 7. **Keine neuen Werkzeuge:** Alle neuen Prüfungen sind eigener Code ohne neue Abhängigkeiten.
    picklescan, oletools, pdfid, exiftool und python-magic werden nicht gebraucht; die
    Byte-Prüfungen greifen keinen Parser an.
+
+---
+
+## 14. Kalibrierung mit dem Benchmark (S3-6, 30.09.2026)
+
+Erste Messung (`docs/benchmark.md`, Engine `f2da04b`): 21 von 60 echten, gutartigen Paketen mit
+einem K- oder H-Befund, Ziel höchstens 5 %. Jede Ursache wurde am Quelltext nachvollzogen. Keine
+Schwelle ist gesenkt, weil Rot schlecht aussieht (Entwicklerregeln E3); geändert ist, was falsch
+gemessen hat oder was Len entschieden hat.
+
+**Fehler in Regeln (behoben, je mit Negativtest):**
+- **D03:** Scoped npm-Pakete wurden nur mit ihrem Namen nach dem Schrägstrich verglichen,
+  `@playwright/test` galt als Verwechslung mit `jest`. Verglichen wird jetzt der volle Name.
+- **B09:** „without user awareness is hiding problems“ beschreibt einen Mangel, statt ihn
+  anzuordnen. Das Muster greift nicht mehr, wenn ein Verb wie „is“ oder „leads“ folgt.
+- **B14:** „skip security group deletion“ (AWS-Sicherheitsgruppen) und „bypassPermissions is
+  unnecessary“ lösten aus. Beides ist ausgenommen. Eine Tabellenzeile, die eine
+  Kommandozeilen-Option dokumentiert (`| --no-sandbox | … |`), gilt als zitiertes Beispiel (M).
+- **B05:** Ein HTML-Kommentar in einem Code-Block ist in der Vorschau als Code sichtbar, nicht
+  versteckt, und wird nicht mehr gemeldet.
+- **ATR in Code-Kommentaren:** ATR-Regeln sind für Prompts und Tool-Argumente geschrieben und
+  trafen in Code Regex-Literale (`ATR-2026-02106`). In Kommentaren gelten nur noch eigene Regeln.
+- **C12:** `Path(x)` legt nur ein Objekt an; erst Dateioperationen darauf zählen, `.exists()` und
+  `.resolve()` nicht. `os.path.join(ordner, FESTER_NAME)` erreicht nur diesen einen Namen und gilt
+  als begrenzt.
+
+**Entscheidungen von Len (30.09.2026):**
+- **Testdateien:** C- und E-Befunde in `tests/`, `__tests__/`, `spec/`, `test_*.py`, `*.test.*`
+  und `*.spec.*` zählen höchstens M. Tests laufen bei der Nutzung eines Pakets nicht und enthalten
+  oft genau die Pfade, die ein Server abweisen soll. Verweist eine Anleitung auf die Testdatei,
+  stuft die Korrelation wieder hoch. Anweisungen (Ebene B) und Dateien (A) bleiben unverändert.
+- **Plugin-Hooks:** Startet jeder Befehl einer Plugin-`hooks.json` nur Skripte, die im Plugin
+  liegen (`python3 "${CLAUDE_PLUGIN_ROOT}/hooks/stop.py"`), ist A02 M statt H. Dafür gilt die
+  `hooks.json` als Quelle der Korrelation: Befunde im gestarteten Skript steigen eine Stufe.
+  Gefährliche Befehle im Hook bleiben K.
+- **Lokale HTTP-Server:** E04 ist M statt H, wenn der Server nachweislich nur an 127.0.0.1,
+  localhost oder ::1 gebunden ist und die Datei nirgends 0.0.0.0 nennt. Andere Programme auf dem
+  Rechner und Websites per DNS-Rebinding bleiben ein Risiko, deshalb nicht N.
+
+**Unverändert, obwohl im Benchmark auffällig:** Bandit bleibt für Python die einzige Quelle für
+C01; eine Deckelung würde echte Shell-Injektion abschwächen. Zutreffende Befunde an gutartigen
+Paketen (ungepinntes `uvx …@latest`, ein Testserver ohne Anmeldung auf allen Schnittstellen)
+stehen in `corpus/vergleich.json` unter `berechtigt`, mit Grund, und bleiben im Benchmark sichtbar.

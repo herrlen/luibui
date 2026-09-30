@@ -204,11 +204,10 @@ def distance(a: str, b: str) -> int:
 def lookalike(name: str, known: frozenset[str]) -> str | None:
     if name in known or len(name) < 5:
         return None
-    base = name.split("/")[-1]
+    # Full names including the npm scope: "@playwright/test" is no lookalike of "jest".
     for target in sorted(known):
-        t_base = target.split("/")[-1]
-        limit = 1 if len(t_base) < 10 else 2
-        if abs(len(base) - len(t_base)) <= limit and 0 < distance(base, t_base) <= limit:
+        limit = 1 if len(target) < 10 else 2
+        if abs(len(name) - len(target)) <= limit and 0 < distance(name, target) <= limit:
             return target
     return None
 

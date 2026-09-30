@@ -34,6 +34,10 @@ class TextFile:
         return lines[line - 1] if len(lines) >= line else ""
 
 
+TESTDATEI = re.compile(r"(^|/)(tests?|__tests__|spec)/|[._-](test|spec)\.\w+$|(^|/)test_\w+\.py$")
+"""Test code: ``tests/``, ``__tests__/``, ``spec/`` and files like ``x.test.ts``, ``test_x.py``."""
+
+
 def read_text(ctx: ScanContext, entry: InventoryEntry, limit: int = 1024 * 1024) -> str:
     return read_bytes(ctx, entry, limit).decode("utf-8", errors="replace")
 

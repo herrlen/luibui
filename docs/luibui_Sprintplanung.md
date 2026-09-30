@@ -179,7 +179,7 @@
 | S3-3 | LLM-Prüfer über mittwald AI Hosting: Anweisungen, Tool-Beschreibungen, „Beschreibung ≠ Verhalten“; strukturierte Ausgabe; Prompt gegen Injection gehärtet (Paketinhalt als Daten markiert) | Claude | 6 |
 | S3-4 | AI-Hosting-Key im mStudio, als Secret hinterlegen | Len | 0,5 |
 | S3-5 | **app.luibui.com – Verlauf:** Note und Befundzahl über die Zeit, Vergleich zweier Prüfungen (neu, behoben, unverändert) | Claude | 4 |
-| S3-6 | Regeln kalibrieren bis Abnahmewerte erreicht | Claude + Len | 6 |
+| S3-6 | ◐ **(30.09.2026)** Erste Runde: Fehlalarme echter Pakete 21/60 → 0/60 (5/60 ohne begründete Ausnahmen), Begründungen im Prüfkatalog §14. Aussagekräftig erst mit dem vollständigen bösartigen Korpus (S3-1). Regeln kalibrieren bis Abnahmewerte erreicht | Claude + Len | 6 |
 | S3-7 | **Befund-Status** im Entwicklerbereich: offen, behoben (automatisch, wenn in neuer Version weg), akzeptiert (mit Begründung), bestritten (Einspruch); Moderationsansicht für Einsprüche | Claude | 5 |
 | S3-8 | Rechtstexte einbauen: Impressum, Datenschutz, Nutzungsbedingungen mit Haftungsausschluss, Disclosure-Richtlinie; DSA-Meldeformular | Claude (Texte: Anwalt) | 3 |
 | S3-9 | luibui.com fertigstellen: Marketingseite (Nutzen, Ablauf, Ampel erklärt, Beispielbericht, „Kostenlos registrieren“), „So prüfen wir“, Doku-Einstieg (kein öffentlicher vollständiger Prüfkatalog, Entscheidung Len 27.09.2026), Transparenz- und Spendenseite, SEO-Grundlagen | Claude | 5 |

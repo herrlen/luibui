@@ -25,4 +25,7 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/healthz"]
+# The release (scripts/release.sh) waits until /healthz reports the new version.
+ARG LUIBUI_VERSION=lokal
+ENV LUIBUI_VERSION=$LUIBUI_VERSION
 CMD ["node", "server.js"]

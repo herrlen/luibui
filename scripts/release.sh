@@ -4,7 +4,12 @@
 #   scripts/release.sh                 alles: Prüfungen, Images, Push, Ausrollen
 #   scripts/release.sh --ohne-deploy   nur prüfen, bauen und pushen
 #
-# Builds exactly the committed state (git archive HEAD), never the working tree. Secrets are read
+# Builds exactly the committed state (git archive HEAD), never the working tree. Before the
+# rollout the new images are pulled onto the server by short-lived containers: mittwald stops the
+# old container first and pulls afterwards, so an image that is already there shortens the gap
+# from about 20 s to a few seconds (measured 30.09.2026). The rollout counts as done only when
+# api and web report the new version; the gap is measured and printed.
+# Secrets are read
 # from the running mittwald stack and handed to `mw` in a mode-600 temp file that is deleted
 # afterwards; nothing is printed. ANNAHME_OFFEN and SMTP_PASSWORD keep their deployed values
 # unless set in the environment (ANNAHME_OFFEN=true scripts/release.sh).
@@ -64,10 +69,10 @@ trap 'rm -rf "$BUILD"' EXIT
 git archive HEAD | tar -x -C "$BUILD"
 for s in api worker; do
   "${DOCKER[@]}" build --platform linux/amd64 -q -f "$BUILD/apps/$s/Dockerfile" \
-    -t "$REGISTRY/$s:$TAG" -t "$REGISTRY/$s:main" "$BUILD"
+    --build-arg LUIBUI_VERSION="$TAG" -t "$REGISTRY/$s:$TAG" -t "$REGISTRY/$s:main" "$BUILD"
 done
 "${DOCKER[@]}" build --platform linux/amd64 -q -f "$BUILD/apps/web/Dockerfile" \
-  -t "$REGISTRY/web:$TAG" -t "$REGISTRY/web:main" "$BUILD/apps/web"
+  --build-arg LUIBUI_VERSION="$TAG" -t "$REGISTRY/web:$TAG" -t "$REGISTRY/web:main" "$BUILD/apps/web"
 
 # --- 3. Push nach ghcr.io -------------------------------------------------------------------
 schritt "Push nach ghcr.io"
@@ -81,7 +86,7 @@ done
 [[ $DEPLOY == 1 ]] || { echo "Fertig ohne Ausrollen."; exit 0; }
 
 # --- 4. Ausrollen auf mittwald --------------------------------------------------------------
-schritt "Ausrollen"
+schritt "Konfiguration"
 ENVFILE="$(mktemp)"
 chmod 600 "$ENVFILE"
 trap 'rm -rf "$BUILD"; rm -f "$ENVFILE"' EXIT
@@ -118,18 +123,69 @@ PP_WEBHOOK="${PAYPAL_WEBHOOK_ID:-$(env_of api PAYPAL_WEBHOOK_ID)}"
 } >"$ENVFILE"
 unset STATE PG MK SMTP PP_ID PP_SECRET PP_WEBHOOK
 echo "Annahme offen: ${ANNAHME:-false}"
+
+# Pull the new images onto the server while the old containers still serve. Each helper runs
+# `true` and stops; it is deleted right away (also leftovers of an aborted run).
+schritt "Images vorladen"
+vorladen_weg() {
+  mw container list -p "$PROJECT" -o json 2>/dev/null \
+    | jq -r '.[] | select((.serviceName // .name // "") | startswith("vorladen-")) | .id' \
+    | while read -r id; do mw container delete "$id" -p "$PROJECT" --force >/dev/null 2>&1 || true; done
+}
+vorladen_weg
+for s in api worker web; do
+  start=$SECONDS
+  if mw container run -q -p "$PROJECT" --name "vorladen-$s" --entrypoint true \
+    --description "luibui – Image vorladen, wird gleich gelöscht" "$REGISTRY/$s:$TAG" >/dev/null 2>&1; then
+    echo "$s: $((SECONDS - start)) s"
+  else
+    echo "Hinweis: $s nicht vorgeladen, das Ausrollen dauert dann länger"
+  fi
+done
+vorladen_weg
+
+# Measure the gap: one request every half second to web and api until both run the new version.
+PROBE="$(mktemp)"
+PROBE_PID=""
+trap 'touch "$PROBE.stop"; [[ -n "$PROBE_PID" ]] && kill "$PROBE_PID" 2>/dev/null; rm -rf "$BUILD"; rm -f "$ENVFILE" "$PROBE" "$PROBE.stop"' EXIT
+(
+  while [[ ! -f "$PROBE.stop" ]]; do
+    printf '%s %s %s\n' "$(perl -MTime::HiRes=time -e 'printf "%.2f", time')" \
+      "$(curl -s -o /dev/null -m 2 -w '%{http_code}' https://luibui.com/healthz)" \
+      "$(curl -s -o /dev/null -m 2 -w '%{http_code}' https://api.luibui.com/health)" >>"$PROBE"
+    sleep 0.5
+  done
+) &
+PROBE_PID=$!
+
+schritt "Ausrollen"
 mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" 2>&1 | grep -E "SUCCESS|rror" || true
 
-# --- 5. Health ------------------------------------------------------------------------------
+# --- 5. Health: done only when api and web run the new version ---------------------------------
 schritt "Health"
-for _ in $(seq 1 60); do
-  if curl -sf https://api.luibui.com/health | grep -q '"status":"ok"' \
-    && curl -sf -o /dev/null https://luibui.com/; then
-    curl -s https://api.luibui.com/health; echo
-    mw stack ps -s "$STACK" 2>&1 | grep -E "^(api|worker|web)" | awk '{print $1, $2}'
-    echo "Ausgerollt: $SHA"
-    exit 0
+version_von() { curl -sf -m 5 "$1" | jq -r '.version // empty' 2>/dev/null || true; }
+neu=0
+for _ in $(seq 1 100); do
+  if curl -sf -m 5 https://api.luibui.com/health | grep -q '"status":"ok"' \
+    && [[ "$(version_von https://api.luibui.com/health)" == "$TAG" ]] \
+    && [[ "$(version_von https://luibui.com/healthz)" == "$TAG" ]] \
+    && [[ "$(version_von https://app.luibui.com/healthz)" == "$TAG" ]]; then
+    neu=1
+    break
   fi
-  sleep 5
+  sleep 3
 done
-fehler "Health nach 5 Minuten nicht grün, bitte Container-Logs ansehen"
+sleep 5 # a few more samples after the switch
+touch "$PROBE.stop"
+wait "$PROBE_PID" 2>/dev/null || true
+rm -f "$PROBE.stop"
+# Seconds from each failed request to the next sample, summed per column (2 = web, 3 = api).
+luecke() {
+  awk -v spalte="$1" 'NR > 1 && fehl { summe += $1 - vorher } { fehl = ($spalte != 200); vorher = $1 }
+    END { printf "%.1f", summe }' "$PROBE"
+}
+echo "Unterbrechung: Web $(luecke 2) s, API $(luecke 3) s"
+[[ $neu == 1 ]] || fehler "Nach 5 Minuten läuft nicht überall $TAG, bitte Container-Logs ansehen"
+curl -s https://api.luibui.com/health; echo
+mw stack ps -s "$STACK" 2>&1 | grep -E "^(api|worker|web)" | awk '{print $1, $2}'
+echo "Ausgerollt: $SHA"

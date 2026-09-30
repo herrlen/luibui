@@ -21,6 +21,13 @@ def test_health_ok_with_database(use_database: str) -> None:
     assert body["database"] == "ok"
 
 
+def test_health_reports_the_baked_in_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    """scripts/release.sh waits until /health reports the new image tag."""
+    assert TestClient(create_app()).get("/health").json()["version"] == "lokal"
+    monkeypatch.setenv("LUIBUI_VERSION", "sha-abc")
+    assert TestClient(create_app()).get("/health").json()["version"] == "sha-abc"
+
+
 def test_docs_are_disabled_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
     from luibui_api.settings import get_settings
 

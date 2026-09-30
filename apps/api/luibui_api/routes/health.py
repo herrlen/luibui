@@ -1,10 +1,11 @@
 """Liveness and readiness. ``/health`` returns 200 only if the database answers."""
 
 import logging
+import os
 from typing import Literal
 
 from fastapi import APIRouter, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from luibui_api.db import get_engine
@@ -18,6 +19,8 @@ class Health(BaseModel):
     status: Literal["ok", "degraded"]
     database: Literal["ok", "unavailable"]
     engine_version: str
+    version: str = Field(default_factory=lambda: os.environ.get("LUIBUI_VERSION") or "lokal")
+    """The image tag baked in at build time; scripts/release.sh waits for the new one."""
 
 
 def database_ok() -> bool:

@@ -32,4 +32,7 @@ WORKDIR /app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+# The release (scripts/release.sh) waits until /health reports the new version.
+ARG LUIBUI_VERSION=lokal
+ENV LUIBUI_VERSION=$LUIBUI_VERSION
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

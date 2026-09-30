@@ -1569,3 +1569,15 @@ deckt die Route ab; PDFs und Knöpfe lokal angesehen.
 
 **Geprüft:** lokal angesehen (Formular, Beispielbericht, Favicon auf beiden Hosts, PDF- und
 CSV-Download); 32 Web-Tests, Schema-Tests, PDF-Tests.
+
+## 2026-09-30 – S0-12: Images vorladen, auf neue Version warten, Lücke messen
+
+**Was:** Beim Ausrollen war luibui.com rund 20 s nicht erreichbar. Messungen (Details in
+`docs/infra-kapazitaet.md`): mittwald stoppt bei neuem Image den alten Container und lädt das Image
+erst danach. `scripts/release.sh` lädt die Images jetzt vorher mit kurzlebigen Containern auf den
+Server, wartet danach, bis api und web das neue Image-Tag melden (`version` in `/health` und
+`/healthz`, per Build-Argument), und gibt die gemessene Unterbrechung aus. Erster Lauf: Web 7,4 s
+(vorher ~20 s), API 10,3 s. Vorher meldete das Skript „Ausgerollt“, sobald die alte API noch
+antwortete.
+
+**Offen:** Ganz ohne Lücke nur mit Proxy-Container und zwei Web-Instanzen (Entscheidung Len).

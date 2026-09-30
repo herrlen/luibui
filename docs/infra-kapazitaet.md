@@ -285,3 +285,33 @@ Live: Favicon auf beiden Hosts, Beispiel-PDF und -CSV, Datei im Schnellscan vorg
 Beispiel. Direkt nach dem Ausrollen rund 20 s lang 503 auf luibui.com, während der Web-Container
 neu startete (die Health-Prüfung von `release.sh` fragt nur die API ab). Logs ohne Fehler.
 cgroup: api 87 MiB (Spitze 132); worker 45 MiB (Spitze 45); web 99 MiB (Spitze 99).
+
+## Neustartfenster beim Ausrollen (30.09.2026, `657e5e9`)
+
+**Gemessen** (Anfrage alle 0,3–0,5 s, Zeitstempel):
+- Reiner Neustart des Web-Containers (`mw container restart`): rund 5 s ohne Antwort. Next.js ist
+  0,15 s nach dem Start bereit, der Ingress schaltet 2–3 s später um.
+- `mw stack deploy` legt nur Dienste neu an, deren Definition sich ändert (neues Image-Tag, andere
+  Umgebung). Unveränderte Container bleiben unberührt, ein identisches Ausrollen kostet 0 s.
+- Bei neuem Image stoppt mittwald den alten Container **zuerst** und lädt das Image danach:
+  API am 30.09. 07:52:30 gestoppt, neuer Container 07:52:36,8 gestartet, 07:52:38,8 bereit,
+  ab 07:52:39,5 wieder Antworten. Beim Web mit vielen neuen Schichten waren es am 29.09. rund 20 s.
+
+**Geändert (`scripts/release.sh`):** Nach dem Push lädt je ein kurzlebiger Container
+(`vorladen-<dienst>`, Befehl `true`, danach gelöscht) die neuen Images auf den Server, bevor
+ausgerollt wird. api und web melden ihr Image-Tag in `/health` bzw. `/healthz` (Build-Argument
+`LUIBUI_VERSION`, letzte Schicht im Dockerfile); das Skript wartet, bis alle drei Hosts das neue Tag
+melden, und gibt die gemessene Unterbrechung aus.
+
+**Ergebnis beim ersten Lauf:** Vorladen 5–7 s je Image; Unterbrechung Web 7,4 s (vorher ~20 s),
+API 10,3 s. Anfragen der Oberfläche an die API (app.luibui.com und der Schnellscan auf luibui.com)
+laufen über Next.js und werden bis 30 s wiederholt; nur direkte Aufrufe von api.luibui.com
+(CLI, CI) sehen die Lücke.
+
+**Ganz ohne Lücke** ginge es nur mit einem eigenen, selten neu gestarteten Proxy-Container vor zwei
+Next.js-Instanzen, die nacheinander ausgerollt werden (Ingress-Ziele sind feste Container-IDs, ein
+zweites Ziel pro Host gibt es nicht). Kosten: ein weiteres Image, eine zweite Web-Instanz
+(real ~100 MB, Limit +384m), mehr Logik im Release. Offen, Entscheidung Len.
+
+cgroup nach `657e5e9`: api 91 MiB (Spitze 122); worker 65 MiB (Spitze 65); web 128 MiB (Spitze 128).
+Logs ohne Fehler, keine `vorladen-`-Container übrig.

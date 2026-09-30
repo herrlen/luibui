@@ -1,6 +1,6 @@
 # Benchmark
 
-Stand `f2da04b+lokal`, gemessen am 2026-09-30 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern; Erklärungen und Kalibrierung stehen in `docs/log.md`.
+Stand `8ba520b`, gemessen am 2026-09-30 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im Prüfkatalog §14, der Verlauf in `docs/log.md`.
 
 ## Ergebnis
 
@@ -8,7 +8,8 @@ Stand `f2da04b+lokal`, gemessen am 2026-09-30 mit `python -m luibui_scan.benchma
 |---|---|---|---|
 | Erkennung, Nachbildungen | 36/36 (100 %) | ≥ 90 % | erreicht |
 | Erkennung, Code-Ebene | 4/4 (100 %) | ≥ 95 % | erreicht |
-| Fehlalarme, echte Pakete | 21/60 (35 %) | ≤ 5 % | **nicht erreicht** |
+| Fehlalarme, echte Pakete | 0/60 (0 %) | ≤ 5 % | erreicht |
+| … ohne Ausnahmen (`berechtigt`) | 5/60 (8 %) | – | zutreffende Befunde, nach Prüfung ausgenommen |
 | Fehlalarme, eigener Korpus | 0/34 (0 %) | 0 | |
 
 Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nicht grün. Fehlalarm heißt: ein gutartiges Paket hat mindestens einen K- oder H-Befund. Bekannte Lücken aus OSV zählen nicht als Fehlalarm und stehen gesondert.
@@ -85,21 +86,21 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | anthropics/skills/skills/slack-gif-creator | 8a1541c4a3ff | rot | – | 1 |
 | anthropics/skills/skills/theme-factory | 8a1541c4a3ff | gelb | – | – |
 | anthropics/skills/skills/web-artifacts-builder | 8a1541c4a3ff | gelb | – | – |
-| anthropics/skills/skills/webapp-testing | 8a1541c4a3ff | rot | `K bandit:B602 scripts/with_server.py` | – |
-| anthropics/claude-plugins-official/plugins/agent-sdk-dev | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/claude-md-management | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/code-review | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/code-simplifier | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/commit-commands | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/explanatory-output-style | 2a8ad9f74633 | rot | `H LB-A02-claude-hooks hooks/hooks.json` | – |
-| anthropics/claude-plugins-official/plugins/feature-dev | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/hookify | 2a8ad9f74633 | rot | `H LB-A02-claude-hooks hooks/hooks.json` | – |
-| anthropics/claude-plugins-official/plugins/mcp-server-dev | 2a8ad9f74633 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/plugin-dev | 2a8ad9f74633 | rot | `H LB-B05-versteckter-text skills/command-development/references/documentation-patterns.md` | – |
-| anthropics/claude-plugins-official/plugins/pr-review-toolkit | 2a8ad9f74633 | gesperrt | `K LB-B09-geheimhaltung agents/silent-failure-hunter.md` | – |
-| anthropics/claude-plugins-official/plugins/ralph-loop | 2a8ad9f74633 | rot | `H LB-A02-claude-hooks hooks/hooks.json` | – |
-| anthropics/claude-plugins-official/plugins/security-guidance | 2a8ad9f74633 | rot | `H LB-A02-claude-hooks hooks/hooks.json`<br>`H ATR-2026-02106 hooks/extensibility.py`<br>`H LB-B14-rechte-umgehen hooks/llm.py` | – |
-| obra/superpowers/skills/brainstorming | 8ca22dba9a94 | rot | `H LB-C01-shell-mit-eingabe scripts/server.cjs` | – |
+| anthropics/skills/skills/webapp-testing | 8a1541c4a3ff | rot | –<br>berechtigt: `K bandit:B602 scripts/with_server.py` | – |
+| anthropics/claude-plugins-official/plugins/agent-sdk-dev | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/claude-md-management | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/code-review | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/code-simplifier | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/commit-commands | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/explanatory-output-style | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/feature-dev | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/hookify | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/mcp-server-dev | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/plugin-dev | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/pr-review-toolkit | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/ralph-loop | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/security-guidance | aa5654b7acb7 | gelb | – | – |
+| obra/superpowers/skills/brainstorming | 8ca22dba9a94 | rot | –<br>berechtigt: `H LB-C01-shell-mit-eingabe scripts/server.cjs` | – |
 | obra/superpowers/skills/executing-plans | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/finishing-a-development-branch | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/receiving-code-review | 8ca22dba9a94 | gelb | – | – |
@@ -110,30 +111,30 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | obra/superpowers/skills/using-git-worktrees | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/writing-plans | 8ca22dba9a94 | gelb | – | – |
 | modelcontextprotocol/python-sdk/examples/servers/simple-auth | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-pagination | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_pagination/server.py` | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-prompt | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_prompt/server.py` | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-resource | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_resource/server.py` | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_streamablehttp/server.py` | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp-stateless | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_streamablehttp_stateless/server.py` | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-tool | 06d1d1e4d210 | rot | `H LB-E04-ohne-anmeldung mcp_simple_tool/server.py` | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-pagination | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-prompt | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-resource | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp-stateless | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-tool | 06d1d1e4d210 | gelb | – | – |
 | modelcontextprotocol/python-sdk/examples/servers/structured-output-lowlevel | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/servers/src/everything | f46d9578190b | rot | `H LB-E04-ohne-anmeldung transports/sse.ts`<br>`H LB-E04-ohne-anmeldung transports/streamableHttp.ts` | – |
+| modelcontextprotocol/servers/src/everything | f46d9578190b | rot | –<br>berechtigt: `H LB-E04-ohne-anmeldung transports/sse.ts`, `H LB-E04-ohne-anmeldung transports/streamableHttp.ts` | – |
 | modelcontextprotocol/servers/src/fetch | f46d9578190b | rot | – | 2 |
 | modelcontextprotocol/servers/src/filesystem | f46d9578190b | gelb | – | – |
 | modelcontextprotocol/servers/src/git | f46d9578190b | rot | – | 3 |
 | modelcontextprotocol/servers/src/memory | f46d9578190b | gelb | – | – |
 | modelcontextprotocol/servers/src/sequentialthinking | f46d9578190b | gelb | – | – |
 | modelcontextprotocol/servers/src/time | f46d9578190b | rot | – | 2 |
-| microsoft/playwright-mcp | f183dad4a529 | rot | `H LB-B14-rechte-umgehen README.md`<br>`H LB-C01-shell-mit-eingabe tests/cli.spec.ts`<br>`H LB-C01-shell-mit-eingabe tests/library.spec.ts`<br>`H LB-D03-namensverwechslung package.json` | – |
+| microsoft/playwright-mcp | f183dad4a529 | gelb | – | – |
 | awslabs/mcp/src/aws-documentation-mcp-server | d80b52d8a889 | rot | – | 2 |
 | awslabs/mcp/src/aws-pricing-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/cloudwatch-mcp-server | d80b52d8a889 | rot | `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json`<br>`H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json` | 2 |
-| awslabs/mcp/src/dynamodb-mcp-server | d80b52d8a889 | rot | `K LB-C12-pfad-ohne-grenze awslabs/dynamodb_mcp_server/server.py`<br>`K LB-C12-pfad-ohne-grenze awslabs/dynamodb_mcp_server/server.py`<br>`K LB-C12-pfad-ohne-grenze awslabs/dynamodb_mcp_server/server.py` | 3 |
-| awslabs/mcp/src/ecs-mcp-server | d80b52d8a889 | gesperrt | `H LB-B14-rechte-umgehen tests/llm_testing/scenarios/04_network_configuration_failure/05_cleanup.sh`<br>`K LB-C04-zugangsdaten-lesen tests/unit/utils/test_path_validation.py`<br>`K LB-C04-zugangsdaten-lesen tests/unit/utils/test_path_validation.py` | 2 |
-| awslabs/mcp/src/eks-mcp-server | d80b52d8a889 | gesperrt | `K LB-C07-persistenz tests/test_path_validation.py`<br>`K LB-C07-persistenz tests/test_path_validation.py` | 2 |
+| awslabs/mcp/src/cloudwatch-mcp-server | d80b52d8a889 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json`, `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json` | 2 |
+| awslabs/mcp/src/dynamodb-mcp-server | d80b52d8a889 | rot | – | 3 |
+| awslabs/mcp/src/ecs-mcp-server | d80b52d8a889 | rot | – | 2 |
+| awslabs/mcp/src/eks-mcp-server | d80b52d8a889 | rot | – | 2 |
 | awslabs/mcp/src/iam-mcp-server | d80b52d8a889 | rot | – | 2 |
 | awslabs/mcp/src/lambda-tool-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/postgres-mcp-server | d80b52d8a889 | rot | `H LB-E09-fremdes-paket kiro_power/mcp.json` | 2 |
+| awslabs/mcp/src/postgres-mcp-server | d80b52d8a889 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket kiro_power/mcp.json` | 2 |
 | awslabs/mcp/src/s3-tables-mcp-server | d80b52d8a889 | rot | – | 2 |
 
 ## Gutartig, eigener Korpus

@@ -174,8 +174,8 @@
 
 | ID | Task | Wer | h |
 |---|---|---|---|
-| S3-1 | Testkorpus: 60 gutartige Pakete (echte offene Skills/MCP-Server mit Lizenz) + 60 **entschärfte** bösartige Nachbildungen (alle Kategorien des Prüfkatalogs, Endpunkte `.invalid`, keine echten Payloads) | Claude | 8 |
-| S3-2 | Benchmark-Skript: Erkennungsrate und Fehlalarm-Quote pro Kategorie → `docs/benchmark.md`, läuft in CI | Claude | 3 |
+| S3-1 | ◐ **(30.09.2026)** Gutartige Seite erledigt: 60 echte Pakete in `corpus/vergleich.json`. Offen: bösartige Seite, bisher 36 Einzeldatei-Nachbildungen aus `corpus/generate.py` statt 60 Pakete. Testkorpus: 60 gutartige Pakete (echte offene Skills/MCP-Server mit Lizenz) + 60 **entschärfte** bösartige Nachbildungen (alle Kategorien des Prüfkatalogs, Endpunkte `.invalid`, keine echten Payloads) | Claude | 8 |
+| S3-2 | ✅ **(30.09.2026)** `scripts/benchmark.sh` (Worker-Image, CI läuft derzeit nicht). Benchmark-Skript: Erkennungsrate und Fehlalarm-Quote pro Kategorie → `docs/benchmark.md`, läuft in CI | Claude | 3 |
 | S3-3 | LLM-Prüfer über mittwald AI Hosting: Anweisungen, Tool-Beschreibungen, „Beschreibung ≠ Verhalten“; strukturierte Ausgabe; Prompt gegen Injection gehärtet (Paketinhalt als Daten markiert) | Claude | 6 |
 | S3-4 | AI-Hosting-Key im mStudio, als Secret hinterlegen | Len | 0,5 |
 | S3-5 | **app.luibui.com – Verlauf:** Note und Befundzahl über die Zeit, Vergleich zweier Prüfungen (neu, behoben, unverändert) | Claude | 4 |

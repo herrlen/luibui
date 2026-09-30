@@ -1607,3 +1607,50 @@ Python 1237 Tests grün; `test_timeout_kills_the_whole_process_group` scheitert 
 Cloud-Sitzung auch ohne diese Änderung (Umgebung, als root), ruff/mypy/eslint/tsc sauber.
 
 **Offen:** Ausrollen mit `scripts/release.sh` (Len, Docker Desktop).
+
+## 2026-09-30 — S3-1 (gutartige Seite) und S3-2: Benchmark
+
+**Was:** `python -m luibui_scan.benchmark` misst Erkennung und Fehlalarme und schreibt
+`docs/benchmark.md`. `scripts/benchmark.sh` führt das im Worker-Image aus, weil nur dort alle
+Scanner installiert sind; Engine und Regeln kommen aus dem Arbeitsbaum. Die OSV-Datenbank liegt im
+Docker-Volume `luibui-benchmark-osv` und wird höchstens täglich mit dem Code des Workers erneuert.
+
+- **Erkennung:** die 36 entschärften Nachbildungen aus `corpus/generate.py` (je Matrix-Zeile eine).
+  Erkannt = erwartete Regel hat angeschlagen *und* die Gesamtampel ist nicht grün.
+- **Fehlalarme:** ein gutartiges Paket mit mindestens einem K- oder H-Befund. `osv:`-Befunde zählen
+  gesondert (eine bekannte Lücke in einer festgelegten Version ist ein Fakt). Nach Prüfung lässt
+  sich eine Regel je Paket in `vergleich.json` unter `berechtigt` (mit Grund) ausnehmen; sie bleibt
+  in der Tabelle sichtbar.
+- **60 echte Pakete** (`corpus/vergleich.json`): 11 Skills aus `anthropics/skills`, 13 Plugins aus
+  `anthropics/claude-plugins-official`, 10 Skills aus `obra/superpowers`, 8 Beispiele aus
+  `modelcontextprotocol/python-sdk`, 7 Server aus `modelcontextprotocol/servers`,
+  `microsoft/playwright-mcp`, 10 Server aus `awslabs/mcp`. Alle MIT oder Apache-2.0; sie werden beim
+  Lauf geholt, nie ins Repo kopiert. Das Worker-Image hat kein git, deshalb holt `--holen` sie
+  vorher auf dem Mac, über `safe_git` mit größeren Grenzen nur für diese feste Liste (60.000
+  Dateien, 1 GB). Stand = jeweils aktueller Standardzweig, der Commit steht in der Tabelle.
+
+**Erster Lauf** (Engine `f2da04b`, 12:45 min):
+- Erkennung 36/36, Code-Ebene 4/4. Aussagekraft gering: eine Datei je Prüfung, vom selben Team wie
+  die Regeln. Steht so auch in `docs/benchmark.md`.
+- Fehlalarme eigener Korpus 0/34.
+- **Fehlalarme echte Pakete 21/60 (35 %), Ziel ≤ 5 %.** Häufigste Ursachen, Stoff für S3-6:
+  - `LB-E04-ohne-anmeldung` (H) bei 7 lokalen Beispielservern aus python-sdk und servers.
+  - `LB-A02-claude-hooks` (H) bei 4 offiziellen Plugins, deren Hooks der eigentliche Zweck sind.
+  - `LB-C04`/`LB-C07` (K) in Testdateien von awslabs (`tests/…/test_path_validation.py`), die
+    genau diese Pfade als Negativbeispiele prüfen; `LB-C12` (K) dreimal in dynamodb.
+  - `LB-B09-geheimhaltung` (K) in `pr-review-toolkit/agents/silent-failure-hunter.md`,
+    `LB-B05`, `LB-B14`, `ATR-2026-02106` in Doku und Hook-Code.
+  - `LB-E09-fremdes-paket` bei mitgelieferten `.mcp.json` mit `npx`/`uvx`.
+  - `bandit:B602` (K) in `webapp-testing/scripts/with_server.py`, `LB-C01` in Tests von
+    playwright-mcp und in `superpowers/brainstorming`, `LB-D03` in playwright-mcp.
+- Fast alle übrigen echten Pakete sind gelb; die M-Befunde dahinter sind noch nicht ausgewertet.
+- A08 (Schadsoftware-Hashliste) lief nicht, die Datenbank ist im Benchmark nicht geladen
+  (Lizenzfrage MalwareBazaar offen).
+
+**Offen:**
+- Bösartige Seite von S3-1: 60 vollständige Pakete statt 36 Einzeldateien. Ein Versuch, sie hier
+  auszuformulieren, wurde vom Sicherheitsfilter des Assistenten abgebrochen; das braucht einen
+  anderen Weg (Len).
+- S3-6: die Fehlalarme oben einzeln bewerten, Regeln anpassen oder begründet in `berechtigt`
+  aufnehmen. Keine Schwelle senken, nur weil Rot schlecht aussieht (E3).
+- „Läuft in CI": das Skript ist bereit, die CI startet derzeit nicht (GitHub-Abrechnung).

@@ -39,7 +39,7 @@ docs/             Konzept, Sprintplanung, Prüfkatalog, ADRs, log.md
 - Tests: `pytest` (Python), `pnpm test` (web)
 - Lint: `ruff check . && ruff format --check . && mypy packages apps/api apps/worker`, `pnpm lint`
 - Engine lokal: `pip install -e packages/engine -e packages/cli && luibui scan corpus/benign/<paket>`
-- Benchmark: `python -m luibui_scan.benchmark corpus/` (ab Sprint 3)
+- Benchmark: `scripts/benchmark.sh` (Worker-Image mit allen Scannern, ~13 min) → `docs/benchmark.md`; nur Fixtures: `--ohne-vergleich`
 
 ## Engine-Konventionen
 - Jeder Analyzer implementiert `analyze(ctx: ScanContext) -> list[Finding]` und ist in der Analyzer-Registry eingetragen.

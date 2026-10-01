@@ -93,6 +93,26 @@ services:
       api:
         condition: service_healthy
 
+  ops:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: apps/ops/Dockerfile
+    image: ${IMAGE_PREFIX:-luibui}/ops:${IMAGE_TAG:-local}
+    environment:
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+      # Empty: no backups, only a warning in the log. A test key from `age-keygen` is enough here.
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:-}
+      HEALTH_URLS: http://api:8000/health,http://web:3000/healthz
+    volumes:
+      - luibui-backup:/backup
+    tmpfs: [/tmp]
+    networks: [backend]
+    mem_limit: 256m
+    depends_on:
+      api:
+        condition: service_healthy
+
   web:
     <<: *hardening
     build:
@@ -116,3 +136,4 @@ volumes:
   luibui-scratch: {}
   luibui-rules: {}
   luibui-projects: {}
+  luibui-backup: {}

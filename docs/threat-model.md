@@ -136,7 +136,7 @@ umgesetzt und getestet wird.
 | # | STRIDE | Bedrohung | Schwere | Gegenmaßnahme | Task |
 |---|---|---|---|---|---|
 | T37 | I | **Volume `luibui-projects` wird gelesen** (Backup-Leck, Fehlkonfiguration) | H | AES-256-GCM, Datenschlüssel pro Projekt, mit `MASTER_KEY` aus ENV verschlüsselt; Test liest Rohdatei und findet keinen Klartext | S2-7 |
-| T38 | I | **`MASTER_KEY`** gerät ins Log, ins Image oder ins Backup | K | Nur ENV, nie im Repo, nie im Image, nie in Logs; Backups des Volumes und des Schlüssels getrennt; Rotationsverfahren dokumentieren | S2-7, S3-10 |
+| T38 | I | **`MASTER_KEY`** gerät ins Log, ins Image oder ins Backup | K | Nur ENV, nie im Repo, nie im Image, nie in Logs; Backups des Volumes und des Schlüssels getrennt; Rotationsverfahren dokumentieren. Datenbank-Backups (S3-10) enthalten ihn nicht und sind mit age an Lens öffentlichen Schlüssel verschlüsselt; der Server kann sie nicht lesen (`docs/restore.md`) | S2-7, S3-10 |
 | T39 | I | **Umgebungsvariablen** werden versehentlich ausgegeben (Debug-Seite, Fehlerseite, `env`-Dump in einem Sitzungsverlauf) | H | Keine Debug-Seiten in Produktion, Settings-Objekt maskiert Secrets in `repr`, Scanner-Subprozesse bekommen eine leere Umgebung | S0-8, S0-9 |
 | T40 | I | **Secrets aus Paketen** landen im Klartext in Bericht, Log oder DB | H | Maskierung (erste 4 Zeichen + `…`) bereits im Analyzer, bevor der Befund die Engine verlässt; Logs enthalten keine Belege | S1-8 |
 | T41 | I | **Scratch bleibt liegen** nach Absturz und ist für den nächsten Job lesbar | H | Scratch pro Job, Löschen im `finally`, beim Start des Workers Aufräumen verwaister Verzeichnisse; Test mit absichtlichem Absturz | S0-9 |

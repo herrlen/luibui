@@ -85,6 +85,25 @@ services:
           memory: 1536m
           cpus: "1.5"
 
+  # Nightly encrypted pg_dump with restore test and health alarm by mail (S3-10, docs/restore.md).
+  # Holds only the age PUBLIC key: it can write backups but never read them.
+  ops:
+    image: ghcr.io/herrlen/luibui/ops:${IMAGE_TAG}
+    description: luibui – Betrieb (Backup, Health-Alarm)
+    environment:
+      DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT}
+      ALARM_AN: ${ALARM_AN}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+    volumes:
+      # mittwald's nightly project backup (01:39, 30 days) copies this volume off the server.
+      - luibui-backup:/backup
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
   web:
     image: ghcr.io/herrlen/luibui/web:${IMAGE_TAG}
     description: luibui – Web (luibui.com, app.luibui.com)
@@ -101,3 +120,4 @@ volumes:
   luibui-scratch: {}
   luibui-rules: {}
   luibui-projects: {}
+  luibui-backup: {}

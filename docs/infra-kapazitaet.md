@@ -10,6 +10,7 @@ Fortgeschrieben nach jedem Deploy (CLAUDE.md, Abschnitt Infrastruktur).
 | Stack | `default` (`b8d0a6a8-83ef-4aba-b785-0b450c0ac551`), Definition in `infra/mittwald-stack.yml` |
 | Images | `ghcr.io/herrlen/luibui/{api,worker,web}:sha-<commit>`, Registry-Zugang `herrlen` (nur `read:packages`, **läuft am 2026-10-26 ab**) |
 | Postgres-Passwort | nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie |
+| Backups | `ops` 01:05 verschlüsselter pg_dump nach `luibui-backup` (14 Stück), mittwald-Projekt-Backup 01:39 (30 Tage), siehe `docs/restore.md` |
 
 | Container | ID | Limit RAM | Limit CPU | Port |
 |---|---|---|---|---|
@@ -17,7 +18,8 @@ Fortgeschrieben nach jedem Deploy (CLAUDE.md, Abschnitt Infrastruktur).
 | api | `c-due8b4` | 512m | – | 8000 |
 | worker | `c-w7jjv1` | 1536m | 1.5 | – |
 | web | `c-k9k9jp` | 384m | – | 3000 |
-| **Summe** | | **3200m** | | |
+| ops (ab S3-10, noch nicht ausgerollt) | – | 256m | – | – |
+| **Summe** | | **3456m** | | |
 
 | Host | Ziel |
 |---|---|

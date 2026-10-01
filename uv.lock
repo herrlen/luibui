@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "luibui",
     "luibui-api",
+    "luibui-ops",
     "luibui-scan",
     "luibui-worker",
     "luibui-workspace",
@@ -791,6 +792,17 @@ requires-dist = [
 dev = [{ name = "httpx2" }]
 
 [[package]]
+name = "luibui-ops"
+version = "0.1.0"
+source = { editable = "apps/ops" }
+dependencies = [
+    { name = "psycopg" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "psycopg", specifier = ">=3.2" }]
+
+[[package]]
 name = "luibui-scan"
 version = "0.1.0"
 source = { editable = "packages/engine" }
@@ -839,6 +851,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "luibui" },
     { name = "luibui-api" },
+    { name = "luibui-ops" },
     { name = "luibui-scan" },
     { name = "luibui-worker" },
 ]
@@ -860,6 +873,7 @@ dev = [
 requires-dist = [
     { name = "luibui", editable = "packages/cli" },
     { name = "luibui-api", editable = "apps/api" },
+    { name = "luibui-ops", editable = "apps/ops" },
     { name = "luibui-scan", editable = "packages/engine" },
     { name = "luibui-worker", editable = "apps/worker" },
 ]

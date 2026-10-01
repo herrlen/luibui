@@ -1688,3 +1688,45 @@ wegen bekannter Lücken aus OSV (gesondert gezählt).
 
 **Offen:** Die Erkennungsquote ist mit 36 Einzeldateien wenig aussagekräftig (S3-1 bösartige
 Seite). Nicht ausgerollt: die Änderungen betreffen die Engine in Produktion, Ausrollen auf Lens Wort.
+
+## 2026-10-01 – S3-10: Backup mit Restore-Test und Health-Alarm (Container `ops`)
+
+**Ausgang:** Es gab kein eigenes Datenbank-Backup. mittwald sichert das Projekt jede Nacht um
+01:39 (30 Tage, laut mittwald inklusive Volumes), aber eine Dateikopie einer laufenden PostgreSQL
+ist nicht verlässlich, und niemand merkte, wenn etwas ausfällt. mittwald-Cronjobs brauchen eine
+App-Installation, luibui hat keine.
+
+**Entscheidungen Len (per Rückfrage, 01.10.):** eigener Container statt im Worker (der verarbeitet
+feindliche Uploads); Verschlüsselung mit Schlüsselpaar, der private Schlüssel bleibt bei Len;
+Alarm an Lens Adresse (als `ALARM_AN` im Stack, nicht im Repo; die Mails enthalten nur Status).
+
+**Was:** neuer Dienst `apps/ops` (Image auf `postgres:17-trixie` mit pg_dump 17, Python, psycopg
+und age aus Debian; keine weiteren Abhängigkeiten), 256 MB.
+- 01:05 Berlin: Lese-Transaktion exportiert ihren Snapshot und zählt die Zeilen jeder Tabelle,
+  `pg_dump --snapshot` sichert genau diesen Stand, Restore in `luibui_restore_test`, Zeilenzahlen
+  müssen gleich sein, dann `age` an den öffentlichen Schlüssel, 14 Dateien in `luibui-backup`.
+  Klartext nur in `/tmp` mit umask 077, im `finally` gelöscht.
+- Alle 5 Minuten api, web (intern) und luibui.com: Alarm nach zwei Fehlschlägen, Entwarnung danach.
+  Alarm auch bei fehlgeschlagenem Backup und wenn das letzte gute Backup älter als 26 h ist.
+- Stack, `docker-compose.yml`, `release.sh` (baut, pusht und lädt `ops` vor; übernimmt
+  `BACKUP_AGE_RECIPIENT`/`ALARM_AN` aus `~/.config/luibui/ops.env` oder dem laufenden Stack),
+  CLAUDE.md (Repo-Struktur, mypy), `docs/restore.md` (Einrichten, Wiederherstellen, Restore-Tests),
+  Bedrohungsmodell T38, Kapazität (Summe 3.456 MB).
+
+**Geprüft:** 16 Tests (Einstellungen, nur echte age-Schlüssel, Alarm-Logik, Zeitplan mit
+Sommer-/Winterzeit, Aufbewahrung; gegen PostgreSQL: Backup mit echtem age und Entschlüsseln,
+abweichender Restore ergibt kein Backup, fehlgeschlagener Dump nennt den Schritt, Testdatenbank
+immer entfernt). Ende-zu-Ende mit dem Image gegen PostgreSQL 17: Backup, Entschlüsseln mit dem
+privaten Testschlüssel, Einspielen in eine frische Datenbank (alle Zeilen da), falscher Schlüssel
+scheitert, kein Klartext in der Datei. Laufender Container: plant 01:05 Berlin, Alarm nach zwei
+Fehlschlägen, sauberes Stoppen. Python 1290 Tests grün, ruff, mypy.
+
+**Offen (Len):**
+1. `age-keygen -o luibui-backup.key`, privaten Schlüssel sichern, öffentlichen Schlüssel und
+   `ALARM_AN` in `~/.config/luibui/ops.env` (Anleitung in `docs/restore.md`).
+2. `scripts/release.sh` ausrollen; danach RAM von `ops` hier und in `docs/infra-kapazitaet.md`.
+3. Nach der ersten Nacht ein echtes Backup holen und lokal einspielen, in `docs/restore.md` eintragen.
+4. `MASTER_KEY` und `POSTGRES_PASSWORD` zusätzlich außerhalb von mittwald sichern.
+
+**Grenze:** `ops` läuft auf demselben Server; fällt der ganze Server aus, kommt keine Mail. Ein
+externer Prüfer (nicht US) wäre der nächste Schritt.

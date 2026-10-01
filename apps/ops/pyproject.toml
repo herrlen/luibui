@@ -1,0 +1,18 @@
+[project]
+name = "luibui-ops"
+version = "0.1.0"
+description = "luibui ops: nightly encrypted database backup with restore test, health alarm by mail"
+requires-python = ">=3.12"
+license = "LicenseRef-Proprietary"
+# Only psycopg: the image installs it from Debian next to pg_dump 17 and age (apps/ops/Dockerfile).
+dependencies = ["psycopg>=3.2"]
+
+[project.scripts]
+luibui-ops = "luibui_ops.main:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["luibui_ops"]

@@ -57,7 +57,7 @@ if ! nc -z 127.0.0.1 55432 2>/dev/null; then
 fi
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy packages apps/api apps/worker
+uv run mypy packages apps/api apps/worker apps/ops
 [[ -n "${LUIBUI_GITLEAKS:-}" ]] || echo "Hinweis: LUIBUI_GITLEAKS nicht gesetzt, gitleaks-Tests werden übersprungen"
 TEST_DATABASE_URL="$TESTDB_URL" uv run pytest -q
 (cd apps/web && pnpm install --frozen-lockfile >/dev/null && pnpm lint && pnpm test && pnpm build >/dev/null)
@@ -67,7 +67,7 @@ schritt "Images bauen ($TAG)"
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 git archive HEAD | tar -x -C "$BUILD"
-for s in api worker; do
+for s in api worker ops; do
   "${DOCKER[@]}" build --platform linux/amd64 -q -f "$BUILD/apps/$s/Dockerfile" \
     --build-arg LUIBUI_VERSION="$TAG" -t "$REGISTRY/$s:$TAG" -t "$REGISTRY/$s:main" "$BUILD"
 done
@@ -77,7 +77,7 @@ done
 # --- 3. Push nach ghcr.io -------------------------------------------------------------------
 schritt "Push nach ghcr.io"
 gh auth token | "${DOCKER[@]}" login ghcr.io -u "$(gh api user -q .login)" --password-stdin >/dev/null
-for s in api worker web; do
+for s in api worker web ops; do
   "${DOCKER[@]}" push -q "$REGISTRY/$s:$TAG"
   "${DOCKER[@]}" push -q "$REGISTRY/$s:main"
 done
@@ -107,6 +107,17 @@ PP_ID="${PAYPAL_CLIENT_ID:-$(env_of api PAYPAL_CLIENT_ID)}"
 PP_SECRET="${PAYPAL_SECRET:-$(env_of api PAYPAL_SECRET)}"
 PP_MODUS="${PAYPAL_MODUS:-$(env_of api PAYPAL_MODUS)}"
 PP_WEBHOOK="${PAYPAL_WEBHOOK_ID:-$(env_of api PAYPAL_WEBHOOK_ID)}"
+# Backup and alarm (S3-10): ~/.config/luibui/ops.env (BACKUP_AGE_RECIPIENT, ALARM_AN) wins over the
+# deployed values. Only the age PUBLIC key goes to the server; the private key stays with Len.
+OPS_DATEI="${HOME}/.config/luibui/ops.env"
+if [[ -f "$OPS_DATEI" ]]; then
+  # shellcheck disable=SC1090
+  set -a; source "$OPS_DATEI"; set +a
+fi
+BACKUP_KEY="${BACKUP_AGE_RECIPIENT:-$(env_of ops BACKUP_AGE_RECIPIENT)}"
+ALARM="${ALARM_AN:-$(env_of ops ALARM_AN)}"
+[[ -n "$BACKUP_KEY" ]] && echo "Backup: eingerichtet" || echo "Hinweis: BACKUP_AGE_RECIPIENT fehlt, es laufen keine Backups (docs/restore.md)"
+[[ -n "$ALARM" ]] || echo "Hinweis: ALARM_AN fehlt, Alarme stehen nur im Log des ops-Containers"
 [[ -n "$PP_ID" && -n "$PP_SECRET" ]] && echo "PayPal: eingerichtet (${PP_MODUS:-live})" || echo "Hinweis: PayPal nicht eingerichtet, Guthaben-Grenzen sind aus"
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt, das Kontaktformular antwortet mit 503"
 {
@@ -120,8 +131,10 @@ PP_WEBHOOK="${PAYPAL_WEBHOOK_ID:-$(env_of api PAYPAL_WEBHOOK_ID)}"
   printf 'PAYPAL_SECRET=%s\n' "$PP_SECRET"
   printf 'PAYPAL_MODUS=%s\n' "${PP_MODUS:-live}"
   printf 'PAYPAL_WEBHOOK_ID=%s\n' "$PP_WEBHOOK"
+  printf 'BACKUP_AGE_RECIPIENT=%s\n' "$BACKUP_KEY"
+  printf 'ALARM_AN=%s\n' "$ALARM"
 } >"$ENVFILE"
-unset STATE PG MK SMTP PP_ID PP_SECRET PP_WEBHOOK
+unset STATE PG MK SMTP PP_ID PP_SECRET PP_WEBHOOK BACKUP_KEY ALARM
 echo "Annahme offen: ${ANNAHME:-false}"
 
 # Pull the new images onto the server while the old containers still serve. Each helper runs
@@ -133,7 +146,7 @@ vorladen_weg() {
     | while read -r id; do mw container delete "$id" -p "$PROJECT" --force >/dev/null 2>&1 || true; done
 }
 vorladen_weg
-for s in api worker web; do
+for s in api worker web ops; do
   start=$SECONDS
   if mw container run -q -p "$PROJECT" --name "vorladen-$s" --entrypoint true \
     --description "luibui – Image vorladen, wird gleich gelöscht" "$REGISTRY/$s:$TAG" >/dev/null 2>&1; then
@@ -187,5 +200,5 @@ luecke() {
 echo "Unterbrechung: Web $(luecke 2) s, API $(luecke 3) s"
 [[ $neu == 1 ]] || fehler "Nach 5 Minuten läuft nicht überall $TAG, bitte Container-Logs ansehen"
 curl -s https://api.luibui.com/health; echo
-mw stack ps -s "$STACK" 2>&1 | grep -E "^(api|worker|web)" | awk '{print $1, $2}'
+mw stack ps -s "$STACK" 2>&1 | grep -E "^(api|worker|web|ops)" | awk '{print $1, $2}'
 echo "Ausgerollt: $SHA"

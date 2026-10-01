@@ -25,6 +25,7 @@ Maßgebliche Dokumente, vor jeder Architekturentscheidung lesen:
 apps/web          Next.js 15, TypeScript, Tailwind – luibui.com (öffentlich) und app.luibui.com (Entwicklerbereich), getrennt per Host-Middleware
 apps/api          FastAPI, SQLAlchemy 2, Alembic – Auth, Projekte, verschlüsselte Dateiablage, Annahme, Berichte, Register
 apps/worker       Job-Loop (Postgres SKIP LOCKED), ruft packages/engine
+apps/ops          Betrieb: nächtlicher verschlüsselter pg_dump mit Restore-Test, Health-Alarm per Mail (docs/restore.md)
 packages/engine   luibui-scan: Pipeline, Analyzer, Bewertung, Bericht (pip-installierbar, auch von der CLI genutzt)
 packages/cli      luibui: scan, init, lint, publish, install, audit
 rules/            eigene Regeln (YAML/YARA/Opengrep) – jede Regel mit Testfällen
@@ -37,7 +38,7 @@ docs/             Konzept, Sprintplanung, Prüfkatalog, ADRs, log.md
 ## Befehle
 - Lokal starten: `docker compose -f infra/docker-compose.yml up --build`
 - Tests: `pytest` (Python), `pnpm test` (web)
-- Lint: `ruff check . && ruff format --check . && mypy packages apps/api apps/worker`, `pnpm lint`
+- Lint: `ruff check . && ruff format --check . && mypy packages apps/api apps/worker apps/ops`, `pnpm lint`
 - Engine lokal: `pip install -e packages/engine -e packages/cli && luibui scan corpus/benign/<paket>`
 - Benchmark: `scripts/benchmark.sh` (Worker-Image mit allen Scannern, ~13 min) → `docs/benchmark.md`; nur Fixtures: `--ohne-vergleich`
 

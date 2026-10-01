@@ -1,5 +1,5 @@
 import { datum, datumZeit, FREIGABE_TEXT, SCHWERE_TEXT, UMFANG_TEXT } from "@/lib/format";
-import type { Bericht } from "@/lib/types";
+import type { BefundStatus, Bericht } from "@/lib/types";
 
 import { Ampel } from "../Ampel";
 import { Abdeckung } from "./Abdeckung";
@@ -16,7 +16,18 @@ const SCAN_ART: Record<string, string> = {
  * One report, as the developer area and the landing page show it. ``showDsgvo={false}`` hides the
  * DSGVO light and every DSGVO finding; the overall light then follows the security axis only.
  */
-export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht; showDsgvo?: boolean }) {
+export function ReportView({
+  bericht: b,
+  showDsgvo = true,
+  status,
+  projektId,
+}: {
+  bericht: Bericht;
+  showDsgvo?: boolean;
+  /** Developer area, project check: status per fingerprint, changeable on each card (S3-7). */
+  status?: Record<string, BefundStatus>;
+  projektId?: string;
+}) {
   const befunde = showDsgvo ? b.befunde : b.befunde.filter((x) => x.achse !== "dsgvo");
   const gesamt = showDsgvo ? b.ampeln.gesamt : b.ampeln.sicherheit;
   const sortiert = REIHENFOLGE.flatMap((s) => befunde.filter((x) => x.schwere === s));
@@ -97,7 +108,13 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
               .join(", ")}
           </p>
           {sortiert.map((x, i) => (
-            <BefundKarte key={`${x.rule_id}-${x.datei}-${i}`} b={x} offen={i === 0} />
+            <BefundKarte
+              key={`${x.rule_id}-${x.datei}-${i}`}
+              b={x}
+              offen={i === 0}
+              status={x.fingerprint ? status?.[x.fingerprint] : undefined}
+              projektId={projektId}
+            />
           ))}
         </section>
       ) : (

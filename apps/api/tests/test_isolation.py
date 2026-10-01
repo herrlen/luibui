@@ -9,6 +9,7 @@ from typing import Any
 from .conftest import Api
 from .test_guthaben import FakePayPal, api_bezahlt, bestaetigt, einzel, kaufen, pp  # noqa: F401
 from .test_scans import project, upload_zip
+from .test_uebersicht import _befund, _fertig
 
 ERLAUBT = {404}
 """Foreign resources look like missing ones (CLAUDE.md rule 9)."""
@@ -16,9 +17,16 @@ OEFFENTLICH = {"/api/v1/geteilt/{token}"}
 """Public by design: the random link token itself is the permission (S2-12, test_teilen.py)."""
 
 
-def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
+def _ids_von_a(a: Any, paypal: FakePayPal, url: str) -> dict[str, list[str]]:
     pid = project(a)
     scan = upload_zip(a, pid).json()["id"]
+    _fertig(url, scan, [_befund("H", "hoch", "a")])  # a finished check with one finding
+    fp = "a" * 64
+    einspruch = a.post(
+        f"/api/v1/projects/{pid}/befunde/{fp}/status",
+        json={"status": "bestritten", "begruendung": "Fehlalarm aus der Doku"},
+    )
+    assert einspruch.status_code == 200, einspruch.text
     einzelpruefung = einzel(a).json()["id"]
     token = a.post("/api/v1/tokens", json={"name": "ci"}).json()["id"]
     kaufen(a, paypal)
@@ -30,16 +38,29 @@ def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
         "token_id": [token],
         "payment_id": [beleg["id"]],
         "version_id": [version["id"]],
+        "fingerprint": [fp],
+        "einspruch_id": [_einspruch_id(url)],
     }
+
+
+def _einspruch_id(url: str) -> str:
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        (row,) = conn.execute(text("SELECT id FROM finding_status")).fetchall()
+    engine.dispose()
+    return str(row[0])
 
 
 def test_user_b_reaches_nothing_of_user_a_on_any_route(
     api_bezahlt: Api,  # noqa: F811
     pp: FakePayPal,  # noqa: F811
+    _migrated: str,
 ) -> None:
     a = bestaetigt(api_bezahlt, "a@luibui.example")
     b = bestaetigt(api_bezahlt, "b@luibui.example")
-    ids = _ids_von_a(a, pp)
+    ids = _ids_von_a(a, pp, _migrated)
     routen = b.get("/openapi.json").json()["paths"]
     geprueft = []
     for pfad, operationen in routen.items():

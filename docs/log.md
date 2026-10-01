@@ -1730,3 +1730,35 @@ Fehlschlägen, sauberes Stoppen. Python 1290 Tests grün, ruff, mypy.
 
 **Grenze:** `ops` läuft auf demselben Server; fällt der ganze Server aus, kommt keine Mail. Ein
 externer Prüfer (nicht US) wäre der nächste Schritt.
+
+## 2026-10-01 – S3-7: Befund-Status und Moderation von Einsprüchen
+
+**Was:** Im Entwicklerbereich hat jeder Befund einer Projekt-Prüfung jetzt einen Status.
+- **Offen, akzeptiert, bestritten:** am Befund setzbar (aufgeklappte Karte). Akzeptieren und
+  Bestreiten brauchen eine Begründung (5 bis 2.000 Zeichen). Der Status hängt am Fingerprint im
+  Projekt und gilt damit auch für die nächste Prüfung. Nur Befunde der letzten fertigen Prüfung
+  lassen sich ändern. Der Bericht selbst bleibt unverändert; Ampel und Note ändern sich nicht.
+- **Behoben:** nie von Hand. Ein Befund der vorigen Prüfung desselben Projekts, der jetzt fehlt,
+  steht unter „Seit der letzten Prüfung behoben“ am Bericht.
+- **Einspruch:** „bestritten“ landet unter `app.luibui.com/admin/einsprueche` (nur `is_admin`,
+  sonst 404, Menüpunkt nur für Admins). Gezeigt werden Regel, Titel, Ort und die Begründung,
+  nicht der Bericht und keine Dateien; die Angaben werden beim Setzen in `finding_status` kopiert
+  (Migration `0005`). Entscheidung „Fehlalarm, Regel anpassen“ oder „Befund bleibt (vom Autor
+  bestritten)“; der Autor sieht sie am Befund. Jeder Aufruf und jede Entscheidung im Audit-Log
+  (nur Metadaten). Ein erneuter Einspruch setzt die Entscheidung zurück.
+- Übersicht und Projektliste zählen akzeptierte und bestrittene Befunde wie bisher nicht als offen.
+
+**Sicherheit:** Begründungen sind Text und werden escaped angezeigt (geprüft mit `<script>` und
+`<b>`). Beim Status-Setzen wird der Besitz geprüft, bevor der Inhalt der Anfrage gelesen wird, damit
+fremde Projekte auch ohne gültige Angaben 404 liefern. Der Isolationstest kennt die neuen
+Parameter (`fingerprint`, `einspruch_id`).
+
+**Geprüft:** 5 API-Tests (Begründungspflicht, Übersicht, nur aktuelle Befunde, „behoben“ und
+Übernahme in die nächste Prüfung, Moderation inkl. 404 für Nichtadmins und Audit-Log),
+Isolationstest, Migrationstest; 2 Web-Tests (Anzeige im Entwicklerbereich, nie auf öffentlichen
+Seiten). Lokal mit API, Worker und Website: echte Prüfung mit 3 K-Befunden, Einspruch im Browser,
+Übersicht zählt 2 offene, Moderationsseite als Nutzer 404 und als Admin 200, Entscheidung
+erscheint im Bericht. Python 1295 Tests, Web 38 Tests grün, ruff, mypy, eslint.
+
+**Offen:** Len als Admin eintragen (`UPDATE users SET is_admin = true WHERE email = …` im
+postgres-Container, nach dem Ausrollen). Mail an Len bei neuem Einspruch wäre eine Ergänzung.

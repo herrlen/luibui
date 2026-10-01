@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from luibui_api import errors
 from luibui_api.routes import (
     auth,
+    befunde,
     guthaben,
     health,
     kontakt,
@@ -38,4 +39,5 @@ def create_app() -> FastAPI:
     app.include_router(guthaben.router)
     app.include_router(konto.router)
     app.include_router(teilen.router)
+    app.include_router(befunde.router)
     return app

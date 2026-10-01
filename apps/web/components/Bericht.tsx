@@ -1,8 +1,9 @@
-import { datumZeit, STATUS_TEXT } from "@/lib/format";
-import type { ScanStatus } from "@/lib/types";
+import { datumZeit, SCHWERE_TEXT, STATUS_TEXT } from "@/lib/format";
+import type { BehobenerBefund, ScanStatus } from "@/lib/types";
 
 import { Aktualisieren } from "./Aktualisieren";
 import { Teilen } from "./app/Teilen";
+import { SCHWERE_STIL } from "./report/BefundKarte";
 import { ReportView } from "./report/ReportView";
 
 /** PDFs come straight from the API (same host, the session cookie goes along); the rest is built here. */
@@ -25,6 +26,30 @@ export function downloadUrl(scanId: string, d: (typeof DOWNLOADS)[number], wo: D
   const api = wo === "bereich" ? "/api/v1/scans" : "/api/v1/quickscans";
   if ("format" in d) return `${seite}/${id}/bericht.${d.format}`;
   return `${api}/${id}/bericht.pdf${d.pfad === "pdf-detail" ? "?umfang=detail" : ""}`;
+}
+
+/** Findings of the previous check of this project that this check no longer has (S3-7). */
+function Behoben({ liste }: { liste: BehobenerBefund[] }) {
+  return (
+    <section aria-labelledby="behoben" className="rounded-[14px] border border-linie bg-surface p-5">
+      <h2 id="behoben" className="font-display text-lg font-bold">
+        Seit der letzten Prüfung behoben: {liste.length}
+      </h2>
+      <ul className="mt-3 flex flex-col gap-2 text-sm">
+        {liste.map((x) => (
+          <li key={x.fingerprint} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${SCHWERE_STIL[x.schwere] ?? ""}`}>
+              {SCHWERE_TEXT[x.schwere] ?? x.schwere}
+            </span>
+            <span className="font-medium">{x.titel}</span>
+            <span className="break-all font-mono text-xs text-muted">
+              {x.datei ? `${x.datei}${x.zeile ? `:${x.zeile}` : ""}` : "ganzes Paket"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 /** `downloads`: only where /pruefungen/<id>/bericht.* or /schnellscan/<id>/bericht.csv exists. */
@@ -50,7 +75,12 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
       ) : null}
       {b ? (
         <>
-          <ReportView bericht={b} />
+          <ReportView
+            bericht={b}
+            status={downloads === "bereich" ? scan.befund_status : undefined}
+            projektId={downloads === "bereich" ? (scan.project_id ?? undefined) : undefined}
+          />
+          {downloads === "bereich" && scan.behoben?.length ? <Behoben liste={scan.behoben} /> : null}
           <p className="text-sm text-muted">
             {b.paket.dateien ?? "?"} Dateien · geprüft am {datumZeit(b.geprueft_am)} · Engine {b.engine_version}
           </p>

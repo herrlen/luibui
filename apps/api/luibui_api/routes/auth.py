@@ -77,6 +77,8 @@ class Ich(BaseModel):
     email: str
     totp_aktiv: bool
     email_bestaetigt: bool
+    admin: bool = False
+    """Shows the moderation view in the menu; the API checks it again on every admin route."""
 
 
 def _ich(user: User) -> Ich:
@@ -85,6 +87,7 @@ def _ich(user: User) -> Ich:
         email=user.email,
         totp_aktiv=user.totp_confirmed_at is not None,
         email_bestaetigt=user.email_verified_at is not None,
+        admin=user.is_admin,
     )
 
 

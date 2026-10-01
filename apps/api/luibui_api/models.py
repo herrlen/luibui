@@ -286,9 +286,26 @@ class FindingStatus(Base):
         ForeignKey("users.id", ondelete="SET NULL")
     )
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    # What the finding was, copied when the status is set: the moderation view shows this instead
+    # of reading the owner's report (rule 9). Package text, rendered as plain text only.
+    rule_id: Mapped[str | None] = mapped_column(String(200))
+    titel: Mapped[str | None] = mapped_column(Text)
+    datei: Mapped[str | None] = mapped_column(Text)
+    zeile: Mapped[int | None]
+    # Outcome of a dispute (Konzept §5): "fehlalarm" (rule adjusted) or "bestritten" (stays
+    # disputed by the author). Empty while it waits; reset when the author disputes again.
+    moderation: Mapped[str | None] = mapped_column(String(20))
+    moderiert_am: Mapped[datetime | None]
+    moderiert_von: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
 
     __table_args__ = (
         UniqueConstraint("project_id", "fingerprint"),
+        CheckConstraint(
+            "moderation IS NULL OR moderation IN ('fehlalarm', 'bestritten')",
+            name="moderation_werte",
+        ),
         CheckConstraint(
             "status NOT IN ('akzeptiert', 'bestritten') OR begruendung IS NOT NULL",
             name="begruendung_required",

@@ -30,8 +30,11 @@ async function abmelden() {
   window.location.assign("/anmelden");
 }
 
-export function Hauptleiste({ email }: { email: string }) {
+export function Hauptleiste({ email, admin = false }: { email: string; admin?: boolean }) {
   const pfad = usePathname();
+  const bereiche = admin
+    ? [...BEREICHE, { href: "/admin/einsprueche", text: "Einsprüche", aktiv: (p: string) => p.startsWith("/admin") }]
+    : BEREICHE;
   return (
     <aside className="flex flex-col bg-ink text-white print:hidden lg:sticky lg:top-0 lg:h-screen">
       <Link href="/" className="flex items-center gap-2.5 px-5 pb-2 pt-5 lg:pb-6 lg:pt-6">
@@ -40,7 +43,7 @@ export function Hauptleiste({ email }: { email: string }) {
       </Link>
       <nav aria-label="Bereiche" className="overflow-x-auto px-3 pb-3 lg:pb-0">
         <ul className="flex gap-1 lg:flex-col">
-          {BEREICHE.map((b) => {
+          {bereiche.map((b) => {
             const aktiv = b.aktiv(pfad);
             return (
               <li key={b.href}>

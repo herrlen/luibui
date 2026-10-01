@@ -55,3 +55,42 @@ describe("report downloads", () => {
     expect(links(renderToStaticMarkup(<Bericht scan={SCAN} />))).toEqual([]);
   });
 });
+
+describe("finding status in the developer area (S3-7)", () => {
+  const b = beispielbericht();
+  const fp = "f".repeat(64);
+  const mitFp = { ...b, befunde: b.befunde.map((x, i) => (i === 0 ? { ...x, fingerprint: fp } : x)) };
+  const projektScan: ScanStatus = {
+    ...SCAN,
+    scan_art: "intensiv",
+    project_id: "11111111-1111-1111-1111-111111111111",
+    bericht: mitFp,
+    befund_status: {
+      [fp]: {
+        fingerprint: fp,
+        status: "bestritten",
+        begruendung: "<script>alert(1)</script> nur Doku",
+        moderation: null,
+        updated_at: "2026-10-01T08:00:00Z",
+      },
+    },
+    behoben: [{ fingerprint: "e".repeat(64), rule_id: "LB-B01-x", schwere: "H", titel: "Alter Befund", datei: "a.md", zeile: 3 }],
+  };
+
+  it("shows the status, the reason as text, the form and what was fixed", () => {
+    const html = renderToStaticMarkup(<Bericht scan={projektScan} downloads="bereich" />);
+    expect(html).toContain("Bestritten, wird geprüft");
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt; nur Doku");
+    expect(html).not.toContain("<script>alert(1)");
+    expect(html).toContain("Status speichern");
+    expect(html).toContain("Seit der letzten Prüfung behoben: 1");
+    expect(html).toContain("Alter Befund");
+  });
+
+  it("never offers the status on public pages", () => {
+    const html = renderToStaticMarkup(<Bericht scan={projektScan} downloads="schnellscan" />);
+    expect(html).not.toContain("Status speichern");
+    expect(html).not.toContain("Bestritten");
+    expect(html).not.toContain("Seit der letzten Prüfung behoben");
+  });
+});

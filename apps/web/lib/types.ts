@@ -54,6 +54,10 @@ export type ScanStatus = {
   bericht: Bericht | null;
   /** A share link is active (S2-12). */
   geteilt?: boolean;
+  /** Owner view of a project check (S3-7): status per fingerprint. */
+  befund_status?: Record<string, BefundStatus>;
+  /** Owner view of a project check: findings of the previous check that are gone now. */
+  behoben?: BehobenerBefund[];
 };
 
 export type Pruefungskurz = {
@@ -103,7 +107,37 @@ export type OffenerBefund = {
   zeile: number | null;
 };
 
-export type Ich = { id: string; email: string; totp_aktiv: boolean; email_bestaetigt: boolean };
+export type Ich = { id: string; email: string; totp_aktiv: boolean; email_bestaetigt: boolean; admin?: boolean };
+
+/** Status of a finding within a project (S3-7). "behoben" is derived, never set by hand. */
+export type BefundStatus = {
+  fingerprint: string;
+  status: "offen" | "behoben" | "akzeptiert" | "bestritten";
+  begruendung: string | null;
+  moderation: "fehlalarm" | "bestritten" | null;
+  updated_at: string;
+};
+
+export type BehobenerBefund = {
+  fingerprint: string;
+  rule_id: string;
+  schwere: string;
+  titel: string;
+  datei: string | null;
+  zeile: number | null;
+};
+
+export type Einspruch = {
+  id: string;
+  rule_id: string | null;
+  titel: string | null;
+  datei: string | null;
+  zeile: number | null;
+  begruendung: string | null;
+  updated_at: string;
+  moderation: "fehlalarm" | "bestritten" | null;
+  moderiert_am: string | null;
+};
 
 export type Fehler = { code: string; text: string; pfad?: string | null; felder?: string[] };
 

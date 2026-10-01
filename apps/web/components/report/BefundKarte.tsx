@@ -3,9 +3,10 @@
 import { useId, useState } from "react";
 
 import { SCHWERE_TEXT } from "@/lib/format";
-import type { Befund } from "@/lib/types";
+import type { Befund, BefundStatus } from "@/lib/types";
 
 import { Kopieren } from "../Kopieren";
+import { BefundStatusSetzen, statusText } from "./BefundStatus";
 
 // Everything from the package (title, path, evidence) is rendered as plain text; React escapes it.
 // Never dangerouslySetInnerHTML, never Markdown (CLAUDE.md rule 6).
@@ -38,8 +39,20 @@ export function MitCode({ text }: { text: string }) {
   );
 }
 
-export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }) {
+/** ``projektId``: developer area, the status can be changed (S3-7). */
+export function BefundKarte({
+  b,
+  offen = false,
+  status,
+  projektId,
+}: {
+  b: Befund;
+  offen?: boolean;
+  status?: BefundStatus;
+  projektId?: string;
+}) {
   const [auf, setAuf] = useState(offen);
+  const label = statusText(status);
   const id = useId();
   return (
     <article className="rounded-[14px] border border-linie bg-surface">
@@ -55,6 +68,9 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
             {SCHWERE_TEXT[b.schwere]}
           </span>
           <span className="min-w-0 flex-1 text-base font-semibold">{b.titel}</span>
+          {label ? (
+            <span className="rounded-md border border-linie-stark px-2 py-0.5 text-xs font-medium text-ink-2">{label}</span>
+          ) : null}
           <span aria-hidden="true" className="text-lg leading-none text-muted sm:order-last">
             {auf ? "−" : "+"}
           </span>
@@ -91,6 +107,15 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
               <Kopieren text={b.fix_prompt} label="Fix-Prompt kopieren" />
             </div>
           </div>
+        ) : null}
+        {status?.begruendung && status.status !== "offen" ? (
+          <p className="mt-3 text-sm">
+            <span className="font-semibold">Begründung: </span>
+            {status.begruendung}
+          </p>
+        ) : null}
+        {projektId && b.fingerprint ? (
+          <BefundStatusSetzen projektId={projektId} fingerprint={b.fingerprint} status={status} />
         ) : null}
       </div>
     </article>

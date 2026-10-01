@@ -1768,6 +1768,9 @@ deckt die neuen Routen ab, 4 Komponententests (Escaping der Begründung). Der be
 Formular-Test fand ein fehlendes `method="post"`. Python 1303 grün, ruff, mypy, Web 40 grün,
 Lint, Build. **Nicht im Browser angesehen.**
 
+**Ausgerollt** am 01.10., 21:43, zusammen mit S3-10 (`f0ed830`, Migration `0005` gelaufen, Backup-
+Schlüssel und `ALARM_AN` gesetzt, ohne messbare Unterbrechung).
+
 **Offen:**
 1. Moderator einrichten (Len): `UPDATE users SET is_admin = true WHERE email = '…';` in der
    Produktionsdatenbank. Es gibt bewusst keine Oberfläche dafür.

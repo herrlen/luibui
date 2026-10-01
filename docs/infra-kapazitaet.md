@@ -325,3 +325,8 @@ wenn `kill` den schon beendeten Messprozess nicht mehr findet. Behoben mit `|| t
 
 cgroup nach `8ee4840` (S3-6): api 84 MiB (Spitze 122); worker 64 MiB (Spitze 64); web 113 MiB
 (Spitze 113). Logs ohne Fehler, keine `vorladen-`-Container übrig. Unterbrechung Web 7,2 s, API 9,4 s.
+
+cgroup nach `f0ed830` (S3-10, S3-7, neuer Container `ops`): api 85 MiB (Spitze 122); worker 57 MiB
+(Spitze 57); web 174 MiB (Spitze 190); ops 33 MiB (Spitze 35, Limit 256 MB). Migration `0005`
+gelaufen, Logs ohne Fehler, `ops` plant das erste Backup für 01:05 Berlin. Unterbrechung Web 0,0 s,
+API 0,0 s. `mw container exec` braucht `MITTWALD_SSH_IDENTITY_FILE=~/.ssh/luibui_mittwald_ed25519`.

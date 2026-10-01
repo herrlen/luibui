@@ -56,3 +56,17 @@ export const STATUS_TEXT: Record<string, string> = {
   fertig: "fertig",
   fehlgeschlagen: "fehlgeschlagen",
 };
+
+/** S3-7: the status of a finding as the owner set it, or as the next check found it. */
+export const BEFUND_STATUS_TEXT: Record<string, string> = {
+  offen: "Offen",
+  behoben: "Behoben",
+  akzeptiert: "Akzeptiert",
+  bestritten: "Bestritten",
+};
+
+/** luibui's decision on a dispute (Konzept §6). */
+export const MODERATION_TEXT: Record<string, string> = {
+  bestritten: "Vom Autor bestritten",
+  fehlalarm: "Fehlalarm, Regel angepasst",
+};

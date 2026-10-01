@@ -1,5 +1,5 @@
 import { datum, datumZeit, FREIGABE_TEXT, SCHWERE_TEXT, UMFANG_TEXT } from "@/lib/format";
-import type { Bericht } from "@/lib/types";
+import type { Bericht, BefundStatus } from "@/lib/types";
 
 import { Ampel } from "../Ampel";
 import { Abdeckung } from "./Abdeckung";
@@ -16,10 +16,24 @@ const SCAN_ART: Record<string, string> = {
  * One report, as the developer area and the landing page show it. ``showDsgvo={false}`` hides the
  * DSGVO light and every DSGVO finding; the overall light then follows the security axis only.
  */
-export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht; showDsgvo?: boolean }) {
+export function ReportView({
+  bericht: b,
+  showDsgvo = true,
+  befundStatus,
+  scanId,
+}: {
+  bericht: Bericht;
+  showDsgvo?: boolean;
+  /** S3-7: with ``scanId`` the owner can change it; lights and grade stay as the check found them. */
+  befundStatus?: Record<string, BefundStatus> | null;
+  scanId?: string;
+}) {
   const befunde = showDsgvo ? b.befunde : b.befunde.filter((x) => x.achse !== "dsgvo");
   const gesamt = showDsgvo ? b.ampeln.gesamt : b.ampeln.sicherheit;
   const sortiert = REIHENFOLGE.flatMap((s) => befunde.filter((x) => x.schwere === s));
+  const erledigt = sortiert.filter(
+    (x) => x.fingerprint && (befundStatus?.[x.fingerprint]?.status ?? "offen") !== "offen",
+  ).length;
   const ohneDsgvo = (liste: string[]) => (showDsgvo ? liste : liste.filter((t) => !t.startsWith("DSGVO")));
   const abdeckung = b.abdeckung?.map((a) => ({ ...a, geprueft: ohneDsgvo(a.geprueft), offen: ohneDsgvo(a.offen) }));
   return (
@@ -95,9 +109,16 @@ export function ReportView({ bericht: b, showDsgvo = true }: { bericht: Bericht;
               .filter(([, n]) => n > 0)
               .map(([s, n]) => `${n} ${SCHWERE_TEXT[s]}`)
               .join(", ")}
+            {erledigt ? ` · ${erledigt} davon akzeptiert, bestritten oder behoben` : ""}
           </p>
           {sortiert.map((x, i) => (
-            <BefundKarte key={`${x.rule_id}-${x.datei}-${i}`} b={x} offen={i === 0} />
+            <BefundKarte
+              key={`${x.rule_id}-${x.datei}-${i}`}
+              b={x}
+              offen={i === 0}
+              status={x.fingerprint ? befundStatus?.[x.fingerprint] : undefined}
+              scanId={befundStatus ? scanId : undefined}
+            />
           ))}
         </section>
       ) : (

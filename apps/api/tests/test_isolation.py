@@ -4,6 +4,7 @@ The routes come from the app's OpenAPI schema, so a new route with a resource ID
 automatically. A path parameter this test does not know fails the test until it is added below.
 """
 
+import uuid
 from typing import Any
 
 from .conftest import Api
@@ -30,6 +31,8 @@ def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
         "token_id": [token],
         "payment_id": [beleg["id"]],
         "version_id": [version["id"]],
+        # Moderation: without is_admin the routes do not exist; any ID will do.
+        "einspruch_id": [str(uuid.uuid4())],
     }
 
 

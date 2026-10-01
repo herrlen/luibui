@@ -15,6 +15,7 @@ from luibui_api.audit import audit
 from luibui_api.auth import AnnahmeOffen, CurrentCaller, DbSession, get_owned
 from luibui_api.models import CreditEntry, Project, Scan
 from luibui_api.pdf import bericht_als_pdf, dateiname
+from luibui_api.routes.befunde import BefundStatus, status_for_scan
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, ablesen, create_scan
 from luibui_scan.intake import DEFAULT_LIMITS
@@ -43,6 +44,8 @@ class ScanStatus(BaseModel):
     """The full report (spec/report.schema.json) once the scan is finished."""
     geteilt: bool = False
     """Whether a share link is active (S2-12)."""
+    befund_status: dict[str, BefundStatus] | None = None
+    """Status per finding fingerprint, only for the owner's checks in a project (S3-7)."""
 
 
 def scan_status_of(scan: Scan) -> ScanStatus:
@@ -170,7 +173,10 @@ async def scan_starten(
 
 @router.get("/api/v1/scans/{scan_id}")
 def scan_status(scan_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> ScanStatus:
-    return scan_status_of(get_owned(db, Scan, scan_id, caller))
+    scan = get_owned(db, Scan, scan_id, caller)
+    out = scan_status_of(scan)
+    out.befund_status = status_for_scan(db, scan)
+    return out
 
 
 @router.get(

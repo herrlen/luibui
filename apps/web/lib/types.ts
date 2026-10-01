@@ -54,7 +54,38 @@ export type ScanStatus = {
   bericht: Bericht | null;
   /** A share link is active (S2-12). */
   geteilt?: boolean;
+  /** Status per finding fingerprint; only for the owner's checks in a project (S3-7). */
+  befund_status?: Record<string, BefundStatus> | null;
 };
+
+export type BefundStatusWert = "offen" | "behoben" | "akzeptiert" | "bestritten";
+
+/** S3-7. Never changes lights or grade; ``moderation`` is luibui's decision on a dispute. */
+export type BefundStatus = {
+  status: BefundStatusWert;
+  begruendung: string | null;
+  geaendert_am: string;
+  moderation: "bestritten" | "fehlalarm" | null;
+  moderation_notiz: string | null;
+  moderiert_am: string | null;
+};
+
+export type Einspruch = {
+  id: string;
+  projekt: string;
+  rule_id: string;
+  schwere: Schwere | null;
+  titel: string;
+  datei: string | null;
+  zeile: number | null;
+  begruendung: string | null;
+  eingereicht_am: string;
+  moderation: "bestritten" | "fehlalarm" | null;
+  moderation_notiz: string | null;
+  moderiert_am: string | null;
+};
+
+export type EinspruchDetail = Einspruch & { erklaerung: string | null; beleg: string | null };
 
 export type Pruefungskurz = {
   id: string;
@@ -103,7 +134,14 @@ export type OffenerBefund = {
   zeile: number | null;
 };
 
-export type Ich = { id: string; email: string; totp_aktiv: boolean; email_bestaetigt: boolean };
+export type Ich = {
+  id: string;
+  email: string;
+  totp_aktiv: boolean;
+  email_bestaetigt: boolean;
+  /** Moderation of disputed findings is open to this user (S3-7). */
+  moderation?: boolean;
+};
 
 export type Fehler = { code: string; text: string; pfad?: string | null; felder?: string[] };
 

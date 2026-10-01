@@ -129,7 +129,7 @@ umgesetzt und getestet wird.
 | T33 | S | **Credential Stuffing**, schwache Passwörter | M | Argon2, Rate-Limit am Login, TOTP, Prüfung gegen Liste häufiger Passwörter (lokal, nicht HIBP-API) | S2-6 |
 | T34 | T | **CSRF** gegen app.luibui.com | M | `SameSite=Lax` plus CSRF-Token bzw. `Origin`-Prüfung für zustandsändernde Anfragen | S2-6 |
 | T35 | S, T | **Gefälschte Webhooks** lösen Prüfungen aus oder überschreiben Versionen | M | HMAC-Signatur pro Projekt, konstante Vergleichszeit, Replay-Schutz über Zeitstempel/Delivery-ID | S5-8 |
-| T36 | R | Admin sieht Projekt-Dateien **ohne Spur** | M | Admin-Zugriff nur über eigenen Pfad, jeder Zugriff im Audit-Log (nur Metadaten) | S2-7 |
+| T36 | R | Admin sieht Projekt-Dateien **ohne Spur** | M | Admin-Zugriff nur über eigenen Pfad, jeder Zugriff im Audit-Log (nur Metadaten). Moderation (S3-7): nur `is_admin` mit Browser-Sitzung (kein API-Token), nur bestrittene Befunde, nur der Befund mit maskiertem Beleg (keine Dateien); Liste ohne Beleg, jedes Öffnen und jede Entscheidung als `moderation.*` im Audit-Log, sonst 404 | S2-7, S3-7 |
 
 ### 4.9 Geheimnisse und Speicherung
 

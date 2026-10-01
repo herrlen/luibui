@@ -1730,3 +1730,46 @@ Fehlschlägen, sauberes Stoppen. Python 1290 Tests grün, ruff, mypy.
 
 **Grenze:** `ops` läuft auf demselben Server; fällt der ganze Server aus, kommt keine Mail. Ein
 externer Prüfer (nicht US) wäre der nächste Schritt.
+
+## 2026-10-01 – S3-7: Befund-Status und Moderation von Einsprüchen
+
+**Ausgang:** Tabelle `finding_status` (Projekt + Fingerprint) gab es seit S0-8, und die Übersicht
+blendete erledigte Befunde schon aus. Es fehlte alles, womit man einen Status setzt.
+
+**Entscheidungen Len (per Rückfrage, 01.10.):** Status ändert **weder Ampel noch Note**, er ist
+nur Anzeige und zählt für „offene Befunde“. Erst „Fehlalarm, Regel angepasst“ wirkt, über die
+geänderte Regel bei der nächsten Prüfung. Die Moderation sieht den Befund mit maskiertem Beleg,
+jedes Öffnen wird protokolliert.
+
+**Was:**
+- Migration `0005`: `moderation` (`bestritten` = „vom Autor bestritten“, `fehlalarm` = „Fehlalarm,
+  Regel angepasst“, Konzept §6), Notiz, wer, wann; Teilindex auf offene Einsprüche.
+- API `routes/befunde.py`: `POST /api/v1/scans/{id}/befund-status` (offen, akzeptiert und
+  bestritten nur mit Begründung, nur Befunde dieses Berichts, nur in Projekten, nicht wenn schon
+  behoben). Der Scan wird als Dependency geladen, damit fremde Scans vor der Body-Prüfung 404
+  liefern. `GET /api/v1/scans/{id}` liefert `befund_status` je Fingerprint. Neuer Status des
+  Eigentümers setzt eine Moderationsentscheidung zurück.
+- Moderation: `GET /api/v1/moderation/einsprueche[?entschieden=true]` (ohne Beleg),
+  `GET …/{id}` (mit Beleg, Audit `moderation.angesehen`), `POST …/{id}/entscheidung` (Audit
+  `moderation.entschieden`, `updated_at` = Einreichung bleibt). Nur `is_admin` mit Browser-Sitzung,
+  sonst 404. `GET /auth/ich` meldet `moderation`.
+- Worker `update_finding_status` nach jedem Bericht: was zurückkommt, ist wieder offen; was aus
+  der vorigen Prüfung fehlt, ist behoben, aber nur bei gleichem Prüfumfang (eine Dateiauswahl sagt
+  nichts über die übrigen Dateien) und nur, wenn keine neuere Prüfung schon fertig ist.
+- Oberfläche: Status-Marke im Kopf jedes Befunds, Steuerung im aufgeklappten Befund
+  (Akzeptieren …, Fehlalarm melden …, Wieder öffnen), Zähler „davon akzeptiert, bestritten oder
+  behoben“; `/moderation` und `/moderation/<id>` mit Menüeintrag nur für Moderatoren. Begründungen
+  und Notizen als Text. Datenexport enthält die Moderationsfelder. Bedrohungsmodell T36 ergänzt.
+
+**Geprüft:** 8 API-Tests (inkl. Ampel/Note unverändert, Nutzer B, Token-Zugang zur Moderation
+abgewiesen, nur bestrittene Befunde sichtbar, Audit ohne Begründungstext), 4 Worker-Tests
+(behoben/wieder offen, engerer Umfang, verspätete ältere Prüfung, ohne Projekt), Isolationstest
+deckt die neuen Routen ab, 4 Komponententests (Escaping der Begründung). Der bestehende
+Formular-Test fand ein fehlendes `method="post"`. Python 1303 grün, ruff, mypy, Web 40 grün,
+Lint, Build. **Nicht im Browser angesehen.**
+
+**Offen:**
+1. Moderator einrichten (Len): `UPDATE users SET is_admin = true WHERE email = '…';` in der
+   Produktionsdatenbank. Es gibt bewusst keine Oberfläche dafür.
+2. Mail an den Autor bei einer Entscheidung: Sprint 5 (Benachrichtigungen, Konzept §4).
+3. PDF/CSV/SARIF tragen den Status noch nicht.

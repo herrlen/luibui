@@ -3,8 +3,9 @@
 import { useId, useState } from "react";
 
 import { SCHWERE_TEXT } from "@/lib/format";
-import type { Befund } from "@/lib/types";
+import type { Befund, BefundStatus } from "@/lib/types";
 
+import { BefundStatusSteuerung, StatusMarke } from "../app/BefundStatus";
 import { Kopieren } from "../Kopieren";
 
 // Everything from the package (title, path, evidence) is rendered as plain text; React escapes it.
@@ -38,7 +39,18 @@ export function MitCode({ text }: { text: string }) {
   );
 }
 
-export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }) {
+/** ``scanId``: the owner's check in a project, where the status can be changed (S3-7). */
+export function BefundKarte({
+  b,
+  offen = false,
+  status,
+  scanId,
+}: {
+  b: Befund;
+  offen?: boolean;
+  status?: BefundStatus;
+  scanId?: string;
+}) {
   const [auf, setAuf] = useState(offen);
   const id = useId();
   return (
@@ -54,6 +66,7 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
           <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${SCHWERE_STIL[b.schwere]}`}>
             {SCHWERE_TEXT[b.schwere]}
           </span>
+          <StatusMarke status={status} />
           <span className="min-w-0 flex-1 text-base font-semibold">{b.titel}</span>
           <span aria-hidden="true" className="text-lg leading-none text-muted sm:order-last">
             {auf ? "−" : "+"}
@@ -91,6 +104,9 @@ export function BefundKarte({ b, offen = false }: { b: Befund; offen?: boolean }
               <Kopieren text={b.fix_prompt} label="Fix-Prompt kopieren" />
             </div>
           </div>
+        ) : null}
+        {scanId && b.fingerprint ? (
+          <BefundStatusSteuerung scanId={scanId} fingerprint={b.fingerprint} status={status} />
         ) : null}
       </div>
     </article>

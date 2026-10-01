@@ -286,12 +286,29 @@ class FindingStatus(Base):
         ForeignKey("users.id", ondelete="SET NULL")
     )
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    moderation: Mapped[str | None] = mapped_column(String(20))
+    """Decision on a dispute: ``bestritten`` (stays "disputed by the author") or ``fehlalarm``
+    ("false alarm, rule adjusted"). Cleared whenever the owner changes the status."""
+    moderation_notiz: Mapped[str | None] = mapped_column(Text)
+    moderiert_von: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    moderiert_at: Mapped[datetime | None]
 
     __table_args__ = (
         UniqueConstraint("project_id", "fingerprint"),
         CheckConstraint(
             "status NOT IN ('akzeptiert', 'bestritten') OR begruendung IS NOT NULL",
             name="begruendung_required",
+        ),
+        CheckConstraint(
+            "moderation IS NULL OR moderation IN ('bestritten', 'fehlalarm')",
+            name="moderation_wert",
+        ),
+        Index(
+            "ix_finding_status_bestritten",
+            "updated_at",
+            postgresql_where=text("status = 'bestritten'"),
         ),
     )
 

@@ -19,7 +19,7 @@ export default async function BereichLayout({ children }: { children: ReactNode 
   }));
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_264px_minmax(0,1fr)]">
-      <Hauptleiste email={ich.ok ? ich.data.email : ""} />
+      <Hauptleiste email={ich.ok ? ich.data.email : ""} moderation={ich.ok && ich.data.moderation === true} />
       <Explorer projekte={eintraege} />
       <main id="inhalt" className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
         <div className="mx-auto max-w-5xl">{children}</div>

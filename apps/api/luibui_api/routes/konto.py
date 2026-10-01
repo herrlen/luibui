@@ -185,7 +185,8 @@ def _plan(db: DbSession, user: User) -> _Plan:
             "versionen": [{"nummer": v.number, "angelegt": _iso(v.created_at),
                            "dateien": v.file_count, "bytes": v.bytes} for v in versionen],
             "befund_status": [{"fingerprint": f.fingerprint, "status": f.status,
-                               "begruendung": f.begruendung} for f in status_liste],
+                               "begruendung": f.begruendung, "moderation": f.moderation,
+                               "moderation_notiz": f.moderation_notiz} for f in status_liste],
         }))  # fmt: skip
         scans = db.scalars(select(Scan).where(Scan.project_id == p.id))
         plan.json.append((f"{ordner}/pruefungen.json", [_scan(s) for s in scans]))

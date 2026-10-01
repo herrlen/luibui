@@ -126,3 +126,69 @@ def record_report(conn: Connection, scan_id: uuid.UUID, raw: object) -> None:
         data["normbezug"] = list(data["normbezug"])
         data.pop("verweise", None)
         conn.execute(_INSERT_FINDING, {**data, "owner_id": owner_id, "scan_id": scan_id})
+    update_finding_status(conn, scan_id)
+
+
+def update_finding_status(conn: Connection, scan_id: uuid.UUID) -> None:
+    """Carry the finding status of a project to its newest check (S3-7).
+
+    A finding that came back is open again. A finding of the previous check that this check of
+    the same scope no longer has is marked fixed: a selection of files says nothing about the
+    files it left out. An older check that finishes late changes nothing.
+    """
+    scan = conn.execute(
+        text("SELECT project_id, pruefumfang, created_at FROM scans WHERE id = :id"),
+        {"id": scan_id},
+    ).one()
+    if scan.project_id is None:
+        return
+    ort = {"id": scan_id, "p": scan.project_id, "c": scan.created_at}
+    neuer = conn.execute(
+        text(
+            "SELECT 1 FROM scans WHERE project_id = :p AND status = 'fertig' AND id <> :id "
+            "AND created_at > :c LIMIT 1"
+        ),
+        ort,
+    ).first()
+    if neuer is not None:
+        return
+    jetzt: list[str] = list(
+        conn.execute(
+            text(
+                "SELECT DISTINCT fingerprint FROM findings "
+                "WHERE scan_id = :id AND fingerprint IS NOT NULL"
+            ),
+            ort,
+        ).scalars()
+    )
+    conn.execute(
+        text("""
+        UPDATE finding_status SET status = 'offen', begruendung = NULL, updated_by = NULL,
+            updated_at = now(), moderation = NULL, moderation_notiz = NULL,
+            moderiert_von = NULL, moderiert_at = NULL
+        WHERE project_id = :p AND status = 'behoben' AND fingerprint = ANY(:jetzt)
+        """),
+        {**ort, "jetzt": jetzt},
+    )
+    vorher = conn.execute(
+        text(
+            "SELECT id, pruefumfang FROM scans WHERE project_id = :p AND status = 'fertig' "
+            "AND id <> :id AND created_at < :c ORDER BY created_at DESC LIMIT 1"
+        ),
+        ort,
+    ).first()
+    if vorher is None or vorher.pruefumfang != scan.pruefumfang:
+        return
+    conn.execute(
+        text("""
+        INSERT INTO finding_status (owner_id, project_id, fingerprint, status)
+        SELECT DISTINCT s.owner_id, s.project_id, f.fingerprint, 'behoben'::befund_status
+        FROM findings f JOIN scans s ON s.id = f.scan_id
+        WHERE f.scan_id = :vorher AND f.fingerprint IS NOT NULL
+            AND NOT (f.fingerprint = ANY(:jetzt))
+        ON CONFLICT (project_id, fingerprint) DO UPDATE
+            SET status = 'behoben', updated_by = NULL, updated_at = now()
+            WHERE finding_status.status <> 'behoben'
+        """),
+        {"vorher": vorher.id, "jetzt": jetzt},
+    )

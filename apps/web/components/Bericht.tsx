@@ -50,7 +50,11 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
       ) : null}
       {b ? (
         <>
-          <ReportView bericht={b} />
+          <ReportView
+            bericht={b}
+            befundStatus={downloads === "bereich" ? scan.befund_status : undefined}
+            scanId={scan.id}
+          />
           <p className="text-sm text-muted">
             {b.paket.dateien ?? "?"} Dateien · geprüft am {datumZeit(b.geprueft_am)} · Engine {b.engine_version}
           </p>

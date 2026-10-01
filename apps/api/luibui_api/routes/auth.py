@@ -77,6 +77,8 @@ class Ich(BaseModel):
     email: str
     totp_aktiv: bool
     email_bestaetigt: bool
+    moderation: bool = False
+    """Whether the moderation of disputed findings is open to this user (S3-7)."""
 
 
 def _ich(user: User) -> Ich:
@@ -85,6 +87,7 @@ def _ich(user: User) -> Ich:
         email=user.email,
         totp_aktiv=user.totp_confirmed_at is not None,
         email_bestaetigt=user.email_verified_at is not None,
+        moderation=user.is_admin,
     )
 
 

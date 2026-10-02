@@ -41,6 +41,12 @@ describe("ReportView", () => {
     expect(html.match(/aria-expanded="false"/g)).toHaveLength(5);
   });
 
+  it("offers both the fix text and the fix prompt for copying", () => {
+    const html = renderToStaticMarkup(<ReportView bericht={beispielbericht()} showDsgvo={false} />);
+    expect(html).toContain("Fix kopieren");
+    expect(html).toContain("Fix-Prompt kopieren");
+  });
+
   it("shows evidence with <script> as text, never as HTML", () => {
     const b = beispielbericht();
     const boese = { ...b.befunde[0], beleg: '<script>alert("x")</script><img src=x onerror=1>' };

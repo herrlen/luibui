@@ -89,6 +89,11 @@ export function BefundKarte({
           <span className="font-semibold">So behebst du es: </span>
           <MitCode text={b.fix} />
         </p>
+        {b.fix ? (
+          <div className="mt-2">
+            <Kopieren text={b.fix} label="Fix kopieren" />
+          </div>
+        ) : null}
         {b.fix_prompt ? (
           <div className="mt-3 flex flex-col gap-2">
             <span className="text-xs text-muted">Prompt für Claude Code oder andere Coding-Agents:</span>

@@ -1871,3 +1871,13 @@ Sitemap (404) und mit `Disallow: /`; Seiten bei 1280 und 500 px angesehen (Headl
 nicht schmaler als 500 px), kein seitliches Scrollen.
 
 **Offen:** Konzept §11 und CLAUDE.md nennen noch „Spenden“; Transparenzseite entscheiden (Len).
+
+## 2026-10-02 – S2-9: Fix-Text kopierbar
+
+**Was:** Unter „So behebst du es“ steht jetzt „Fix kopieren“, wie schon beim Fix-Prompt
+(`components/report/BefundKarte.tsx`). Gilt für Entwicklerbereich, Schnellscan-Ergebnis, geteilte
+Berichte und den Beispielbericht (gemeinsame `ReportView`).
+
+**Geprüft:** ReportView-Test (beide Knöpfe vorhanden), Web-Tests.
+
+**Offen:** Fortschritt während der Prüfung weiterhin nur als Status, ohne Schritte.

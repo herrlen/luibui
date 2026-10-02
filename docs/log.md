@@ -1846,3 +1846,28 @@ sechs unlesbare Varianten, Grenze für die Metadaten), Korpus-Matrix. Python 132
 
 **Offen:** Benchmark (`scripts/benchmark.sh`) neu laufen lassen, damit `docs/benchmark.md` die neue
 Zeile MOD-04 zeigt (braucht das Worker-Image, Len).
+
+## 2026-10-02 – S3-9: „So prüfen wir“, Doku, SEO-Grundlagen
+
+**Was:**
+- **„So prüfen wir“** war veraltet („C, E, G folgen“, seit Sprint 2 erledigt). Jetzt: sieben
+  Prüfebenen in Worten (ohne Regel-IDs, kein öffentlicher Prüfkatalog), Schnellscan gegen gründliche
+  Prüfung, Bewertung mit Abzügen je Schwere (aus `scoring.py`: K −40, H −15, M −5, N −1, I 0),
+  DSGVO-Ampel nur mit Manifest, Befund-Status, Umgang mit Dateien. Noch fehlend benannt: Sandbox
+  und LLM-Prüfer.
+- **Doku** unter `/doku`: Schnellscan, Registrieren (Gratis-Kontingent, Guthabenpreise),
+  Eingabearten mit Limits, Bericht lesen, Downloads, Teilen, Befund-Status, Verlauf/Vergleich,
+  Manifest `luibui.json` mit Beispiel aus `corpus/benign/wetter-skill`. Keine CLI-Doku, weil die
+  CLI nicht öffentlich installierbar ist. Link in Kopf und Fuß.
+- **SEO:** `robots.txt` je Host (app.luibui.com `Disallow: /`; luibui.com ohne `/schnellscan/`,
+  `/bericht/`, `/api/`, mit Sitemap), `/sitemap.xml` nur auf luibui.com, `metadataBase`,
+  OpenGraph, Beschreibung und Canonical für Start, „So prüfen wir“, Doku.
+- **Transparenz- und Spendenseite weggelassen** (Len, 02.10.2026): passt nicht mehr zum
+  Guthaben-Modell; später entscheiden.
+
+**Geprüft:** `lib/seo.test.ts` (robots je Host, Sitemap deckt genau die vorhandenen öffentlichen
+Seiten ab), 50 Web-Tests, tsc, eslint. Lokal mit `next dev`: alle Routen 200, app-Host ohne
+Sitemap (404) und mit `Disallow: /`; Seiten bei 1280 und 500 px angesehen (Headless-Chrome kann
+nicht schmaler als 500 px), kein seitliches Scrollen.
+
+**Offen:** Konzept §11 und CLAUDE.md nennen noch „Spenden“; Transparenzseite entscheiden (Len).

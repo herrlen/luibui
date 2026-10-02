@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
+
 import { Ampel } from "@/components/Ampel";
 import { appUrl } from "@/lib/hosts";
 
 import { Beispielbericht } from "./Beispielbericht";
 import { Schnellscan } from "./Schnellscan";
+
+export const metadata: Metadata = {
+  description:
+    "luibui prüft KI-Skills, Plugins, Tools und MCP-Server auf Sicherheit und Datenschutz: Schnellscan kostenlos, Bericht mit zwei Ampeln, Note und Hinweisen zum Beheben. Gehostet in Deutschland.",
+  alternates: { canonical: "/" },
+};
 
 const SCHRITTE = [
   ["Hochladen", "Datei, Ordner, ZIP- oder tar-Archiv, Text oder ein Git-Repository. Jede Eingabe gilt als feindlich und wird nur gelesen."],

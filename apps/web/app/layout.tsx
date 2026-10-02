@@ -9,10 +9,20 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+const BESCHREIBUNG =
+  "Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server. Bericht mit Ampeln für Sicherheit und DSGVO.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://luibui.com"),
   title: "luibui – Prüfstelle für KI-Skills und MCP-Server",
-  description:
-    "Prüfstelle für KI-Skills, Plugins, Tools und MCP-Server. Bericht mit Ampeln für Sicherheit und DSGVO.",
+  description: BESCHREIBUNG,
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    siteName: "luibui",
+    title: "luibui – Prüfen, bevor man installiert",
+    description: BESCHREIBUNG,
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },

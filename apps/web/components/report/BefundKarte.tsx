@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 
 import { SCHWERE_TEXT } from "@/lib/format";
+import { SCHWERE_STIL } from "@/lib/schwere";
 import type { Befund, BefundStatus } from "@/lib/types";
 
 import { BefundStatusSteuerung, StatusMarke } from "../app/BefundStatus";
@@ -10,13 +11,7 @@ import { Kopieren } from "../Kopieren";
 
 // Everything from the package (title, path, evidence) is rendered as plain text; React escapes it.
 // Never dangerouslySetInnerHTML, never Markdown (CLAUDE.md rule 6).
-export const SCHWERE_STIL: Record<string, string> = {
-  K: "bg-gesperrt text-white",
-  H: "bg-rot-bg text-rot",
-  M: "bg-gelb-bg text-gelb",
-  N: "bg-tag text-ink-2",
-  I: "bg-tag text-ink-2",
-};
+export { SCHWERE_STIL } from "@/lib/schwere";
 
 export function ort(b: Befund): string {
   return b.datei ? `${b.datei}${b.zeile ? `:${b.zeile}` : ""}` : "ganzes Paket";

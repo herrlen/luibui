@@ -3,9 +3,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { Ampel } from "@/components/Ampel";
 import { Brotkrumen } from "@/components/app/Brotkrumen";
+import { Verlauf } from "@/components/app/Verlauf";
 import { datumZeit, groesse, STATUS_TEXT, UMFANG_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
-import type { Projekt, Pruefungskurz, Version } from "@/lib/types";
+import type { Projekt, Pruefungskurz, VerlaufPunkt, Version } from "@/lib/types";
 
 import { ProjektLoeschen } from "./ProjektLoeschen";
 import { Upload } from "./Upload";
@@ -24,6 +25,11 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
   const liste = scans.ok ? scans.data : [];
   const versionen = await apiGet<Version[]>(`/api/v1/projects/${encodeURIComponent(id)}/versions`);
   const versionListe = versionen.ok ? versionen.data : [];
+  const verlauf = await apiGet<VerlaufPunkt[]>(`/api/v1/projects/${encodeURIComponent(id)}/verlauf`);
+  const punkte = verlauf.ok ? verlauf.data : [];
+  // A check can be compared with the finished one before it (list is newest first).
+  const fertig = liste.filter((s) => s.status === "fertig");
+  const vorgaenger = new Map(fertig.slice(0, -1).map((s, i) => [s.id, fertig[i + 1].id]));
   return (
     <div className="flex flex-col gap-6">
       <Brotkrumen
@@ -77,6 +83,27 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           </ul>
         </section>
       ) : null}
+      {punkte.length ? (
+        <section aria-labelledby="verlauf" className="flex flex-col gap-3 rounded-[14px] border border-linie bg-surface p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="verlauf" className="font-display text-xl font-bold">
+              Verlauf
+            </h2>
+            {fertig.length > 1 ? (
+              <Link href={`/projekte/${projekt.data.id}/vergleich`} className="text-sm font-medium text-petrol hover:underline">
+                Letzte Prüfung mit der vorigen vergleichen
+              </Link>
+            ) : null}
+          </div>
+          {punkte.length > 1 ? (
+            <Verlauf punkte={punkte} />
+          ) : (
+            <p className="text-sm text-muted">
+              Eine fertige Prüfung (Note {punkte[0].note ?? "–"}). Der Verlauf erscheint ab der zweiten.
+            </p>
+          )}
+        </section>
+      ) : null}
       <section>
         <h2 className="font-display text-xl font-bold">Prüfungen</h2>
         {liste.length === 0 ? (
@@ -84,10 +111,10 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {liste.map((s) => (
-              <li key={s.id}>
+              <li key={s.id} className="flex items-stretch gap-2">
                 <Link
                   href={`/pruefungen/${s.id}`}
-                  className="flex flex-wrap items-center gap-4 rounded-[14px] border border-linie bg-surface px-5 py-3 hover:border-petrol"
+                  className="flex min-w-0 flex-1 flex-wrap items-center gap-4 rounded-[14px] border border-linie bg-surface px-5 py-3 hover:border-petrol"
                 >
                   <span className="text-sm">{datumZeit(s.created_at)}</span>
                   <span className="text-sm text-muted">{UMFANG_TEXT[s.pruefumfang] ?? s.pruefumfang}</span>
@@ -96,6 +123,15 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
                     {s.note !== null ? <span>Note {s.note}</span> : null}
                   </span>
                 </Link>
+                {vorgaenger.has(s.id) ? (
+                  <Link
+                    href={`/projekte/${projekt.data.id}/vergleich?von=${vorgaenger.get(s.id)}&bis=${s.id}`}
+                    className="flex items-center rounded-[14px] border border-linie bg-surface px-4 text-sm hover:border-petrol"
+                    title="Mit der Prüfung davor vergleichen"
+                  >
+                    Vergleichen
+                  </Link>
+                ) : null}
               </li>
             ))}
           </ul>

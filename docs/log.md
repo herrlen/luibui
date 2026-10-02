@@ -1776,3 +1776,33 @@ Schlüssel und `ALARM_AN` gesetzt, ohne messbare Unterbrechung).
    Produktionsdatenbank. Es gibt bewusst keine Oberfläche dafür.
 2. Mail an den Autor bei einer Entscheidung: Sprint 5 (Benachrichtigungen, Konzept §4).
 3. PDF/CSV/SARIF tragen den Status noch nicht.
+
+## 2026-10-02 – S3-5: Verlauf und Vergleich zweier Prüfungen
+
+**Was:**
+- API `routes/verlauf.py`: `GET /api/v1/projects/{id}/verlauf` (die letzten 100 fertigen
+  Prüfungen, älteste zuerst, Note, Ampel, Umfang, Befunde je Schwere; gezählt in PostgreSQL über
+  `report->'befunde'`, ohne die Berichte zu laden) und `GET /api/v1/projects/{id}/vergleich`
+  (ohne Angaben: letzte gegen vorige; mit `von`/`bis` zwei beliebige fertige Prüfungen des Projekts,
+  immer älter → neuer). Neu, behoben, unverändert nach Fingerprint; `gleicher_umfang` warnt, wenn
+  eine Dateiauswahl gegen das ganze Paket steht. Fremde Projekte, fremde oder unfertige Prüfungen 404.
+- Projektseite: Abschnitt „Verlauf“ mit Notenlinie und gestapelten Balken je Schwere, eine
+  gemeinsame Hover-/Fokus-Anzeige für beide, Tabelle als Alternative; ab der zweiten Prüfung. Je
+  Prüfung ein Knopf „Vergleichen“ mit der davor, oben „Letzte Prüfung mit der vorigen vergleichen“.
+- Vergleichsseite `/projekte/<id>/vergleich`: beide Prüfungen mit Ampel und Note, Notenänderung,
+  Listen „Neu“, „Behoben“, „Unverändert“ (eingeklappt). Titel und Pfade als Text.
+- Farben der Schweregrade im Diagramm: eine rote Tonleiter (kritisch dunkel → niedrig/info hell),
+  mit dem Dataviz-Prüfskript als ordinale Reihe geprüft (monoton, Abstände, Kontrast 2,38:1 am
+  hellen Ende, ein Farbton). Keine zweite Y-Achse: Note und Befunde sind zwei Diagramme.
+
+**Fehler gefunden und behoben (live seit 01.10.):** Server-Seiten importierten `SCHWERE_STIL` aus
+einer Client-Komponente und bekamen statt der Tabelle eine Client-Referenz; die Schwere-Abzeichen
+auf `/moderation` und `/moderation/<id>` hatten deshalb keine Farbe. `SCHWERE_STIL` liegt jetzt in
+`lib/schwere.ts`; ein neuer Test (`lib/client-grenze.test.ts`) verbietet Konstanten-Importe aus
+`"use client"`-Modulen in Server-Komponenten und schlägt mit dem alten Stand an.
+
+**Geprüft:** 4 API-Tests (Zählung je Schwere, leeres Projekt, neu/behoben/unverändert in beiden
+Reihenfolgen, nur eigenes Projekt, unfertig, Nutzer B), Isolationstest; 3 Web-Tests. Lokal mit
+API, Worker und Website: drei echte Prüfungen eines Projekts, Verlauf mit Hover angesehen,
+Vergleich (Note +40, 1 behoben), Abzeichenfarbe im Browser gemessen. Python 1306, Web 43 Tests
+grün, ruff, mypy, eslint.

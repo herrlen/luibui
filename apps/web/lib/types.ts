@@ -172,3 +172,39 @@ export type Beleg = {
   waehrung: string;
   paypal_transaktion: string | null;
 };
+
+/** One finished check in a project's history (S3-5). */
+export type VerlaufPunkt = {
+  scan_id: string;
+  created_at: string;
+  note: number | null;
+  ampel_gesamt: string | null;
+  pruefumfang: string;
+  befunde: Record<"K" | "H" | "M" | "N" | "I", number>;
+};
+
+export type VergleichEintrag = {
+  fingerprint: string;
+  rule_id: string;
+  schwere: string;
+  titel: string;
+  datei: string | null;
+  zeile: number | null;
+};
+
+export type VergleichSeite = {
+  scan_id: string;
+  created_at: string;
+  note: number | null;
+  ampel_gesamt: string | null;
+  pruefumfang: string;
+};
+
+export type Vergleich = {
+  von: VergleichSeite;
+  bis: VergleichSeite;
+  neu: VergleichEintrag[];
+  behoben: VergleichEintrag[];
+  unveraendert: VergleichEintrag[];
+  gleicher_umfang: boolean;
+};

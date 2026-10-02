@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Brotkrumen } from "@/components/app/Brotkrumen";
-import { SCHWERE_STIL } from "@/components/report/BefundKarte";
+import { SCHWERE_STIL } from "@/lib/schwere";
 import { datumZeit, MODERATION_TEXT, SCHWERE_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
 import type { Einspruch } from "@/lib/types";

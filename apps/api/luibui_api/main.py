@@ -15,6 +15,7 @@ from luibui_api.routes import (
     scans,
     teilen,
     tokens,
+    verlauf,
 )
 from luibui_api.settings import get_settings
 
@@ -40,4 +41,5 @@ def create_app() -> FastAPI:
     app.include_router(guthaben.router)
     app.include_router(konto.router)
     app.include_router(teilen.router)
+    app.include_router(verlauf.router)
     return app

@@ -1,17 +1,21 @@
-"""Analyzer A, part 4: model files (Prüfkatalog A16, A18, A19; Scanner-Matrix MOD-01, MOD-06,
-MOD-07).
+"""Analyzer A, part 4: model files (Prüfkatalog A16, A18, A19; Scanner-Matrix MOD-01, MOD-04,
+MOD-06, MOD-07).
 
 Pickle files are never loaded. ``pickletools.genops`` only walks the opcode stream and returns the
 imports a load would perform; nothing is resolved, imported or called. PyTorch checkpoints are ZIP
-files whose ``data.pkl`` is read into memory with a size limit, not unpacked to disk.
+files whose ``data.pkl`` is read into memory with a size limit, not unpacked to disk. GGUF files
+are read only up to the end of their metadata, value by value with hard limits; tensors are never
+touched.
 """
 
 import json
 import pickletools
 import re
+import struct
 import zipfile
 from collections.abc import Iterator
 from pathlib import PurePosixPath
+from typing import BinaryIO
 
 from luibui_scan.analyzers._common import file_name, finding, read_bytes, read_json, visible
 from luibui_scan.context import InventoryEntry, ScanContext
@@ -258,23 +262,152 @@ def _a19_config(ctx: ScanContext) -> Iterator[Finding]:
             else []
         )
         for text in texts:
-            m = _SSTI.search(str(text))
-            if m:
-                yield finding(
-                    rule_id="LB-A16-template-code",
-                    ebene=Ebene.A,
-                    schwere=Schwere.K,
-                    titel="Chat-Vorlage greift auf Python-Interna zu",
-                    erklaerung=(
-                        "Die Jinja-Vorlage des Modells nutzt Mittel, mit denen Vorlagen aus der "
-                        "Sandbox ausbrechen und Code ausführen (Server-Side Template Injection). "
-                        "Das passiert beim ersten Chat mit dem Modell."
-                    ),
-                    datei=entry.path,
-                    zeile=None,
-                    beleg=visible(str(text)[max(0, m.start() - 60) : m.end() + 60]),
-                    fix="Die Chat-Vorlage durch die offizielle Vorlage des Modells ersetzen.",
-                    fix_prompt=f"Ersetze chat_template in {entry.path} durch die Originalvorlage.",
-                    normbezug=("OWASP-ASI05", "OWASP-LLM03"),
-                )
+            befund = _template_befund(entry.path, str(text), "chat_template")
+            if befund is not None:
+                yield befund
+                break
+
+
+def _template_befund(pfad: str, text: str, wo: str) -> Finding | None:
+    """A16 for a Jinja chat template that reaches Python internals (SSTI); None if it does not."""
+    m = _SSTI.search(text)
+    if m is None:
+        return None
+    return finding(
+        rule_id="LB-A16-template-code",
+        ebene=Ebene.A,
+        schwere=Schwere.K,
+        titel="Chat-Vorlage greift auf Python-Interna zu",
+        erklaerung=(
+            "Die Jinja-Vorlage des Modells nutzt Mittel, mit denen Vorlagen aus der "
+            "Sandbox ausbrechen und Code ausführen (Server-Side Template Injection). "
+            "Das passiert beim ersten Chat mit dem Modell."
+        ),
+        datei=pfad,
+        zeile=None,
+        beleg=visible(text[max(0, m.start() - 60) : m.end() + 60]),
+        fix="Die Chat-Vorlage durch die offizielle Vorlage des Modells ersetzen.",
+        fix_prompt=f"Ersetze {wo} in {pfad} durch die Originalvorlage des Modells.",
+        normbezug=("OWASP-ASI05", "OWASP-LLM03"),
+    )
+
+
+# --- MOD-04: GGUF metadata (A16 chat template, A18 unreadable header) ---------------------------
+
+GGUF_MAX_METADATEN = 64 * 1024 * 1024
+"""Metadata beyond this is not read (vocabularies are a few MB); the header counts as unclear."""
+GGUF_MAX_EINTRAEGE = 100_000
+GGUF_MAX_TEXT = 16 * 1024 * 1024
+GGUF_MAX_FELD = 10_000_000
+_GGUF_FEST = {0: 1, 1: 1, 2: 2, 3: 2, 4: 4, 5: 4, 6: 4, 7: 1, 10: 8, 11: 8, 12: 8}
+"""Value types with a fixed size in bytes (GGUF spec): integers, floats, bool."""
+_GGUF_TEXT, _GGUF_FELD = 8, 9
+
+
+class GgufError(ValueError):
+    """The metadata cannot be read within the limits; the message says why, in German."""
+
+
+class _Leser:
+    def __init__(self, f: BinaryIO, version: int) -> None:
+        self.f = f
+        self.lang = "<Q" if version >= 2 else "<I"  # GGUF v1 used 32-bit lengths and counts
+        self.gelesen = 0
+
+    def bytes_(self, n: int) -> bytes:
+        self.gelesen += n
+        if self.gelesen > GGUF_MAX_METADATEN:
+            raise GgufError("Metadaten größer als 64 MB")
+        data = self.f.read(n)
+        if len(data) != n:
+            raise GgufError("Datei endet mitten in den Metadaten")
+        return data
+
+    def zahl(self, fmt: str) -> int:
+        (wert,) = struct.unpack(fmt, self.bytes_(struct.calcsize(fmt)))
+        return int(wert)
+
+    def text(self) -> str:
+        n = self.zahl(self.lang)
+        if n > GGUF_MAX_TEXT:
+            raise GgufError("Text in den Metadaten länger als 16 MB")
+        return self.bytes_(n).decode("utf-8", errors="replace")
+
+    def wert(self, typ: int, behalten: bool) -> str | None:
+        """Read one value; returns it only for a string that should be kept."""
+        if typ in _GGUF_FEST:
+            self.bytes_(_GGUF_FEST[typ])
+            return None
+        if typ == _GGUF_TEXT:
+            text = self.text()
+            return text if behalten else None
+        if typ == _GGUF_FELD:
+            innen, anzahl = self.zahl("<I"), self.zahl(self.lang)
+            if anzahl > GGUF_MAX_FELD or innen == _GGUF_FELD:
+                raise GgufError("Feld in den Metadaten zu groß oder verschachtelt")
+            if innen in _GGUF_FEST:
+                self.bytes_(_GGUF_FEST[innen] * anzahl)
+            else:
+                for _ in range(anzahl):
+                    self.wert(innen, False)
+            return None
+        raise GgufError(f"unbekannter Werttyp {typ}")
+
+
+def gguf_vorlagen(f: BinaryIO) -> dict[str, str]:
+    """Chat templates in a GGUF file's metadata (``tokenizer.chat_template`` and named variants).
+    Raises :class:`GgufError` when the header is not readable within the limits."""
+    if f.read(4) != b"GGUF":
+        raise GgufError("Kennung GGUF fehlt")
+    kopf = f.read(4)
+    if len(kopf) != 4:
+        raise GgufError("Datei zu kurz")
+    version = int.from_bytes(kopf, "little")
+    if version not in (1, 2, 3):
+        raise GgufError(f"unbekannte GGUF-Version {version}")
+    leser = _Leser(f, version)
+    leser.zahl(leser.lang)  # tensor count, not needed
+    eintraege = leser.zahl(leser.lang)
+    if eintraege > GGUF_MAX_EINTRAEGE:
+        raise GgufError("zu viele Metadaten-Einträge")
+    vorlagen: dict[str, str] = {}
+    for _ in range(eintraege):
+        schluessel = leser.text()
+        typ = leser.zahl("<I")
+        wert = leser.wert(typ, schluessel.startswith("tokenizer.chat_template"))
+        if wert is not None:
+            vorlagen[schluessel] = wert
+    return vorlagen
+
+
+def _mod04_gguf(ctx: ScanContext) -> Iterator[Finding]:
+    for entry in ctx.inventory:
+        if entry.kind != "gguf" and not entry.path.lower().endswith(".gguf"):
+            continue
+        try:
+            with ctx.resolve(entry.path).open("rb") as f:
+                vorlagen = gguf_vorlagen(f)
+        except (GgufError, OSError, struct.error) as exc:
+            yield finding(
+                rule_id="LB-A18-modell-unklar",
+                ebene=Ebene.A,
+                schwere=Schwere.M,
+                titel="GGUF-Modelldatei ist nicht lesbar",
+                erklaerung=(
+                    f"Der Dateikopf ließ sich nicht prüfen: {exc}. Eine beschädigte oder "
+                    "manipulierte Modelldatei kann Ladeprogramme zum Absturz bringen; eine "
+                    "eingebettete Chat-Vorlage ist so nicht geprüft."
+                ),
+                datei=entry.path,
+                zeile=None,
+                beleg=f"{entry.size} Byte",
+                fix="Die Datei neu aus dem Originalmodell erzeugen (z. B. mit llama.cpp).",
+                fix_prompt=f"Erzeuge {entry.path} neu aus dem Originalmodell.",
+                normbezug=("OWASP-LLM03",),
+            )
+            continue
+        for schluessel, text in sorted(vorlagen.items()):
+            befund = _template_befund(entry.path, text, schluessel)
+            if befund is not None:
+                yield befund
                 break

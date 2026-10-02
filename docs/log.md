@@ -1825,3 +1825,24 @@ der Eigentümer oder die Moderation gesetzt hat, mit denselben Wörtern wie die 
 **Geprüft:** 2 PDF-Tests (Beschriftung, Escaping der Begründung, beide Formen, Download mit
 Status), 3 Export-Tests (CSV mit Formel in der Begründung, JSON, alle SARIF-Fälle, ohne Status
 unverändert). Python 1308, Web 46 Tests grün, ruff, mypy, eslint.
+
+## 2026-10-02 – S3-12: GGUF-Modelle und eingebettete Chat-Vorlagen (Matrix MOD-04)
+
+**Was:** GGUF-Dateien (erkannt an `GGUF` am Dateianfang oder an der Endung) werden bis zum Ende der
+Metadaten gelesen, Wert für Wert, nie die Gewichte: höchstens 64 MB Metadaten, 100.000 Einträge,
+16 MB je Text, 10 Mio. Elemente je Feld, keine verschachtelten Felder, GGUF-Version 1 bis 3 (v1 mit
+32-Bit-Längen). Gefunden werden `tokenizer.chat_template` und benannte Varianten
+(`tokenizer.chat_template.tool_use` usw.); sie laufen durch dieselbe SSTI-Prüfung wie die Vorlage in
+`tokenizer_config.json` (gemeinsame Funktion `_template_befund`).
+- **A16 (K, sperrt):** Vorlage greift auf Python-Interna zu (`__class__`, `cycler`, `lipsum` …).
+- **A18 (M):** Kopf nicht lesbar (falsche Kennung, unbekannte Version, Datei endet mitten in den
+  Metadaten, Grenze überschritten, unbekannter Werttyp); der Grund steht in der Erklärung.
+- Korpus: `MOD-04` bösartig (Vorlage mit `''.__class__`, gibt nur „echo hallo“ aus) und gutartig
+  (übliche Vorlage). Prüfkatalog A16/A18 ergänzt.
+
+**Geprüft:** 11 neue Engine-Tests (Vokabular mit 2.000 Einträgen und alle festen Werttypen werden
+übersprungen, SSTI in Haupt- und benannter Vorlage, Erkennung am Inhalt bei `weights.bin`, Version 1,
+sechs unlesbare Varianten, Grenze für die Metadaten), Korpus-Matrix. Python 1321 Tests grün, ruff, mypy.
+
+**Offen:** Benchmark (`scripts/benchmark.sh`) neu laufen lassen, damit `docs/benchmark.md` die neue
+Zeile MOD-04 zeigt (braucht das Worker-Image, Len).

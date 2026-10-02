@@ -13,7 +13,12 @@ from luibui_scan.analyzers._a_ausfuehrung import _a02, _a03
 from luibui_scan.analyzers._a_dokumente import _dokumente
 from luibui_scan.analyzers._a_formate import _a13, _a14, _a15, _installer
 from luibui_scan.analyzers._a_herkunft import _a10, _a11, _a12
-from luibui_scan.analyzers._a_modelle import _a16_pickle, _a18_safetensors, _a19_config
+from luibui_scan.analyzers._a_modelle import (
+    _a16_pickle,
+    _a18_safetensors,
+    _a19_config,
+    _mod04_gguf,
+)
 from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
@@ -383,6 +388,7 @@ class DateienAnalyzer:
             _a16_pickle,
             _a18_safetensors,
             _a19_config,
+            _mod04_gguf,
             _dokumente,
             key_files,
         ):

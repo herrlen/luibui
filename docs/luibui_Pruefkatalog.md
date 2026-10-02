@@ -78,8 +78,8 @@ Was im Paket liegt, unabhängig vom Inhalt der Dateien. Sprint 1 (A01 mit S1-2, 
 | A13 | **Git-Attribute und LFS:** eigene `filter=`/`diff=`/`merge=`-Treiber in `.gitattributes` (M); LFS-Zeiger ohne Inhalt als „nicht geprüft“ (I) | M | – | ✓ ✓ – ✓ | eigene Regeln | ASI04 |
 | A14 | **Täuschende Dateinamen:** Doppelendung (`rechnung.pdf.exe`), reservierte Windows-Namen (`CON`, `NUL`, `COM1`) | M | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI04 |
 | A15 | **Polyglot und angehängte Daten:** Bild oder PDF, das zugleich ein ZIP ist (H), oder mehr als 1 KB Daten nach dem Formatende (M) | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
-| A16 | **Code-Ausführung beim Laden eines Modells:** Pickle-Importe von `os`, `subprocess`, `eval` & Co. (auch in PyTorch-ZIPs, nur als Opcodes gelesen), Jinja-SSTI in `chat_template` | K | ● | ✓ ✓ ✓ ✓ | eigener Code (`pickletools.genops`) | ASI05, LLM03 |
-| A18 | **Modelldatei unklar:** Pickle mit unbekannten Importen oder nicht lesbar, ungültiger safetensors-Header | M | – | ✓ ✓ ✓ ✓ | eigener Code | LLM03 |
+| A16 | **Code-Ausführung beim Laden eines Modells:** Pickle-Importe von `os`, `subprocess`, `eval` & Co. (auch in PyTorch-ZIPs, nur als Opcodes gelesen), Jinja-SSTI in `chat_template` (in `tokenizer_config.json` und eingebettet in GGUF) | K | ● | ✓ ✓ ✓ ✓ | eigener Code (`pickletools.genops`) | ASI05, LLM03 |
+| A18 | **Modelldatei unklar:** Pickle mit unbekannten Importen oder nicht lesbar, ungültiger safetensors-Header, GGUF-Kopf nicht lesbar | M | – | ✓ ✓ ✓ ✓ | eigener Code | LLM03 |
 | A19 | **`trust_remote_code`:** `auto_map` in `config.json` verweist auf Code im Paket | M | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
 | A20 | **Formeln in mitgelieferten Tabellen:** CSV/TSV-Zellen mit Formeln (N), mit `HYPERLINK`, `WEBSERVICE`, DDE oder `\|` (H) | H | – | ✓ ✓ ✓ ✓ | eigener Code | LLM05 |
 | A21 | **Aktive Inhalte in Dokumenten:** PDF mit JavaScript, `/Launch`, eingebetteten Dateien (H) oder Aktion beim Öffnen (M); Office mit Makros, externer Vorlage oder DDE | H | – | ✓ ✓ ✓ ✓ | eigener Code (nur Bytes, kein Parser) | ASI05 |

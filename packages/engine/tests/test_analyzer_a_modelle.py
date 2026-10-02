@@ -4,6 +4,7 @@ dangerous for the test (CLAUDE.md rule 8)."""
 
 import io
 import json
+import struct
 import zipfile
 from pathlib import Path
 
@@ -148,3 +149,89 @@ def test_ordinary_config_and_template(tmp_path: Path) -> None:
         "tokenizer_config.json": json.dumps({"chat_template": tpl}),
     }
     assert analyze(tmp_path, files) == []
+
+
+# --- MOD-04 GGUF -----------------------------------------------------------------------------
+
+
+def _s(text: str, lang: str = "<Q") -> bytes:
+    roh = text.encode()
+    return struct.pack(lang, len(roh)) + roh
+
+
+def gguf(meta: list[tuple[str, int, bytes]], version: int = 3, tensoren: int = 0) -> bytes:
+    """A GGUF header with the given (key, type, encoded value) entries and no tensor data."""
+    lang = "<Q" if version >= 2 else "<I"
+    kopf = b"GGUF" + struct.pack("<I", version) + struct.pack(lang, tensoren)
+    kopf += struct.pack(lang, len(meta))
+    for key, typ, wert in meta:
+        kopf += _s(key, lang) + struct.pack("<I", typ) + wert
+    return kopf
+
+
+def text_(wert: str, lang: str = "<Q") -> tuple[int, bytes]:
+    return 8, _s(wert, lang)
+
+
+ORDENTLICH = "{% for m in messages %}<|{{ m.role }}|>{{ m.content }}{% endfor %}"
+SSTI = "{% if ''.__class__ %}echo hallo{% endif %}{{ messages[0].content }}"
+
+
+def _vokabular(n: int) -> tuple[int, bytes]:
+    """tokenizer.ggml.tokens: an array of n strings, as in real models."""
+    return 9, struct.pack("<I", 8) + struct.pack("<Q", n) + b"".join(_s(f"t{i}") for i in range(n))
+
+
+def test_gguf_with_ordinary_template_passes(tmp_path: Path) -> None:
+    datei = gguf(
+        [
+            ("general.name", *text_("LUIBUI-TESTFIXTURE wetter-7b")),
+            ("general.alignment", 4, struct.pack("<I", 32)),
+            ("llama.rope.freq_base", 6, struct.pack("<f", 10000.0)),
+            ("tokenizer.ggml.tokens", *_vokabular(2000)),
+            ("tokenizer.ggml.scores", 9, struct.pack("<I", 6) + struct.pack("<Q", 3) + b"\0" * 12),
+            ("tokenizer.chat_template", *text_(ORDENTLICH)),
+        ]
+    )
+    assert analyze(tmp_path, {"modell.gguf": datei}) == []
+
+
+@pytest.mark.parametrize(
+    "schluessel", ["tokenizer.chat_template", "tokenizer.chat_template.tool_use"]
+)
+def test_gguf_template_ssti_locks(tmp_path: Path, schluessel: str) -> None:
+    datei = gguf([("tokenizer.ggml.tokens", *_vokabular(50)), (schluessel, *text_(SSTI))])
+    f = by_rule(analyze(tmp_path, {"modell.gguf": datei}), "LB-A16-template-code")
+    assert f is not None and is_blocklisted(f)
+    assert f.datei == "modell.gguf" and "__class__" in (f.beleg or "")
+    assert schluessel in f.fix_prompt
+
+
+def test_gguf_recognised_by_content_and_version_1(tmp_path: Path) -> None:
+    datei = gguf([("tokenizer.chat_template", *text_(SSTI, "<I"))], version=1)
+    assert by_rule(analyze(tmp_path, {"weights.bin": datei}), "LB-A16-template-code") is not None
+
+
+@pytest.mark.parametrize(
+    ("datei", "grund"),
+    [
+        (b"GGML" + b"\0" * 32, "Kennung GGUF fehlt"),
+        (b"GGUF" + struct.pack("<I", 9) + b"\0" * 16, "unbekannte GGUF-Version 9"),
+        (gguf([("tokenizer.chat_template", *text_(ORDENTLICH))])[:-10], "endet mitten"),
+        (gguf([("x", 8, struct.pack("<Q", 2**40))]), "länger als 16 MB"),
+        (gguf([("x", 9, struct.pack("<I", 9) + struct.pack("<Q", 1))]), "verschachtelt"),
+        (gguf([("x", 99, b"")]), "unbekannter Werttyp 99"),
+    ],
+)
+def test_unreadable_gguf_is_medium(tmp_path: Path, datei: bytes, grund: str) -> None:
+    f = by_rule(analyze(tmp_path, {"modell.gguf": datei}), "LB-A18-modell-unklar")
+    assert f is not None and f.schwere == Schwere.M and grund in f.erklaerung
+
+
+def test_gguf_metadata_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(_a_modelle, "GGUF_MAX_METADATEN", 1000)
+    datei = gguf(
+        [("tokenizer.ggml.tokens", *_vokabular(500)), ("tokenizer.chat_template", *text_(SSTI))]
+    )
+    f = by_rule(analyze(tmp_path, {"modell.gguf": datei}), "LB-A18-modell-unklar")
+    assert f is not None and "64 MB" in f.erklaerung

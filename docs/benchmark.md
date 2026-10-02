@@ -1,16 +1,16 @@
 # Benchmark
 
-Stand `8ba520b`, gemessen am 2026-09-30 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im Prüfkatalog §14, der Verlauf in `docs/log.md`.
+Stand `e36e039+lokal`, gemessen am 2026-10-02 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im Prüfkatalog §14, der Verlauf in `docs/log.md`.
 
 ## Ergebnis
 
 | Messung | Wert | Ziel Sprint 3 | |
 |---|---|---|---|
-| Erkennung, Nachbildungen | 36/36 (100 %) | ≥ 90 % | erreicht |
+| Erkennung, Nachbildungen | 37/37 (100 %) | ≥ 90 % | erreicht |
 | Erkennung, Code-Ebene | 4/4 (100 %) | ≥ 95 % | erreicht |
 | Fehlalarme, echte Pakete | 0/60 (0 %) | ≤ 5 % | erreicht |
 | … ohne Ausnahmen (`berechtigt`) | 5/60 (8 %) | – | zutreffende Befunde, nach Prüfung ausgenommen |
-| Fehlalarme, eigener Korpus | 0/34 (0 %) | 0 | |
+| Fehlalarme, eigener Korpus | 0/35 (0 %) | 0 | |
 
 Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nicht grün. Fehlalarm heißt: ein gutartiges Paket hat mindestens einen K- oder H-Befund. Bekannte Lücken aus OSV zählen nicht als Fehlalarm und stehen gesondert.
 
@@ -24,7 +24,7 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 
 | Ebene | Erkannt |
 |---|---|
-| A | 19/19 (100 %) |
+| A | 20/20 (100 %) |
 | B | 6/6 (100 %) |
 | C | 4/4 (100 %) |
 | D | 3/3 (100 %) |
@@ -68,6 +68,7 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | DOC-03 | Dokumente | `LB-B21-aktive-inhalte` | gelb | ja |
 | INV-01 | Inventar | `LB-A15-angehaengte-daten` | rot | ja |
 | MOD-01 | Modelle | `LB-A16-pickle-code` | gesperrt | ja |
+| MOD-04 | Modelle | `LB-A16-template-code` | gesperrt | ja |
 | MOD-06 | Modelle | `LB-A18-modell-unklar` | gelb | ja |
 | MOD-07 | Modelle | `LB-A19-remote-code` | gelb | ja |
 | SEC-01 | Secrets | `LB-B20-schluesseldatei` | gesperrt | ja |
@@ -87,19 +88,19 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | anthropics/skills/skills/theme-factory | 8a1541c4a3ff | gelb | – | – |
 | anthropics/skills/skills/web-artifacts-builder | 8a1541c4a3ff | gelb | – | – |
 | anthropics/skills/skills/webapp-testing | 8a1541c4a3ff | rot | –<br>berechtigt: `K bandit:B602 scripts/with_server.py` | – |
-| anthropics/claude-plugins-official/plugins/agent-sdk-dev | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/claude-md-management | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/code-review | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/code-simplifier | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/commit-commands | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/explanatory-output-style | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/feature-dev | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/hookify | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/mcp-server-dev | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/plugin-dev | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/pr-review-toolkit | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/ralph-loop | aa5654b7acb7 | gelb | – | – |
-| anthropics/claude-plugins-official/plugins/security-guidance | aa5654b7acb7 | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/agent-sdk-dev | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/claude-md-management | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/code-review | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/code-simplifier | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/commit-commands | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/explanatory-output-style | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/feature-dev | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/hookify | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/mcp-server-dev | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/plugin-dev | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/pr-review-toolkit | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/ralph-loop | ab024cdcfa7c | gelb | – | – |
+| anthropics/claude-plugins-official/plugins/security-guidance | ab024cdcfa7c | gelb | – | – |
 | obra/superpowers/skills/brainstorming | 8ca22dba9a94 | rot | –<br>berechtigt: `H LB-C01-shell-mit-eingabe scripts/server.cjs` | – |
 | obra/superpowers/skills/executing-plans | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/finishing-a-development-branch | 8ca22dba9a94 | gelb | – | – |
@@ -110,14 +111,14 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | obra/superpowers/skills/test-driven-development | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/using-git-worktrees | 8ca22dba9a94 | gelb | – | – |
 | obra/superpowers/skills/writing-plans | 8ca22dba9a94 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-auth | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-pagination | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-prompt | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-resource | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp-stateless | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/simple-tool | 06d1d1e4d210 | gelb | – | – |
-| modelcontextprotocol/python-sdk/examples/servers/structured-output-lowlevel | 06d1d1e4d210 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-auth | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-pagination | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-prompt | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-resource | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-streamablehttp-stateless | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/simple-tool | c15566c9dd48 | gelb | – | – |
+| modelcontextprotocol/python-sdk/examples/servers/structured-output-lowlevel | c15566c9dd48 | gelb | – | – |
 | modelcontextprotocol/servers/src/everything | f46d9578190b | rot | –<br>berechtigt: `H LB-E04-ohne-anmeldung transports/sse.ts`, `H LB-E04-ohne-anmeldung transports/streamableHttp.ts` | – |
 | modelcontextprotocol/servers/src/fetch | f46d9578190b | rot | – | 2 |
 | modelcontextprotocol/servers/src/filesystem | f46d9578190b | gelb | – | – |
@@ -126,16 +127,16 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | modelcontextprotocol/servers/src/sequentialthinking | f46d9578190b | gelb | – | – |
 | modelcontextprotocol/servers/src/time | f46d9578190b | rot | – | 2 |
 | microsoft/playwright-mcp | f183dad4a529 | gelb | – | – |
-| awslabs/mcp/src/aws-documentation-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/aws-pricing-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/cloudwatch-mcp-server | d80b52d8a889 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json`, `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json` | 2 |
-| awslabs/mcp/src/dynamodb-mcp-server | d80b52d8a889 | rot | – | 3 |
-| awslabs/mcp/src/ecs-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/eks-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/iam-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/lambda-tool-mcp-server | d80b52d8a889 | rot | – | 2 |
-| awslabs/mcp/src/postgres-mcp-server | d80b52d8a889 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket kiro_power/mcp.json` | 2 |
-| awslabs/mcp/src/s3-tables-mcp-server | d80b52d8a889 | rot | – | 2 |
+| awslabs/mcp/src/aws-documentation-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/aws-pricing-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/cloudwatch-mcp-server | f280c32aa639 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json`, `H LB-E09-fremdes-paket skills/agentcore-investigation/mcp/.mcp.json` | 2 |
+| awslabs/mcp/src/dynamodb-mcp-server | f280c32aa639 | rot | – | 3 |
+| awslabs/mcp/src/ecs-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/eks-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/iam-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/lambda-tool-mcp-server | f280c32aa639 | rot | – | 2 |
+| awslabs/mcp/src/postgres-mcp-server | f280c32aa639 | rot | –<br>berechtigt: `H LB-E09-fremdes-paket kiro_power/mcp.json` | 2 |
+| awslabs/mcp/src/s3-tables-mcp-server | f280c32aa639 | rot | – | 2 |
 
 ## Gutartig, eigener Korpus
 
@@ -166,6 +167,7 @@ Erkannt heißt: die erwartete Regel hat angeschlagen und die Gesamtampel ist nic
 | Matrix DOC-03 | – | gelb | – | – |
 | Matrix INV-01 | – | gelb | – | – |
 | Matrix MOD-01 | – | gelb | – | – |
+| Matrix MOD-04 | – | gelb | – | – |
 | Matrix MOD-07 | – | gelb | – | – |
 | Matrix SEC-01 | – | gelb | – | – |
 | beratungs-skill | – | gelb | – | – |

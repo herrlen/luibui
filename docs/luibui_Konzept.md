@@ -56,7 +56,7 @@ Jeder lädt ein Projekt hoch oder gibt eine Git-URL an. luibui prüft es auf Sic
 |---|---|---|
 | Anmeldung | nein | ja, kostenlos |
 | Eingabe | öffentliche Git-URL oder eine Datei bis 2 MB | alle Eingabearten |
-| Prüfungen | Ebene A (Dateien), B (versteckte Inhalte und Anweisungsmuster, nur Regeln), Secrets, D (Abhängigkeiten, bei Git) | alle Ebenen A–H, Code-Analyse (Opengrep, Bandit, Cisco-Scanner), MCP, DSGVO-Abgleich, Korrelation, LLM-Prüfer, ClamAV, ab Sprint 6 Sandbox |
+| Prüfungen | Ebene A (Dateien), B (versteckte Inhalte und Anweisungsmuster, nur Regeln), Secrets, D (Abhängigkeiten, bei Git) | alle Ebenen A–H, Code-Analyse (Opengrep, Bandit), MCP, DSGVO-Abgleich, Korrelation, LLM-Prüfer, ClamAV, ab Sprint 6 Sandbox |
 | Dauer | unter 30 Sekunden | bis 5 Minuten |
 | Ergebnis | vorläufige Ampel mit Hinweis **„Schnellscan – eingeschränkter Umfang, ohne Gewähr“** | vollständiger Bericht mit Verlauf, Befund-Status, Dateiansicht |
 | Speicherung | nichts, Bericht 7 Tage per Link | im eigenen Bereich |
@@ -127,7 +127,7 @@ Den vollständigen Katalog mit rund 80 Prüfungen enthält `luibui_Pruefkatalog.
 | 5 | **Ebene B – Inhalte** | unsichtbare Unicode-Zeichen, Bidi, Homoglyphen, versteckter Text, kodierte Blöcke, Injection-Muster (ATR-Regeln) | 1 |
 | 6 | **Geheimnisse** | gitleaks, Werte im Bericht maskiert | 1 |
 | 7 | **Ebene D – Abhängigkeiten** | OSV-Scanner offline: CVEs und bekannte Schadpakete, Typosquatting, fehlende Lockfiles | 1 |
-| 8 | **Ebene C – Code** | Opengrep mit eigenen Regeln, Bandit, Cisco skill-scanner (Datenfluss, YARA) | 2 |
+| 8 | **Ebene C – Code** | Opengrep mit eigenen Regeln, Bandit | 2 |
 | 9 | **Ebene E – MCP** | Tool-Beschreibungen statisch aus dem Code (eigene Umsetzung, kein mcp-scanner, Len 29.09.2026), Auth, Transport | 2 |
 | 10 | **DSGVO und Rechte** | Endpunkte und Rechte im Code gegen Manifest, Länderzuordnung | 2 |
 | 11 | **Korrelation** | Anweisung im Markdown verweist auf eine Datei mit Befund → Befund wird hochgestuft | 2 |
@@ -240,7 +240,7 @@ Ein Paket kann aus einem Bericht heraus veröffentlicht werden, wenn es nicht ge
 |---|---|---|---|
 | `web` | öffentliche Seite (luibui.com) und Entwicklerbereich (app.luibui.com) in einer Next.js-App, getrennt per Host-Routing | Next.js 15, TS, Tailwind | 384 MB |
 | `api` | Auth, Annahme, Git-Clone, Projekte, verschlüsselte Dateiablage, Berichte, Register | FastAPI, SQLAlchemy 2, Alembic | 512 MB |
-| `worker` | Pipeline, eine Prüfung gleichzeitig, Timeout 5 min | Python 3.12 + gitleaks, osv-scanner, opengrep, bandit, skill-scanner (+ ClamAV ab Sprint 4) | 1,5 GB (2,5 GB mit ClamAV) |
+| `worker` | Pipeline, eine Prüfung gleichzeitig, Timeout 5 min | Python 3.12 + gitleaks, osv-scanner, opengrep, bandit (+ ClamAV ab Sprint 4) | 1,5 GB (2,5 GB mit ClamAV) |
 | `postgres` | Nutzer, Scans, Befunde, Pakete, Jobs, Audit-Log | PostgreSQL 17 | 768 MB |
 
 **Monorepo**
@@ -280,7 +280,7 @@ luibui/
 
 | Werkzeug | Lizenz | Einsatz |
 |---|---|---|
-| Cisco skill-scanner | Apache-2.0 | Skills: statisch, YARA, Datenfluss; LLM-Teil über mittwald statt Cloud |
+| Cisco skill-scanner | Apache-2.0 | **nicht eingesetzt** (Len, 02.10.2026): zu viele Fehlalarme, nichts zusätzlich erkannt, Prüfkatalog §15 |
 | ATR – Agent Threat Rules | MIT | 818 Regeln für Injection u. a., mit Testfällen |
 | gitleaks | MIT | Secrets |
 | OSV-Scanner + OSV-Offline-DB | Apache-2.0 | CVEs und Schadpakete (`MAL-…`) |

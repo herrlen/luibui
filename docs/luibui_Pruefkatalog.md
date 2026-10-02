@@ -68,7 +68,7 @@ Was im Paket liegt, unabhängig vom Inhalt der Dateien. Sprint 1 (A01 mit S1-2, 
 | A03 | **Install- und Hilfsskripte:** `setup.py` mit Code außerhalb von `setup()`, `install.sh`/`install.ps1`, `Makefile`/`Justfile`-Ziele und alle Shell-/PowerShell-Skripte, die herunterladen und ausführen oder eine Reverse Shell öffnen, `conftest.py` mit Netzwerk, Build-Backend im Paket (`backend-path`), Notebook-Shell-Zellen, die nachladen | H | – | ✓ ✓ ✓ ✓ | eigene Regeln | ASI05, LLM03 |
 | A04 | **Ausführbare Binärdateien:** ELF, Mach-O, PE, WASM, Java-Class, deb, rpm im Paket (Inventar); Installationspakete `.msi`, `.apk`, `.dmg`, `.pkg` | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04, LLM03 |
 | A05 | **Endung passt nicht zum Typ:** z. B. `bild.png` ist ein ELF, `notes.md` ist ein ZIP | H | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
-| A06 | **Kompilierter Code ohne Quelle:** `.pyc`, `.so`, `.node`, minifizierte `.js` ohne Quelldatei | M | – | ✓ ✓ ✓ ✓ | Inventar, Cisco skill-scanner (Bytecode) | ASI04 |
+| A06 | **Kompilierter Code ohne Quelle:** `.pyc`, `.so`, `.node`, minifizierte `.js` ohne Quelldatei | M | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
 | A07 | **Archive im Archiv:** verschachtelte ZIP/tar/7z/RAR bleiben gepackt und ungeprüft. Ausnahme: Paketformate `.whl`, `.egg`, `.dxt`, `.mcpb`, `.vsix`, `.xpi`, `.nupkg` werden eine Ebene tief nach `<name>.inhalt/` entpackt und mitgeprüft (Limits des ganzen Pakets) | M | – | ✓ ✓ ✓ ✓ | Inventar | ASI04 |
 | A08 | **Bekannte Schadsoftware:** Hash-Liste (MalwareBazaar, täglich, plus eigene Einträge in `rules/data/schadsoftware-sha256.txt`) und Signaturen (ab Sprint 4 ClamAV). Fehlt die Liste oder ist sie älter als 7 Tage, gilt die Prüfung als fehlgeschlagen. Treffer: Dateien sofort löschen, nur Hash behalten (Konzept §3) | K | ● | ✓ ✓ ✓ ✓ | Hash-Liste, ClamAV | ASI04, LLM03 |
 | A09 | **Versteckte Dateien und Ordner** außerhalb bekannter Muster (`.github/`, `.gitignore`, `.claude-plugin/`, …) | N | – | ✓ ✓ – ✓ | eigene Regeln | – |
@@ -143,7 +143,8 @@ eine statische Regel derselben Datei mindestens M meldet. Bis dahin ergibt es Ro
 ## 4. Ebene C – Code
 
 Skripte und Serverquellcode, statisch analysiert. Sprint 2 (S2-1, S2-2). Opengrep **nur mit
-eigenen Regeln** (`rules/opengrep/`), dazu Bandit für Python und der Cisco skill-scanner offline.
+eigenen Regeln** (`rules/opengrep/`), dazu Bandit für Python. Der Cisco skill-scanner wird nicht
+eingesetzt (Entscheidung Len, 02.10.2026, §15).
 Vollständig für Python, JavaScript/TypeScript und Shell (auch Skripte ohne Endung mit Shebang).
 Grundmuster (C01–C04, C07, C08, C10) für Go, Ruby, PHP, Rust, Java, Kotlin, C#, PowerShell und
 Batch (`LB-CXX-andere-sprachen`, `LB-CXX-powershell`); Datenfluss und Pfadprüfung (C05, C06, C12)
@@ -153,14 +154,14 @@ nur für Python und JavaScript/TypeScript.
 |---|---|---|---|---|---|---|
 | C01 | **Shell-Ausführung mit fremden Daten:** `subprocess(shell=True)`, `os.system`, `child_process.exec` mit Eingaben aus Tool-Parametern, Netz oder Dateien | H | – | ✓ ✓ ✓ – | Opengrep, Bandit | ASI05, LLM05 |
 | C02 | **Dynamische Code-Ausführung:** `eval`, `exec`, `new Function`, `pickle.loads`, `yaml.load` ohne SafeLoader, `importlib` mit variablen Namen | H | – | ✓ ✓ ✓ – | Opengrep, Bandit | ASI05 |
-| C03 | **Herunterladen und Ausführen:** Download gefolgt von `exec`, `chmod +x`, `import` oder Schreiben in `site-packages` | K | ● | ✓ ✓ ✓ – | Opengrep, skill-scanner (Pipeline) | ASI05, LLM03 |
-| C04 | **Lesen von Zugangsdaten:** Zugriff auf `~/.ssh`, `~/.aws`, `~/.config/gcloud`, `.env`, `.netrc`, Browser-Profile, Keychain | K | ● | ✓ ✓ ✓ – | Opengrep, skill-scanner (Datenfluss) | ASI03, LLM02 |
-| C05 | **Datenabfluss:** Daten aus Dateien, Umgebung oder Tool-Eingaben fließen zu einem Netz-Aufruf | K | ● | ✓ ✓ ✓ – | skill-scanner (Datenfluss), Opengrep | ASI02, LLM02 |
+| C03 | **Herunterladen und Ausführen:** Download gefolgt von `exec`, `chmod +x`, `import` oder Schreiben in `site-packages` | K | ● | ✓ ✓ ✓ – | Opengrep | ASI05, LLM03 |
+| C04 | **Lesen von Zugangsdaten:** Zugriff auf `~/.ssh`, `~/.aws`, `~/.config/gcloud`, `.env`, `.netrc`, Browser-Profile, Keychain | K | ● | ✓ ✓ ✓ – | Opengrep | ASI03, LLM02 |
+| C05 | **Datenabfluss:** Daten aus Dateien, Umgebung oder Tool-Eingaben fließen zu einem Netz-Aufruf | K | ● | ✓ ✓ ✓ – | Opengrep | ASI02, LLM02 |
 | C06 | **Umgebungsvariablen komplett gelesen und versendet** (`os.environ`, `process.env` als Ganzes) | H | – | ✓ ✓ ✓ – | Opengrep | LLM02 |
 | C07 | **Persistenz im Code:** Schreiben in Shell-Profile, Crontab, LaunchAgents, systemd, Autostart, Agent-Konfiguration | K | ● | ✓ ✓ ✓ – | Opengrep | ASI06, ASI10 |
 | C08 | **Verschleierter Code:** mehrstufiges Dekodieren mit anschließender Ausführung, gepackte Strings, absichtlich unlesbare Bezeichner | K | ● | ✓ ✓ ✓ – | Opengrep, YARA-X | ASI05 |
 | C09 | **Zeitbomben:** Verhalten abhängig von Datum, Aufrufzähler oder Umgebung (CI erkannt → harmlos) | K | ● | ✓ ✓ ✓ – | Opengrep; ab Sprint 6 Sandbox (F04) | ASI10 |
-| C10 | **Schadmuster:** Reverse Shell, Keylogger, Krypto-Miner, Ransomware-Muster, Anti-Analyse | K | ● | ✓ ✓ ✓ – | YARA-X, skill-scanner (YARA) | ASI10 |
+| C10 | **Schadmuster:** Reverse Shell, Keylogger, Krypto-Miner, Ransomware-Muster, Anti-Analyse | K | ● | ✓ ✓ ✓ – | YARA-X | ASI10 |
 | C11 | **Unsichere Netzwerknutzung:** TLS-Prüfung abgeschaltet, `http://` für Daten, Server lauscht auf `0.0.0.0` ohne Auth | M | – | ✓ ✓ ✓ – | Opengrep, Bandit | ASI07 |
 | C12 | **Pfad- und Dateizugriffe ohne Grenze:** Tool-Parameter als Pfad ohne Normalisierung (Path Traversal), Löschen außerhalb eines Arbeitsordners | H | – | ✓ ✓ ✓ – | Opengrep | ASI02, LLM06 |
 | C13 | **Sonstige Code-Schwächen:** SQL-Injection, schwache Kryptografie, hartkodierte Temp-Pfade (Bandit mittel und niedrig) | N | – | ✓ ✓ ✓ – | Bandit, Opengrep | – |
@@ -413,3 +414,29 @@ gemessen hat oder was Len entschieden hat.
 C01; eine Deckelung würde echte Shell-Injektion abschwächen. Zutreffende Befunde an gutartigen
 Paketen (ungepinntes `uvx …@latest`, ein Testserver ohne Anmeldung auf allen Schnittstellen)
 stehen in `corpus/vergleich.json` unter `berechtigt`, mit Grund, und bleiben im Benchmark sichtbar.
+
+---
+
+## 15. Cisco skill-scanner nicht eingesetzt (S2-2, Len, 02.10.2026)
+
+Gemessen mit `cisco-ai-skill-scanner` 2.1.0, nur Offline-Analyzer plus `--use-behavioral`, ohne
+Netz und mit leerer Umgebung, auf den 60 echten Paketen aus `corpus/vergleich.json` und den 37
+entschärften Nachbildungen aus `corpus/generate.py`:
+
+| | skill-scanner | luibui (Benchmark) |
+|---|---|---|
+| Nachbildungen mit K/H-Befund | 15/37, keine, die luibui nicht erkennt | 36/36 (+ MOD-04) |
+| Gutartige Pakete mit K/H-Befund | 14/60 | 0/60 |
+| Dauer je Prüfung | Median 15 s, bis 53 s | – |
+| Speicher je Prüfung | Median 142 MB, bis 296 MB | – |
+| Installation | rund 400 MB (litellm, openai, anthropic, fastapi, textual …) | – |
+
+Die Fehlalarme kommen vor allem aus groben Mustern (`subprocess.run([...])` ohne Shell und `eval`
+in Tests als kritisch, `while True:` als hoch), aber auch aus dem Datenfluss: Ein Plugin, das einen
+API-Schlüssel aus der Umgebung liest und damit ein Sprachmodell aufruft, wird „Datenabfluss,
+kritisch“. Gerade die Prüfungen, für die der Scanner vorgesehen war (C03, C04, C05, C10), sperren
+bei K. Viele Befunde haben keine Zeile, die Texte sind englisch, und ohne Markdown-Datei verweigert
+der Scanner die Prüfung (einzelne Python-Dateien, MCP-Server ohne README).
+
+Neu bewerten, wenn der vollständige bösartige Korpus (S3-1) steht und zeigt, dass luibui dort
+Datenflüsse übersieht.

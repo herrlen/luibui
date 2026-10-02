@@ -42,7 +42,7 @@ Zielumgebung: Docker-Worker auf Basis von `python:3.12-slim`. Laut `docker-libra
 
 | Werkzeug | Version (Datum) | Lizenz (LICENSE geprüft) | offline | RAM (ca.) | Ausgabe | Empfehlung |
 |---|---|---|---|---|---|---|
-| Cisco skill-scanner | 2.1.0 (2026-09-05) | Apache-2.0 | ja, ohne `--use-*`-Flags; `LITELLM_LOCAL_MODEL_COST_MAP=True` setzen | 300–800 MB (nicht verifiziert) | JSON, SARIF, Markdown, HTML, Tabelle | **einsetzen**, nur Kern-Analyzer plus `--use-behavioral` |
+| Cisco skill-scanner | 2.1.0 (2026-09-05) | Apache-2.0 | ja, ohne `--use-*`-Flags; `LITELLM_LOCAL_MODEL_COST_MAP=True` setzen | 300–800 MB (nicht verifiziert) | JSON, SARIF, Markdown, HTML, Tabelle | ~~einsetzen~~ **nicht eingesetzt** (Len, 02.10.2026): gemessen 142–296 MB, 15 s, 14/60 Fehlalarme; Prüfkatalog §15 |
 | Cisco mcp-scanner | 4.8.4 (2026-08-28) | Apache-2.0 | nur mit `--analyzers yara` und Subbefehl `static`; Standard ist **nicht** offline | 200–500 MB (nicht verifiziert) | JSON (`raw`), Text; **kein SARIF** | **eingeschränkt**: YARA-Regeln nutzbar, Live-Modi verboten |
 | ATR – Agent Threat Rules | v4.0.0 (2026-08-23); `main` meldet 4.1.1 | MIT (Marken ausgenommen) | ja (Regeln sind YAML-Dateien) | vernachlässigbar | YAML, Export JSON | **einsetzen**, als Regelquelle mit Qualitätsfilter |
 | gitleaks | v8.30.1 (2026-03-21) | MIT | ja | < 200 MB (nicht verifiziert) | JSON, SARIF, CSV, JUnit | **einsetzen**; Nachfolger Betterleaks beobachten |

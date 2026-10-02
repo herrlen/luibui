@@ -1905,3 +1905,23 @@ Scrollen); der QR-Code aus dem Screenshot wurde mit OpenCV gelesen und ergibt di
 demselben Schlüssel. Python 1326, Web 52 Tests grün, ruff, mypy, eslint.
 
 **Offen:** E-Mail-Adresse ändern (Bestätigung der neuen Adresse, Hinweis an die alte).
+
+## 2026-10-02 – S2-2: Cisco skill-scanner gemessen, nicht eingesetzt (Len)
+
+**Was:** `cisco-ai-skill-scanner` 2.1.0 (Apache-2.0) in einem Wegwerf-venv außerhalb des Repos
+installiert und ohne Netz-Flags, mit `--use-behavioral` und leerer Umgebung über die 60 echten
+Pakete des Benchmarks und die 37 entschärften Nachbildungen laufen lassen. Vorher im Quelltext
+geprüft: kein `.env`-Laden aus dem geprüften Ordner, Policy nur per Flag, keine Unterdrückung
+durch Kommentare im Paket.
+
+**Ergebnis:** 14/60 gutartige Pakete mit K/H-Befund (luibui: 0/60), auf den Nachbildungen 15/37 mit
+K/H und keine, die luibui nicht schon erkennt. Median 15 s und 142 MB je Prüfung (bis 53 s und
+296 MB), rund 400 MB Installation. Ohne Markdown-Datei verweigert er die Prüfung. Einzelheiten
+und Beispiele im Prüfkatalog §15.
+
+**Entscheidung Len (02.10.2026):** nicht einbauen. Prüfkatalog (Quellen für A06, C03–C05, C10),
+Konzept, Sprintplanung und `docs/scanner-tools.md` angepasst. Neu bewerten mit dem vollständigen
+bösartigen Korpus (S3-1).
+
+**Nicht geändert:** Das Präfix `cisco-skill:` bleibt als Beispiel in CLAUDE.md und
+`spec/finding.schema.json` stehen; es wird nirgends erzeugt.

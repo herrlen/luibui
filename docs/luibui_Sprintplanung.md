@@ -139,7 +139,7 @@
 | ID | Task | h |
 |---|---|---|
 | S2-1 | ✅ **(28.09.2026)** Analyzer **C – Code**: Opengrep mit eigenen Regeln (C01–C12, Python, JavaScript/TypeScript, Shell), Bandit (Python: C01, C02, C11, C13). Dazu im Bericht „Was geprüft wurde“ je Dateiart | 6 |
-| S2-2 | Cisco skill-scanner einbinden (nur Offline-Analyzer), Befunde auf luibui-Schema mappen, Duplikate zusammenführen | 4 |
+| S2-2 | ✅ **(02.10.2026) entschieden: nicht eingesetzt** (Len). Gemessen: 14/60 gutartige Pakete mit K/H, keine zusätzliche Erkennung, +15 s und bis 300 MB je Prüfung; Prüfkatalog §15. Cisco skill-scanner einbinden (nur Offline-Analyzer), Befunde auf luibui-Schema mappen, Duplikate zusammenführen | 4 |
 | S2-3 | ✅ **(29.09.2026)** Analyzer **E – MCP**: Tool-Namen, -Beschreibungen und Parameter statisch aus Python (`ast`) und JavaScript/TypeScript gelesen und mit allen B-Regeln geprüft (E01, E02), Beschreibung ↔ Code für Python (E03), Anmeldung, CORS, Token-Weitergabe (E04–E06). Ohne Cisco mcp-scanner (Entscheidung Len) | 4 |
 | S2-4 | ✅ **(29.09.2026)** Analyzer **G – DSGVO und Rechte**: Endpunkte und Rechte aus Code extrahieren, gegen Manifest, Länderzuordnung (gepflegte Liste + Angemessenheitsbeschlüsse, `rules/data/laender.yaml`) | 5 |
 | S2-5 | ✅ **(29.09.2026)** **Korrelation**: Verweise aus Anleitungen (SKILL.md, AGENTS.md, CLAUDE.md, Commands, Agents, Cursor-Regeln, über verlinktes Markdown bis Tiefe 3) auf Code auflösen, Befunde der Ebenen A, C, E dort um eine Stufe hochstufen (M→H, H→K); Fingerprints für jeden Befund | 3 |

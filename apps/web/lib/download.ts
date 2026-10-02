@@ -28,7 +28,8 @@ function antwort(scan: Antwort<ScanStatus>, format: Format): Response {
     });
   }
   const b = scan.data.bericht;
-  return new Response(inhalt(b, format), {
+  // Only the owner's project checks carry a status; the public quick scan never does.
+  return new Response(inhalt(b, format, scan.data.befund_status), {
     headers: {
       "Content-Type": TYP[format],
       "Content-Disposition": `attachment; filename="${dateiname(b, format)}"`,

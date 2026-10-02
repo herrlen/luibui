@@ -2,7 +2,8 @@
 // semicolon, every cell quoted. Cells that a spreadsheet would read as a formula get an apostrophe.
 // Without findings there is one row with the result and empty finding columns, so the result and
 // "ohne Gewähr" in scan_art are still in the file.
-import type { Bericht } from "./types";
+import { statusLabel } from "./format";
+import type { BefundStatus, Bericht } from "./types";
 
 const FORMEL = /^[=+\-@\t\r]/;
 
@@ -30,9 +31,15 @@ const SPALTEN = [
   "beleg",
   "fix",
   "fix_prompt",
+  "status",
+  "status_begruendung",
 ] as const;
 
-export function berichtAlsCsv(b: Bericht, { showDsgvo = true }: { showDsgvo?: boolean } = {}): string {
+/** ``status``: the owner's finding status (S3-7), only for downloads from the developer area. */
+export function berichtAlsCsv(
+  b: Bericht,
+  { showDsgvo = true, status }: { showDsgvo?: boolean; status?: Record<string, BefundStatus> | null } = {},
+): string {
   const befunde = showDsgvo ? b.befunde : b.befunde.filter((x) => x.achse !== "dsgvo");
   const gesamt = showDsgvo ? b.ampeln.gesamt : b.ampeln.sicherheit;
   const scanArt = b.scan_art === "schnell" ? "schnell (ohne Gewähr)" : b.scan_art;
@@ -50,9 +57,15 @@ export function berichtAlsCsv(b: Bericht, { showDsgvo = true }: { showDsgvo?: bo
       x?.beleg,
       x?.fix,
       x?.fix_prompt,
+      ...statusZellen(x?.fingerprint ? status?.[x.fingerprint] : undefined),
     ]
       .map(zelle)
       .join(";"),
   );
   return "﻿" + [SPALTEN.map(zelle).join(";"), ...zeilen].join("\r\n") + "\r\n";
+}
+
+function statusZellen(st: BefundStatus | undefined): [string, string] {
+  const label = statusLabel(st);
+  return label ? [label, st?.begruendung ?? ""] : ["", ""];
 }

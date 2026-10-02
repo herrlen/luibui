@@ -1,6 +1,7 @@
 // SARIF 2.1.0 export of a report (S2-12) for GitHub Code Scanning and other SARIF viewers.
 // Only plain-text message fields are used: package content never reaches a Markdown renderer.
-import type { Bericht, Schwere } from "./types";
+import { statusLabel } from "./format";
+import type { BefundStatus, Bericht, Schwere } from "./types";
 
 const SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
 const PAKET_ANKER = "luibui.json";
@@ -17,7 +18,24 @@ const LEVEL: Record<Schwere, "error" | "warning" | "note"> = {
 // GitHub sorts security alerts by this score (critical ≥ 9, high ≥ 7, medium ≥ 4, low > 0).
 const SECURITY_SEVERITY: Record<Schwere, string> = { K: "9.5", H: "7.5", M: "5.0", N: "2.0", I: "0.1" };
 
-export function berichtAlsSarif(b: Bericht): object {
+// SARIF suppressions (§3.35): accepted = the owner keeps the finding on purpose or luibui confirmed
+// a false alarm; underReview = disputed, not decided; rejected = luibui kept the finding.
+function unterdrueckung(st: BefundStatus | undefined): object[] | undefined {
+  if (!st) return undefined;
+  const status =
+    st.status === "akzeptiert" || st.moderation === "fehlalarm"
+      ? "accepted"
+      : st.status === "bestritten"
+        ? st.moderation === "bestritten"
+          ? "rejected"
+          : "underReview"
+        : null;
+  if (!status) return undefined;
+  return [{ kind: "external", status, ...(st.begruendung ? { justification: st.begruendung } : {}) }];
+}
+
+/** ``status``: the owner's finding status (S3-7), only for downloads from the developer area. */
+export function berichtAlsSarif(b: Bericht, status?: Record<string, BefundStatus> | null): object {
   const regeln = new Map<string, number>();
   const rules: object[] = [];
   const results = b.befunde.map((x) => {
@@ -36,7 +54,10 @@ export function berichtAlsSarif(b: Bericht): object {
         },
       });
     }
+    const st = x.fingerprint ? status?.[x.fingerprint] : undefined;
+    const suppressions = unterdrueckung(st);
     return {
+      ...(suppressions ? { suppressions } : {}),
       ruleId: x.rule_id,
       ruleIndex: index,
       level: LEVEL[x.schwere],
@@ -57,6 +78,7 @@ export function berichtAlsSarif(b: Bericht): object {
         nachweisgrad: x.nachweisgrad,
         ...(x.beleg ? { beleg: x.beleg } : {}),
         fix_prompt: x.fix_prompt,
+        ...(statusLabel(st) ? { luibui_status: statusLabel(st) } : {}),
       },
     };
   });

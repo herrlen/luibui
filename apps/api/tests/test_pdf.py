@@ -98,3 +98,57 @@ def test_example_pdf_on_the_website_matches_the_example_report() -> None:
         bericht_als_pdf(report, "detail", fest=True)
         == (web / "public" / "beispielbericht.pdf").read_bytes()
     )
+
+
+def _texte(flowables: list[Any]) -> str:
+    """Text of every paragraph, also inside tables (ReportLab keeps the markup in ``.text``)."""
+    from reportlab.platypus import KeepTogether, Paragraph, Table
+
+    out: list[str] = []
+    for f in flowables:
+        if isinstance(f, Paragraph):
+            out.append(f.text)
+        elif isinstance(f, KeepTogether):
+            out.append(_texte(f._content))
+        elif isinstance(f, Table):
+            for zeile in f._cellvalues:
+                for zelle in zeile:
+                    out.append(_texte(zelle if isinstance(zelle, list) else [zelle]))
+    return "\n".join(out)
+
+
+def test_finding_status_in_both_forms() -> None:
+    """S3-7 in the PDF: label at each finding, the reason as escaped text, a note on the cover."""
+    from luibui_api.pdf import _befund_detail, _befunde_liste, _stile, status_text
+
+    assert status_text(None) is None and status_text({"status": "offen"}) is None
+    assert status_text({"status": "akzeptiert"}) == "Akzeptiert"
+    assert status_text({"status": "bestritten", "moderation": None}) == "Bestritten"
+    assert status_text({"status": "bestritten", "moderation": "fehlalarm"}) == (
+        "Fehlalarm, Regel angepasst"
+    )
+    befund = _bericht()["befunde"][0]
+    status = {befund["fingerprint"]: {"status": "akzeptiert", "begruendung": BOESE}}
+    s = _stile()
+    detail = _texte(_befund_detail(befund, s, 500, status))
+    assert "Status:</font> Akzeptiert" in detail
+    assert "&lt;script&gt;" in detail and "<script>" not in detail
+    assert "Status: Akzeptiert" in _texte([_befunde_liste([befund], s, 500, status)])
+    assert "Status" not in _texte([_befunde_liste([befund], s, 500, None)])
+    for umfang in ("standard", "detail"):
+        pdf = bericht_als_pdf(_bericht(), umfang, status=status)  # type: ignore[arg-type]
+        assert pdf.startswith(b"%PDF-")
+
+
+def test_owner_pdf_carries_the_status(api: Api, _migrated: str) -> None:
+    a = api.user("anna@example.org")
+    scan = upload_zip(a, project(a)).json()["id"]
+    _fertig(_migrated, scan, [_befund("K", "exfil", "a")])
+    ohne = a.get(f"/api/v1/scans/{scan}/bericht.pdf?umfang=detail").content
+    r = a.post(
+        f"/api/v1/scans/{scan}/befund-status",
+        json={"fingerprint": "a" * 64, "status": "akzeptiert", "begruendung": "Nur im Test."},
+    )
+    assert r.status_code == 200, r.text
+    mit = a.get(f"/api/v1/scans/{scan}/bericht.pdf?umfang=detail").content
+    assert mit.startswith(b"%PDF-") and len(mit) > len(ohne)

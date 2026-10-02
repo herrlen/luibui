@@ -1806,3 +1806,22 @@ Reihenfolgen, nur eigenes Projekt, unfertig, Nutzer B), Isolationstest; 3 Web-Te
 API, Worker und Website: drei echte Prüfungen eines Projekts, Verlauf mit Hover angesehen,
 Vergleich (Note +40, 1 behoben), Abzeichenfarbe im Browser gemessen. Python 1306, Web 43 Tests
 grün, ruff, mypy, eslint.
+
+## 2026-10-02 – S3-7: Befund-Status in PDF, CSV, JSON und SARIF
+
+**Was:** Offener Punkt aus S3-7. Downloads aus dem Entwicklerbereich tragen jetzt den Status, den
+der Eigentümer oder die Moderation gesetzt hat, mit denselben Wörtern wie die Oberfläche
+(„Akzeptiert“, „Bestritten“, „Behoben“, „Fehlalarm, Regel angepasst“, „Vom Autor bestritten“).
+- **PDF:** Zeile „Status: …“ unter dem Befund (Standard) bzw. mit Begründung (Detail), dazu ein
+  Satz, dass der Status weder Ampel noch Note ändert. Begründung escaped wie jeder andere Text.
+- **CSV:** zwei neue Spalten `status` und `status_begruendung`, Schutz gegen Formeln wie bei
+  allen Zellen (auch im öffentlichen Beispiel, dort leer).
+- **JSON:** `befund_status` je Fingerprint.
+- **SARIF:** `suppressions` nach §3.35: akzeptiert oder bestätigter Fehlalarm = `accepted`,
+  bestritten ohne Entscheidung = `underReview`, vom Autor bestritten = `rejected`; „behoben“ ohne
+  Unterdrückung. GitHub Code Scanning blendet `accepted` aus.
+- Schnellscan und geteilte Berichte bekommen nie einen Status.
+
+**Geprüft:** 2 PDF-Tests (Beschriftung, Escaping der Begründung, beide Formen, Download mit
+Status), 3 Export-Tests (CSV mit Formel in der Begründung, JSON, alle SARIF-Fälle, ohne Status
+unverändert). Python 1308, Web 46 Tests grün, ruff, mypy, eslint.

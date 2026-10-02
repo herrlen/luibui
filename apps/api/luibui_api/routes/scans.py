@@ -198,12 +198,18 @@ async def bericht_pdf(
             status.HTTP_409_CONFLICT,
             {"code": "nicht_fertig", "text": "Die Prüfung ist noch nicht fertig."},
         )
-    return await pdf_antwort(scan.report, umfang)
+    status_ = {fp: st.model_dump() for fp, st in (status_for_scan(db, scan) or {}).items()}
+    return await pdf_antwort(scan.report, umfang, status_)
 
 
-async def pdf_antwort(report: dict[str, Any], umfang: Literal["standard", "detail"]) -> Response:
-    """The PDF download of a finished report, shared with the public quick scan route."""
-    pdf = await run_in_threadpool(bericht_als_pdf, report, umfang)
+async def pdf_antwort(
+    report: dict[str, Any],
+    umfang: Literal["standard", "detail"],
+    status_: dict[str, dict[str, Any]] | None = None,
+) -> Response:
+    """The PDF download of a finished report, shared with the public quick scan route (which
+    never passes a status)."""
+    pdf = await run_in_threadpool(lambda: bericht_als_pdf(report, umfang, status=status_))
     return Response(
         pdf,
         media_type="application/pdf",

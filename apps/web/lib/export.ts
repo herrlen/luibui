@@ -1,7 +1,7 @@
 // Report downloads (S2-12): file name and body per format. Pure, so it runs in tests.
 import { berichtAlsCsv } from "./csv";
 import { berichtAlsSarif, hinweise } from "./sarif";
-import type { Bericht } from "./types";
+import type { BefundStatus, Bericht } from "./types";
 
 export type Format = "csv" | "json" | "sarif";
 
@@ -22,8 +22,9 @@ export function dateiname(b: Bericht, format: Format): string {
   return `luibui-${paket}-${datum}.${format}`;
 }
 
-export function inhalt(b: Bericht, format: Format): string {
-  if (format === "csv") return berichtAlsCsv(b);
-  if (format === "sarif") return JSON.stringify(berichtAlsSarif(b), null, 2);
-  return JSON.stringify({ ...b, hinweise: hinweise(b) }, null, 2);
+/** ``status``: finding status by fingerprint (S3-7); only the developer area passes it. */
+export function inhalt(b: Bericht, format: Format, status?: Record<string, BefundStatus> | null): string {
+  if (format === "csv") return berichtAlsCsv(b, { status });
+  if (format === "sarif") return JSON.stringify(berichtAlsSarif(b, status), null, 2);
+  return JSON.stringify({ ...b, hinweise: hinweise(b), ...(status ? { befund_status: status } : {}) }, null, 2);
 }

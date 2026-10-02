@@ -66,6 +66,12 @@ export const BEFUND_STATUS_TEXT: Record<string, string> = {
 };
 
 /** luibui's decision on a dispute (Konzept §6). */
+/** One label for a finding's status, as the developer area shows it; "" for an open finding. */
+export function statusLabel(st: { status: string; moderation: string | null } | null | undefined): string {
+  if (!st || st.status === "offen") return "";
+  return st.moderation ? (MODERATION_TEXT[st.moderation] ?? st.moderation) : (BEFUND_STATUS_TEXT[st.status] ?? st.status);
+}
+
 export const MODERATION_TEXT: Record<string, string> = {
   bestritten: "Vom Autor bestritten",
   fehlalarm: "Fehlalarm, Regel angepasst",

@@ -304,8 +304,36 @@ def _deckblatt(r: dict[str, Any], s: dict[str, ParagraphStyle], breite: float) -
     return teile
 
 
+Status = dict[str, dict[str, Any]]
+"""Finding status by fingerprint (S3-7), as the owner set it; only in the developer area."""
+
+
+def status_text(st: dict[str, Any] | None) -> str | None:
+    """Short label for a finding's status; None for open findings (the default)."""
+    if not st or st.get("status") in (None, "offen"):
+        return None
+    if st.get("status") == "akzeptiert":
+        return "Akzeptiert"
+    if st.get("status") == "behoben":
+        return "Behoben"
+    # Same words as the developer area (lib/format.ts: MODERATION_TEXT, BEFUND_STATUS_TEXT).
+    if st.get("moderation") == "fehlalarm":
+        return "Fehlalarm, Regel angepasst"
+    if st.get("moderation") == "bestritten":
+        return "Vom Autor bestritten"
+    return "Bestritten"
+
+
+def _status_von(b: dict[str, Any], status: Status | None) -> dict[str, Any] | None:
+    fp = b.get("fingerprint")
+    return status.get(fp) if status and isinstance(fp, str) else None
+
+
 def _befunde_liste(
-    befunde: list[dict[str, Any]], s: dict[str, ParagraphStyle], breite: float
+    befunde: list[dict[str, Any]],
+    s: dict[str, ParagraphStyle],
+    breite: float,
+    status: Status | None = None,
 ) -> Table:
     zeilen: list[list[Any]] = [
         [Paragraph(escape(t), s["klein"]) for t in ("Schwere", "Befund", "Ort")]
@@ -329,6 +357,11 @@ def _befunde_liste(
                 [
                     Paragraph(_t(b.get("titel")), s["h3"]),
                     Paragraph(_t(b.get("rule_id"), "PlexMono"), s["klein"]),
+                    *(
+                        [Paragraph(f"Status: {escape(label)}", s["klein"])]
+                        if (label := status_text(_status_von(b, status)))
+                        else []
+                    ),
                 ],
                 Paragraph(_t(_ort(b), "PlexMono"), s["mono"]),
             ]
@@ -338,7 +371,9 @@ def _befunde_liste(
     return tabelle
 
 
-def _befund_detail(b: dict[str, Any], s: dict[str, ParagraphStyle], breite: float) -> list[Any]:
+def _befund_detail(
+    b: dict[str, Any], s: dict[str, ParagraphStyle], breite: float, status: Status | None = None
+) -> list[Any]:
     schwere = str(b.get("schwere"))
     kopf = Table(
         [
@@ -397,6 +432,12 @@ def _befund_detail(b: dict[str, Any], s: dict[str, ParagraphStyle], breite: floa
     normen = [n for n in b.get("normbezug") or [] if n]
     if normen:
         teile += [Spacer(1, 3), Paragraph("Bezug: " + _t(", ".join(map(str, normen))), s["klein"])]
+    st = _status_von(b, status)
+    if label := status_text(st):
+        text = f'<font name="Plex-SemiBold">Status:</font> {escape(label)}'
+        if st and st.get("begruendung"):
+            text += f" – Begründung: {_t(st.get('begruendung'))}"
+        teile += [Spacer(1, 3), Paragraph(text, s["klein"])]
     return [CondPageBreak(40 * mm), KeepTogether(teile[:5]), *teile[5:], Spacer(1, 12)]
 
 
@@ -411,10 +452,14 @@ def dateiname(r: dict[str, Any], umfang: Umfang) -> str:
 
 
 def bericht_als_pdf(
-    report: dict[str, Any], umfang: Umfang = "standard", *, fest: bool = False
+    report: dict[str, Any],
+    umfang: Umfang = "standard",
+    *,
+    fest: bool = False,
+    status: Status | None = None,
 ) -> bytes:
     """``fest``: same bytes for the same report (no creation time, fixed IDs), for the example
-    PDF on the website that a test compares."""
+    PDF on the website that a test compares. ``status``: the owner's finding status (S3-7)."""
     s = _stile()
     puffer = io.BytesIO()
     rand = 18 * mm
@@ -468,11 +513,20 @@ def bericht_als_pdf(
         teile.append(Paragraph("Keine Befunde.", s["basis"]))
     else:
         teile += [Paragraph(escape(zaehlung), s["klein"]), Spacer(1, 6)]
+        if any(status_text(_status_von(b, status)) for b in befunde):
+            teile += [
+                Paragraph(
+                    "Der Status (akzeptiert, bestritten, behoben) stammt vom Eigentümer bzw. aus "
+                    "der Moderation und ändert weder Ampel noch Note.",
+                    s["klein"],
+                ),
+                Spacer(1, 6),
+            ]
         if umfang == "detail":
             for b in befunde:
-                teile += _befund_detail(b, s, breite)
+                teile += _befund_detail(b, s, breite, status)
         else:
-            teile.append(_befunde_liste(befunde, s, breite))
+            teile.append(_befunde_liste(befunde, s, breite, status))
             teile += [
                 Spacer(1, 6),
                 Paragraph(

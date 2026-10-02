@@ -1881,3 +1881,27 @@ Berichte und den Beispielbericht (gemeinsame `ReportView`).
 **Geprüft:** ReportView-Test (beide Knöpfe vorhanden), Web-Tests.
 
 **Offen:** Fortschritt während der Prüfung weiterhin nur als Status, ohne Schritte.
+
+## 2026-10-02 – S2-10: Passwort, Zwei-Faktor-Anmeldung und Speicher im Konto
+
+**Was:**
+- API `GET /api/v1/konto/speicher`: belegte Bytes der gespeicherten Projekt-Dateien (gezählt wie
+  die Kontingentprüfung beim Hochladen) und die Grenze (500 MB).
+- API `POST /api/v1/konto/passwort`: neues Passwort mit aktuellem Passwort und, falls aktiv,
+  Code; Fehlversuche zählen wie bei Export und Löschen. Beendet alle anderen Sitzungen, die
+  aktuelle bleibt. Nur mit Browser-Sitzung, nie mit API-Token. Audit `konto.passwort_geaendert`.
+- `POST /api/v1/auth/totp/einrichten` liefert zusätzlich den QR-Code als Zeilen aus `0`/`1`
+  (Encoder aus reportlab, das schon für die PDFs da ist, keine neue Abhängigkeit). Die
+  Oberfläche zeichnet ihn als SVG-Rechtecke, kein Bild, kein HTML aus der API.
+- Konto-Seite: Speicherbalken im Profil, „Passwort ändern“ (mit Wiederholung), „Zwei-Faktor-
+  Anmeldung“ einrichten (QR-Code, Schlüssel zum Abtippen, erster Code bestätigt) und ausschalten
+  (Passwort und Code). Untermenü um beide Abschnitte ergänzt.
+
+**Geprüft:** 4 neue API-Tests (Speicher nur eigene Dateien und ohne Anmeldung 401; Passwort
+ändern hält die eigene Sitzung und beendet die andere, falsches/kurzes Passwort; braucht den
+zweiten Faktor und eine Sitzung, Token 401/403; QR-Matrix quadratisch mit Suchmuster), Web-Test
+für die QR-Darstellung. Lokal mit API und Website angesehen (1280 und 375 px, kein seitliches
+Scrollen); der QR-Code aus dem Screenshot wurde mit OpenCV gelesen und ergibt die otpauth-URI mit
+demselben Schlüssel. Python 1326, Web 52 Tests grün, ruff, mypy, eslint.
+
+**Offen:** E-Mail-Adresse ändern (Bestätigung der neuen Adresse, Hinweis an die alte).

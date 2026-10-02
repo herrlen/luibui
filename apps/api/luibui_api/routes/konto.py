@@ -1,11 +1,11 @@
-"""Data export and account deletion (S2-10; DSGVO Art. 15, 17 and 20).
+"""Account: storage used, password change, data export and deletion (S2-10; DSGVO Art. 15, 17, 20).
 
-Both need a browser session (never an API token), the password and, with two-factor login, the
-code. The export is a ZIP with everything stored about the account: account data, sessions and
-tokens (no secrets or hashes), credit, purchases, the own audit log, projects with their reports
-and the stored files, decrypted, streamed while it is built. Deleting removes the account with
-all projects, reports and the encrypted files on the volume. Receipts stay for ten years
-(§ 147 AO), without the account link.
+Export, deletion and the password change need a browser session (never an API token), the
+password and, with two-factor login, the code. The export is a ZIP with everything stored about
+the account: account data, sessions and tokens (no secrets or hashes), credit, purchases, the own
+audit log, projects with their reports and the stored files, decrypted, streamed while it is
+built. Deleting removes the account with all projects, reports and the encrypted files on the
+volume. Receipts stay for ten years (§ 147 AO), without the account link.
 """
 
 import io
@@ -21,7 +21,7 @@ from typing import Any
 from fastapi import APIRouter, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from luibui_api.audit import audit
@@ -40,8 +40,14 @@ from luibui_api.models import (
     User,
     UserSession,
 )
-from luibui_api.routes.auth import login_limiter
-from luibui_api.security import PASSWORD_MAX, decrypt_totp_secret, verify_password, verify_totp
+from luibui_api.routes.auth import Passwort, login_limiter
+from luibui_api.security import (
+    PASSWORD_MAX,
+    decrypt_totp_secret,
+    hash_password,
+    verify_password,
+    verify_totp,
+)
 from luibui_api.settings import get_settings
 from luibui_api.storage import blob_store, project_data_key
 
@@ -77,6 +83,46 @@ def _pruefen(user: User, body: Nachweis) -> None:
         limiter.hit(key)
         raise fehler(status.HTTP_400_BAD_REQUEST, "nachweis_falsch", "Passwort oder Code falsch")
     limiter.reset(key)
+
+
+# --- storage and password ----------------------------------------------------------------------
+
+
+class Speicher(BaseModel):
+    belegt: int
+    grenze: int
+
+
+@router.get("/speicher")
+def speicher(caller: SessionCaller, db: DbSession) -> Speicher:
+    """Bytes of stored project files, counted like the quota check on upload."""
+    belegt = db.scalar(
+        select(func.coalesce(func.sum(StoredFile.size), 0)).where(
+            StoredFile.owner_id == caller.user.id
+        )
+    )
+    return Speicher(belegt=int(belegt or 0), grenze=get_settings().account_quota_bytes)
+
+
+class PasswortAendern(Nachweis):
+    neu: Passwort
+
+
+@router.post("/passwort")
+def passwort_aendern(
+    body: PasswortAendern, caller: SessionCaller, db: DbSession
+) -> dict[str, bool]:
+    """Needs the current password (and code). Ends every other session, keeps this one."""
+    user = db.merge(caller.user)
+    _pruefen(user, body)
+    user.password_hash = hash_password(body.neu)
+    andere = delete(UserSession).where(UserSession.owner_id == user.id)
+    if caller.session_id is not None:
+        andere = andere.where(UserSession.id != caller.session_id)
+    db.execute(andere)
+    audit(db, user.id, "konto.passwort_geaendert", "user", user.id)
+    db.commit()
+    return {"geaendert": True}
 
 
 # --- export ------------------------------------------------------------------------------------

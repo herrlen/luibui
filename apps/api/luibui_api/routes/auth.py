@@ -9,6 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field, field_validator
+from reportlab.graphics.barcode import qrencoder
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
@@ -340,6 +341,17 @@ def ich(caller: CurrentCaller) -> Ich:
 class TotpEinrichtung(BaseModel):
     secret: str
     uri: str
+    qr: list[str]
+    """QR code of ``uri`` as rows of '1' (dark) and '0', drawn by the web UI as SVG rectangles."""
+
+
+def qr_zeilen(text: str) -> list[str]:
+    """Module matrix of a QR code (error correction M). reportlab is already there for the PDFs."""
+    qr = qrencoder.QRCode(None, qrencoder.QRErrorCorrectLevel.M)
+    qr.addData(text)
+    qr.make()
+    n = qr.getModuleCount()
+    return ["".join("1" if qr.isDark(r, c) else "0" for c in range(n)) for r in range(n)]
 
 
 class TotpCode(BaseModel):
@@ -360,7 +372,8 @@ def totp_einrichten(caller: SessionCaller, db: DbSession) -> TotpEinrichtung:
     secret = new_totp_secret()
     user.totp_secret_enc = encrypt_totp_secret(user.id, secret)
     db.commit()
-    return TotpEinrichtung(secret=secret, uri=totp_uri(secret, user.email))
+    uri = totp_uri(secret, user.email)
+    return TotpEinrichtung(secret=secret, uri=uri, qr=qr_zeilen(uri))
 
 
 @router.post("/totp/bestaetigen")

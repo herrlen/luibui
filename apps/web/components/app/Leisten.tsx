@@ -100,6 +100,8 @@ function Eintrag({ href, aktiv, children }: { href: string; aktiv: boolean; chil
 
 const KONTO = [
   ["#profil", "Profil"],
+  ["#passwort", "Passwort"],
+  ["#zwei-faktor", "Zwei-Faktor-Anmeldung"],
   ["#guthaben", "Guthaben"],
   ["#tokens", "API-Tokens"],
   ["#export", "Deine Daten"],

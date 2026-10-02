@@ -1,4 +1,4 @@
-"""S2-10 and S2-6: data export, account deletion (DSGVO Art. 15, 17, 20) and password reset."""
+"""S2-10 and S2-6: storage, password change and reset, data export, account deletion."""
 
 import io
 import json
@@ -213,3 +213,57 @@ def test_export_is_streamed_and_intact(api: Api, tmp_path: Path) -> None:
     assert zf.read(datei) == gross
     # The export never touches the disk (the scratch only holds the upload for the queued check).
     assert not list((tmp_path / "scratch").rglob("*.zip"))
+
+
+# --- storage and password change -------------------------------------------------------------
+
+
+def test_storage_counts_only_own_files(api: Api) -> None:
+    a = api.user("anna@example.org")
+    b = api.user("bert@example.org")
+    leer = a.get("/api/v1/konto/speicher").json()
+    assert leer == {"belegt": 0, "grenze": 500 * 1024 * 1024}
+    assert upload_zip(a, project(a), {"SKILL.md": b"# Wetter\n" * 100}).status_code == 202
+    assert a.get("/api/v1/konto/speicher").json()["belegt"] == 900
+    assert b.get("/api/v1/konto/speicher").json()["belegt"] == 0
+    assert api.client().get("/api/v1/konto/speicher").status_code == 401
+
+
+def test_password_change_keeps_this_session_and_ends_the_others(api: Api) -> None:
+    a = api.user("anna@example.org")
+    zweit, r = login(api, "anna@example.org")  # a second session in another browser
+    assert r.status_code == 200
+    neu = "ein-ganz-neues-passwort"
+    falsch = a.post("/api/v1/konto/passwort", json={"passwort": "falsch-falsch", "neu": neu})
+    assert falsch.status_code == 400
+    kurz = a.post("/api/v1/konto/passwort", json={"passwort": PW, "neu": "kurz"})
+    assert kurz.status_code == 422
+    assert a.post("/api/v1/konto/passwort", json={"passwort": PW, "neu": neu}).status_code == 200
+    assert a.get("/api/v1/auth/ich").status_code == 200
+    assert zweit.get("/api/v1/auth/ich").status_code == 401
+    assert login(api, "anna@example.org")[1].status_code == 401
+    assert login(api, "anna@example.org", passwort=neu)[1].status_code == 200
+
+
+def test_password_change_needs_the_second_factor_and_a_session(api: Api) -> None:
+    a = api.user("anna@example.org")
+    secret = enable_totp(a)
+    neu = "ein-ganz-neues-passwort"
+    assert a.post("/api/v1/konto/passwort", json={"passwort": PW, "neu": neu}).status_code == 400
+    token = a.post("/api/v1/tokens", json={"name": "ci"}).json()["token"]
+    r = api.client(base_url="https://api.luibui.com").post(
+        "/api/v1/konto/passwort",
+        json={"passwort": PW, "neu": neu, "code": pyotp.TOTP(secret).now()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code in (401, 403)
+    code = pyotp.TOTP(secret).now()
+    ok = a.post("/api/v1/konto/passwort", json={"passwort": PW, "neu": neu, "code": code})
+    assert ok.status_code == 200
+
+
+def test_totp_setup_returns_a_square_qr_code(api: Api) -> None:
+    setup = api.user("anna@example.org").post("/api/v1/auth/totp/einrichten").json()
+    n = len(setup["qr"])
+    assert n >= 21 and all(len(z) == n and set(z) <= {"0", "1"} for z in setup["qr"])
+    assert setup["qr"][0].startswith("1111111")  # finder pattern

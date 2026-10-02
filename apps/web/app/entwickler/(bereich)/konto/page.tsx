@@ -10,6 +10,7 @@ import type { Guthaben, Ich } from "@/lib/types";
 
 import { Abmelden } from "./Abmelden";
 import { DatenExport, KontoLoeschen } from "./DatenUndLoeschen";
+import { PasswortAendern, ZweiFaktor } from "./Sicherheit";
 import { type TokenInfo, Tokens } from "./Tokens";
 
 export const metadata = { title: "Konto – luibui" };
@@ -20,6 +21,7 @@ export default async function Konto() {
   if (!ich.ok) redirect("/anmelden");
   const tokens = await apiGet<TokenInfo[]>("/api/v1/tokens");
   const guthaben = await apiGet<Guthaben>("/api/v1/guthaben");
+  const speicher = await apiGet<{ belegt: number; grenze: number }>("/api/v1/konto/speicher");
   return (
     <div className="flex flex-col gap-6">
       <Brotkrumen pfad={[{ text: "Übersicht", href: "/" }, { text: "Konto" }]} />
@@ -31,7 +33,26 @@ export default async function Konto() {
         <p className="mt-1">
           <span className="font-semibold">Zwei-Faktor-Anmeldung:</span> {ich.data.totp_aktiv ? "aktiv" : "nicht aktiv"}
         </p>
+        {speicher.ok ? <SpeicherAnzeige belegt={speicher.data.belegt} grenze={speicher.data.grenze} /> : null}
       </section>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="passwort" className="flex flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6">
+          <h2 id="passwort" className="scroll-mt-6 font-display text-xl font-bold">
+            Passwort ändern
+          </h2>
+          <PasswortAendern totp={ich.data.totp_aktiv} />
+        </section>
+        <section
+          id="zwei-faktor"
+          aria-labelledby="zwei-faktor-titel"
+          className="flex scroll-mt-6 flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6"
+        >
+          <h2 id="zwei-faktor-titel" className="font-display text-xl font-bold">
+            Zwei-Faktor-Anmeldung
+          </h2>
+          <ZweiFaktor aktiv={ich.data.totp_aktiv} />
+        </section>
+      </div>
       {guthaben.ok && guthaben.data.aktiv ? (
         <section aria-labelledby="guthaben" className="flex flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6">
           <div className="flex flex-wrap items-center gap-4">
@@ -88,4 +109,32 @@ export default async function Konto() {
       </div>
     </div>
   );
+}
+
+function SpeicherAnzeige({ belegt, grenze }: { belegt: number; grenze: number }) {
+  const anteil = grenze > 0 ? Math.min(1, belegt / grenze) : 0;
+  return (
+    <div className="mt-4 flex max-w-md flex-col gap-1.5">
+      <p>
+        <span className="font-semibold">Speicher:</span> {megabyte(belegt)} von {megabyte(grenze)} belegt
+      </p>
+      <div
+        role="meter"
+        aria-label="Belegter Speicher"
+        aria-valuemin={0}
+        aria-valuemax={grenze}
+        aria-valuenow={belegt}
+        aria-valuetext={`${Math.round(anteil * 100)} Prozent`}
+        className="h-2 overflow-hidden rounded-full bg-flaeche-2"
+      >
+        <div className={`h-full ${anteil >= 0.9 ? "bg-rot" : "bg-petrol"}`} style={{ width: `${anteil * 100}%` }} />
+      </div>
+      <p className="text-muted">Gezählt werden die gespeicherten Projekt-Dateien aller Versionen.</p>
+    </div>
+  );
+}
+
+function megabyte(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return `${mb < 10 && mb > 0 ? mb.toLocaleString("de-DE", { maximumFractionDigits: 1 }) : Math.round(mb)} MB`;
 }

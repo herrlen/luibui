@@ -183,6 +183,22 @@ def test_coverage_lists_what_ran_per_kind_of_file(tmp_path: Path) -> None:
     assert "Zugangsdaten im Klartext" not in a["Python"]["geprueft"]
 
 
+def test_coverage_names_personal_data_only_for_data_files_and_notebooks(tmp_path: Path) -> None:
+    reg = registry(Reports("a_dateien", []), Reports("g_personendaten", []))
+    pruefung = "DSGVO: Personendaten in Datendateien und Notebook-Ausgaben (Stichprobe)"
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    mit = _abdeckung(
+        report_for(tmp_path / "a", {"k.csv": "a;b\n"}, Eingabe.LOKAL, ScanArt.LOKAL, reg)
+    )
+    assert pruefung in mit["Konfiguration und Daten"]["geprueft"]
+    ohne = _abdeckung(
+        report_for(tmp_path / "b", {"c.yaml": "a: 1\n"}, Eingabe.LOKAL, ScanArt.LOKAL, reg)
+    )
+    k = ohne["Konfiguration und Daten"]
+    assert pruefung not in k["geprueft"] and not any(pruefung in o for o in k["offen"])
+
+
 def test_coverage_never_claims_a_failed_check(tmp_path: Path) -> None:
     class CodeCrashes(Crashes):
         info = AnalyzerInfo(name="c_code", titel="C – Code", ebenen=frozenset({Ebene.C}))

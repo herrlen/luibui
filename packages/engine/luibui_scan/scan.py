@@ -45,8 +45,15 @@ ERWARTET: dict[ScanArt, dict[str, str]] = {
         "c_code": "C – Code",
         "e_mcp": "E – MCP",
         "g_dsgvo": "G – DSGVO",
+        "g_personendaten": "G – Personendaten in Daten und Notebooks",
     },
-    ScanArt.LOKAL: {**_SCHNELL, "c_code": "C – Code", "e_mcp": "E – MCP", "g_dsgvo": "G – DSGVO"},
+    ScanArt.LOKAL: {
+        **_SCHNELL,
+        "c_code": "C – Code",
+        "e_mcp": "E – MCP",
+        "g_dsgvo": "G – DSGVO",
+        "g_personendaten": "G – Personendaten in Daten und Notebooks",
+    },
 }
 """Analyzers each scan type must have (Konzept §2 and §4, Prüfkatalog). As long as one is not
 built yet, the scan is incomplete and never green. Analyzers that exist but do not apply to the

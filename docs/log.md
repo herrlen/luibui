@@ -1925,3 +1925,59 @@ bösartigen Korpus (S3-1).
 
 **Nicht geändert:** Das Präfix `cisco-skill:` bleibt als Beispiel in CLAUDE.md und
 `spec/finding.schema.json` stehen; es wird nirgends erzeugt.
+
+## 2026-10-02 – S3-13: Namenslisten in Datendateien, Personendaten in Notebook-Ausgaben
+
+**Messung vorab** (Mac, Presidio 2.2.364, MIT; `de_core_news_sm` 3.8.0, MIT): geladen 280 MB in
+3–5 s, Spitze 436 MB für 180 KB Text und 479 MB für 1,8 MB, Dauer rund 75 s je MB. Im selben
+Prozess wie die Engine (270 MB) neben Opengrep (bis 900 MB) wäre das Worker-Limit von 1536 MiB
+überschritten, als eigener Unterprozess nach Opengrep nicht. **Entscheidung Len (02.10.2026):**
+einbauen mit Grenzen.
+
+**Erster Entwurf verworfen, weil er auf echten Daten nicht taugt:** Ganze Dateien als Fließtext
+an Presidio, Befund ab 5 verschiedenen Personennamen. Gegenprobe mit gutartigen öffentlichen
+Daten: `datasets/country-codes` (172 „Personen“), `currency-codes` (57), `airport-codes` (103)
+und 18 von 26 Notebooks des Anthropic Cookbook schlugen an. Das kleine deutsche Modell hält
+Länder, Währungen, Flughäfen und Fachbegriffe für Namen. Die 60 Pakete des Benchmarks hätten das
+nicht gezeigt: keines enthält eine Datendatei oder ein Notebook.
+
+**Was jetzt gilt:**
+- Analyzer `g_personendaten` (Intensivscan und lokal). Datendateien (`.csv`, `.tsv`, `.jsonl`,
+  `.ndjson`) werden in Spalten zerlegt (CSV-Trenner erkannt, JSON Lines nach Schlüssel), jeder
+  Wert geht einzeln auf eine Zeile an Presidio. Werte mit Ziffern, `@` oder `/`, zu kurze und zu
+  lange werden nicht geschickt. Eine Spalte ist eine Namensliste, wenn mindestens 5 Werte und
+  mindestens die Hälfte ihrer Werte überwiegend aus einem Personennamen bestehen (der Runner misst
+  das je Zeile). Ein Befund je Datei, M auf der DSGVO-Achse, nie gesperrt, nur wenn die Regex in
+  `a_dateien` dort nichts findet.
+- Notebook-Ausgaben (Streams und `text/plain`, nie Code-Zellen) bekommen nur die Regex
+  (E-Mail, IBAN), keine Namenserkennung.
+- Stichprobe 64 KB je Datei (an einer Zeilengrenze), 256 KB je Prüfung, höchstens 200
+  verschiedene Werte je Spalte. Ohne Datendateien startet Presidio gar nicht.
+- `tools/presidio.py` + `tools/_presidio_runner.py`: eigenes venv (`LUIBUI_PRESIDIO_PYTHON`, im
+  Worker `/opt/presidio`), `python -I`, leere Umgebung, Timeout 120 s, Texte per stdin. Zurück
+  kommen nur Zahlen (Werte, Werte mit Namen), die Werte verlassen den Prozess nie.
+- Worker-Image: `apps/worker/presidio.txt` (51 Pakete und das Modell-Wheel, alle mit SHA-256),
+  `pip install --require-hashes --only-binary=:all:`, danach schreibgeschützt.
+  `LUIBUI_PRESIDIO_PYTHON` wird an den Prüfprozess durchgereicht.
+- Bericht: „Was geprüft wurde“ nennt „DSGVO: Personendaten in Datendateien und
+  Notebook-Ausgaben (Stichprobe)“. `scan.ERWARTET` kennt den Analyzer. Regex-Teil von G07 als
+  `regex_arten()` herausgelöst.
+
+**Geprüft:** 20 Engine-Tests (Namensspalte ohne Werte im Befund, Trenner `;` `,` Tab `|`, JSON
+Lines, wenige oder in der Minderheit, kein Start ohne Daten, keine Doppelung mit der Regex,
+Notebooks nur Regex, Stichprobengrenzen, fehlendes Presidio nur dann ein Fehler, wenn es gebraucht
+wird, Runner misst je Zeile und teilt lange Spalten, Adapter mit leerer Umgebung und fünf
+Fehlerfällen, echter Lauf mit Kunden- und Länderliste), Abdeckungstest; Python 1346 Tests grün.
+Gegenprobe gutartig: country-, currency- und airport-codes sowie das ganze Anthropic Cookbook
+(31 Datendateien, 100+ Notebooks): 0 Befunde. Erfundene Kundenliste: „Spalte name: 55 von 58“.
+Im lokal gebauten Worker-Image ohne Netz und mit 1536 MiB: dieselben Ergebnisse, 6,5–7,6 s je
+Paket, Presidio-Prozess 282 MB, Engine 64 MB. Benchmark mit dem neuen Image: 37/37 erkannt
+(jetzt mit MOD-04), 0/60 Fehlalarme; er enthält aber keine Datendateien, sagt über diese Prüfung
+also nichts.
+
+**Kosten:** Worker-Image 827 MB → 1,36 GB (`/opt/presidio` 395 MB, davon spaCy 129 MB mit den
+Sprachdaten aller Sprachen). Mehr als die 160 MB der Mac-Messung, weil die Linux-Wheels von numpy
+und spaCy größer sind.
+
+**Offen:** Erkennung unbekannter Namenslisten ist nur mit erfundenen Daten belegt; ein Korpus mit
+echten Namenslisten darf es nicht geben (CLAUDE.md Regel 8).

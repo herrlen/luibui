@@ -65,3 +65,8 @@ exclude = ["/tests/"]
 # ReportLab ships no type hints (PDF report, apps/api/luibui_api/pdf.py).
 module = ["reportlab.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Presidio lives only in the worker's separate venv (luibui_scan/tools/_presidio_runner.py).
+module = ["presidio_analyzer.*"]
+ignore_missing_imports = true

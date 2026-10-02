@@ -8,6 +8,7 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
+from luibui_scan.analyzers._a_dokumente import DATA_EXT
 from luibui_scan.analyzers._common import MAX_TEXT_BYTES, TEXT_KINDS
 from luibui_scan.analyzers.b_muster import INSTRUCTION_SUFFIXES, LOCKFILES
 from luibui_scan.context import InventoryEntry
@@ -29,6 +30,7 @@ MCP = "MCP-Tools: versteckte Anweisungen, Shadowing, Anmeldung, Token"
 MCP_ABGLEICH = "MCP-Tools: Beschreibung passt zum Code"
 ENDPUNKTE = "DSGVO: Endpunkte und Drittländer"
 MANIFEST = "DSGVO: Abgleich mit luibui.json (Endpunkte, Rechte, Datenkategorien)"
+PERSONEN = "DSGVO: Personendaten in Datendateien und Notebook-Ausgaben (Stichprobe)"
 
 ANALYZER: dict[str, str] = {
     DATEITYP: "a_dateien",
@@ -43,9 +45,15 @@ ANALYZER: dict[str, str] = {
     MCP_ABGLEICH: "e_mcp",
     ENDPUNKTE: "g_dsgvo",
     MANIFEST: "g_dsgvo",
+    PERSONEN: "g_personendaten",
 }
 
-TITEL = {"c_code": "C – Code", "e_mcp": "E – MCP", "g_dsgvo": "G – DSGVO"}
+TITEL = {
+    "c_code": "C – Code",
+    "e_mcp": "E – MCP",
+    "g_dsgvo": "G – DSGVO",
+    "g_personendaten": "G – Personendaten in Daten und Notebooks",
+}
 """Analyzers that only the intensive scan runs, with their titles in ``scan.ERWARTET``."""
 
 _PYTHON = frozenset({".py", ".pyw"})
@@ -64,6 +72,7 @@ _SHEBANG_ART = {
     "typescript": "JavaScript und TypeScript",
 }
 _CODE_ARTEN = ("Python", "JavaScript und TypeScript", "Shell-Skripte")
+_PERSONENDATEN = DATA_EXT | {".ipynb"}
 
 ARTEN = (
     "Anweisungen und Doku",
@@ -165,6 +174,8 @@ def _vorgesehen(
         checks.append((MANIFEST, None if manifest else "nur mit luibui.json"))
     elif art == "Anderer Code":
         checks.append((ENDPUNKTE, "für diese Programmiersprache noch nicht"))
+    if any(PurePosixPath(e.path).suffix.lower() in _PERSONENDATEN for e in entries):
+        checks.append((PERSONEN, None))
     return checks
 
 

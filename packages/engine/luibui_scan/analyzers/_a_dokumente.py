@@ -348,7 +348,7 @@ def _notebook(ctx: ScanContext, entry: InventoryEntry, ext: str) -> Iterator[Fin
 _EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]{1,64}@([A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,24}(?![\w-])")
 _IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){3,7}(?: ?[A-Z0-9]{1,3})?\b")
 _EXAMPLE_DOMAIN = re.compile(r"@(.+\.)?(example|invalid|test|localhost)(\.[a-z]+)?$", re.I)
-_DATA_EXT = frozenset({".csv", ".tsv", ".jsonl", ".ndjson"})
+DATA_EXT = frozenset({".csv", ".tsv", ".jsonl", ".ndjson"})
 MIN_EMAILS = 5
 
 
@@ -360,21 +360,27 @@ def _iban_ok(raw: str) -> bool:
     return int(digits) % 97 == 1
 
 
-def _g07(ctx: ScanContext, entry: InventoryEntry, ext: str) -> Iterator[Finding]:
-    if entry.kind != "text" or ext not in _DATA_EXT:
-        return
-    text = read_text(ctx, entry, MAX_DOC)
+def regex_arten(text: str) -> list[str]:
+    """What the regular expressions find, e.g. ['7 E-Mail-Adressen']; empty below the thresholds.
+    Shared with ``g_personendaten``, which only reports where this finds nothing."""
     emails = {
         m.group(0).lower() for m in _EMAIL.finditer(text) if not _EXAMPLE_DOMAIN.search(m.group(0))
     }
     ibans = {m.group(0).replace(" ", "") for m in _IBAN.finditer(text) if _iban_ok(m.group(0))}
-    if len(emails) < MIN_EMAILS and not ibans:
-        return
     arten = []
     if len(emails) >= MIN_EMAILS:
         arten.append(f"{len(emails)} E-Mail-Adressen")
     if ibans:
         arten.append(f"{len(ibans)} gültige IBAN")
+    return arten
+
+
+def _g07(ctx: ScanContext, entry: InventoryEntry, ext: str) -> Iterator[Finding]:
+    if entry.kind != "text" or ext not in DATA_EXT:
+        return
+    arten = regex_arten(read_text(ctx, entry, MAX_DOC))
+    if not arten:
+        return
     yield finding(
         rule_id="LB-G07-personenbezogene-daten",
         ebene=Ebene.G,

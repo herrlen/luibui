@@ -254,7 +254,7 @@ Rust, Java, Kotlin, C#, PowerShell und Batch, wenn die Datei einen Netzwerk-Clie
 | G04 | **Undeklarierte Rechte:** Shell, Dateisystem, Netzwerk, Umgebungsvariablen genutzt, aber nicht deklariert | H | – | ✓ – – – | Code gegen Manifest | DSGVO-Art-25, LLM06 |
 | G05 | **Datenkategorien unvollständig:** verarbeitete personenbezogene Daten nicht angegeben | M | – | ✓ – – – | Manifest, Code | DSGVO-Art-13, DSGVO-Art-30 |
 | G06 | **Selbstauskunft:** Angaben aus dem Manifest, die sich nicht prüfen lassen (Betreiber, Speicherort) | I | – | ✓ – – – | Manifest (M) | DSGVO-Art-13 |
-| G07 | **Personenbezogene Daten in Datendateien:** mindestens fünf echt wirkende E-Mail-Adressen oder eine IBAN mit gültiger Prüfziffer in CSV/TSV/JSONL; Werte werden nie angezeigt | M | – | ✓ ✓ ✓ ✓ | eigener Code | DSGVO-Art-5 |
+| G07 | **Personenbezogene Daten in Datendateien und Notebook-Ausgaben:** mindestens fünf echt wirkende E-Mail-Adressen oder eine IBAN mit gültiger Prüfziffer in CSV/TSV/JSONL/NDJSON; im Intensivscan zusätzlich eine Spalte, in der mindestens fünf Werte und mindestens die Hälfte aller Werte Personennamen sind (Presidio mit `de_core_news_sm`, je Wert einzeln; Stichprobe 64 KB je Datei, 256 KB je Prüfung); gespeicherte Ausgaben in `.ipynb` nur mit E-Mail/IBAN, weil die Namenserkennung auf Fließtext zu viele Fehlalarme gibt (S3-13, docs/log.md). Ein Befund je Datei; Werte werden nie angezeigt und verlassen den Presidio-Prozess nicht | M | – | ✓ ✓ ✓ ✓ | eigener Code, Presidio (`g_personendaten`) | DSGVO-Art-5 |
 | G08 | **Standort in Fotos:** GPS-Koordinaten in den Exif-Daten von JPEG/PNG | M | – | ✓ ✓ ✓ ✓ | eigener Code | DSGVO-Art-5 |
 
 ---

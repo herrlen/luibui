@@ -39,6 +39,7 @@ def test_ok_returns_result_and_runs_with_empty_env(
     allowed = {"PATH", "HOME", "TMPDIR", "PYTHONDONTWRITEBYTECODE", "LANG", "LC_ALL", "TZ"}
     allowed |= {"LUIBUI_RULES_DIR", "LUIBUI_GITLEAKS", "LUIBUI_OSV_SCANNER", "LUIBUI_OSV_DB"}
     allowed |= {"LUIBUI_OPENGREP", "LUIBUI_OPENGREP_CACHE", "LUIBUI_NETZ_ISOLIEREN"}
+    allowed |= {"LUIBUI_PRESIDIO_PYTHON"}
     allowed |= {"LC_CTYPE", "__CF_USER_TEXT_ENCODING"}
     assert env <= allowed
     assert Path(result.result["cwd"]).resolve() == Path(result.result["scratch"]).resolve()

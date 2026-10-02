@@ -26,10 +26,18 @@ ADD --checksum=sha256:35779bdd72e92129c8df2a77f0c55e8c08356801ea92591ef32108d6b2
     /usr/local/bin/opengrep
 RUN HOME=/tmp XDG_CACHE_HOME=/opt/opengrep-cache /usr/local/bin/opengrep --version \
  && chmod -R a+rX,a-w /opt/opengrep-cache
+# Presidio with the German spaCy model for G07 (S3-13): own venv, every package and the model
+# pinned by hash, read-only. Started per check as a subprocess (luibui_scan/tools/presidio.py).
+COPY apps/worker/presidio.txt /tmp/presidio.txt
+RUN python -m venv /opt/presidio \
+ && /opt/presidio/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/presidio.txt \
+ && /opt/presidio/bin/python -c "import presidio_analyzer, de_core_news_sm" \
+ && chmod -R a+rX,a-w /opt/presidio
 
 FROM python:3.12-slim-trixie
 COPY --from=scanners /usr/local/bin/gitleaks /usr/local/bin/osv-scanner /usr/local/bin/opengrep /usr/local/bin/
 COPY --from=scanners /opt/opengrep-cache /opt/opengrep-cache
+COPY --from=scanners /opt/presidio /opt/presidio
 RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui \
  && mkdir -p /scratch /rules/osv && chown 10001:10001 /scratch /rules /rules/osv \
  && chmod 700 /scratch
@@ -41,6 +49,7 @@ ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     LUIBUI_OSV_SCANNER=/usr/local/bin/osv-scanner LUIBUI_OSV_DB=/rules/osv \
     LUIBUI_MALWARE_DB=/rules/malware/sha256.bin \
     LUIBUI_OPENGREP=/usr/local/bin/opengrep LUIBUI_OPENGREP_CACHE=/opt/opengrep-cache \
+    LUIBUI_PRESIDIO_PYTHON=/opt/presidio/bin/python \
     LUIBUI_NETZ_ISOLIEREN=1
 USER 10001
 WORKDIR /scratch

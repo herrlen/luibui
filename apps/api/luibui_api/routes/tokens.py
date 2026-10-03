@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from luibui_api.audit import audit
 from luibui_api.auth import DbSession, SessionCaller, get_owned
-from luibui_api.models import Token
+from luibui_api.models import Project, Token
 from luibui_api.security import new_api_token, sha256_hex
 
 router = APIRouter(prefix="/api/v1/tokens", tags=["tokens"])
@@ -20,6 +20,8 @@ _PREFIX_LEN = 11  # "lb_" + 8 characters, enough for the owner to recognise a to
 class TokenNeu(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     gueltig_tage: int = Field(default=90, ge=1, le=365)
+    project_id: uuid.UUID | None = None
+    """A project token (S5-5, for CI): only checks of this project, nothing else."""
 
 
 class TokenInfo(BaseModel):
@@ -29,6 +31,7 @@ class TokenInfo(BaseModel):
     expires_at: datetime
     last_used_at: datetime | None
     created_at: datetime
+    project_id: uuid.UUID | None = None
 
 
 class TokenErstellt(TokenInfo):
@@ -44,14 +47,18 @@ def _info(t: Token) -> dict[str, object]:
         "expires_at": t.expires_at,
         "last_used_at": t.last_used_at,
         "created_at": t.created_at,
+        "project_id": t.project_id,
     }
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def erstellen(body: TokenNeu, caller: SessionCaller, db: DbSession) -> TokenErstellt:
+    if body.project_id is not None:
+        get_owned(db, Project, body.project_id, caller)
     raw = new_api_token()
     token = Token(
         owner_id=caller.user.id,
+        project_id=body.project_id,
         name=body.name,
         prefix=raw[:_PREFIX_LEN],
         token_hash=sha256_hex(raw),

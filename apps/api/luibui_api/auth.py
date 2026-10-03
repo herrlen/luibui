@@ -5,8 +5,11 @@
   the cookie must come from ``APP_ORIGIN`` (CSRF).
 - Every resource is loaded through ``get_owned``, which answers 404 for anything the caller does
   not own — never 403, so foreign IDs cannot be probed.
+- A project token (S5-5, for CI) works for one project only and only on the few routes CI needs:
+  start a check of that project, read its checks and their reports.
 """
 
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -51,6 +54,8 @@ class Caller:
     user: User
     via: Literal["session", "token"]
     session_id: uuid.UUID | None = None
+    projekt_id: uuid.UUID | None = None
+    """Set for a project token: the caller may only touch this project and its checks."""
 
 
 # --- sessions --------------------------------------------------------------------------------
@@ -111,7 +116,7 @@ def _from_token(db: Session, raw: str) -> Caller | None:
     if token.last_used_at is None or now - token.last_used_at > _TOUCH_AFTER:
         db.execute(update(Token).where(Token.id == token.id).values(last_used_at=now))
         db.commit()
-    return Caller(user, "token")
+    return Caller(user, "token", projekt_id=token.project_id)
 
 
 def _from_cookie(db: Session, secret: str) -> Caller | None:
@@ -128,6 +133,25 @@ def _from_cookie(db: Session, secret: str) -> Caller | None:
     return Caller(user, "session", sess.id)
 
 
+_UUID = r"[0-9a-fA-F-]{36}"
+_PROJEKT_ROUTEN = (
+    ("POST", re.compile(rf"^/api/v1/projects/(?P<p>{_UUID})/scans$")),
+    ("GET", re.compile(rf"^/api/v1/projects/(?P<p>{_UUID})$")),
+    ("GET", re.compile(rf"^/api/v1/scans/{_UUID}$")),
+    ("GET", re.compile(rf"^/api/v1/scans/{_UUID}/bericht\.(sarif|pdf)$")),
+)
+
+
+def projekt_route_erlaubt(method: str, path: str, projekt_id: uuid.UUID) -> bool:
+    """What a project token may call; a project in the path must be the token's own."""
+    for m, muster in _PROJEKT_ROUTEN:
+        treffer = muster.match(path)
+        if method == m and treffer:
+            p = treffer.groupdict().get("p")
+            return p is None or p.lower() == str(projekt_id)
+    return False
+
+
 def get_caller(request: Request, db: DbSession) -> Caller:
     authorization = request.headers.get("authorization")
     if authorization is not None:
@@ -135,6 +159,14 @@ def get_caller(request: Request, db: DbSession) -> Caller:
         caller = _from_token(db, raw.strip()) if scheme.lower() == "bearer" else None
         if caller is None:
             raise _unauthorized()
+        if caller.projekt_id is not None and not projekt_route_erlaubt(
+            request.method, request.url.path, caller.projekt_id
+        ):
+            raise fehler(
+                status.HTTP_403_FORBIDDEN,
+                "projekt_token",
+                "Ein Projekt-Token darf nur Prüfungen seines Projekts starten und lesen.",
+            )
         return caller
     if _host(request) in get_settings().bearer_only_hosts:
         raise _unauthorized()
@@ -176,5 +208,10 @@ def get_owned[M: Base](db: Session, model: type[M], resource_id: uuid.UUID, call
     """Load a resource of the caller. Missing and foreign resources both answer 404."""
     obj = db.get(model, resource_id)
     if obj is None or getattr(obj, "owner_id", None) != caller.user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    projekt_feld = "id" if model.__tablename__ == "projects" else "project_id"
+    eigenes = getattr(obj, projekt_feld, None)
+    if caller.projekt_id is not None and eigenes != caller.projekt_id:
+        # A project token sees only its project and what belongs to it.
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
     return obj

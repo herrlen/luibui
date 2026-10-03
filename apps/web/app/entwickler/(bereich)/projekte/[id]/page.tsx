@@ -8,6 +8,7 @@ import { datumZeit, groesse, STATUS_TEXT, UMFANG_TEXT } from "@/lib/format";
 import { apiGet } from "@/lib/server-api";
 import type { Projekt, Pruefungskurz, VerlaufPunkt, Version } from "@/lib/types";
 
+import { CiAnbindung } from "./CiAnbindung";
 import { ProjektLoeschen } from "./ProjektLoeschen";
 import { Upload } from "./Upload";
 import { VersionLoeschen } from "./VersionLoeschen";
@@ -49,6 +50,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
       </div>
       <Upload projektId={projekt.data.id} quelle={projekt.data.quelle} gitUrl={projekt.data.git_url} />
       {webhook?.ok ? <Webhook projektId={projekt.data.id} info={webhook.data} /> : null}
+      <CiAnbindung projektId={projekt.data.id} projektName={projekt.data.name} />
       {versionListe.length ? (
         <section aria-labelledby="versionen">
           <h2 id="versionen" className="font-display text-xl font-bold">

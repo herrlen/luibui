@@ -1,0 +1,55 @@
+name: luibui-Prüfung
+description: Prüft ein KI-Skill-, Plugin- oder MCP-Paket mit luibui und liefert SARIF für GitHub Code Scanning.
+author: luibui
+branding:
+  icon: shield
+  color: green
+inputs:
+  token:
+    description: Projekt-Token aus app.luibui.com (Projekt → CI-Anbindung). Als Secret übergeben.
+    required: true
+  projekt:
+    description: ID des luibui-Projekts.
+    required: true
+  pfad:
+    description: Ordner des Pakets im Repository.
+    default: "."
+  schwelle:
+    description: "Ab welcher Gesamtampel der Schritt fehlschlägt: gesperrt, rot, gelb oder nie."
+    default: rot
+  sarif:
+    description: Datei, in die der SARIF-Bericht geschrieben wird.
+    default: luibui.sarif
+  zeitlimit:
+    description: Sekunden, die auf das Ergebnis gewartet wird.
+    default: "900"
+  api:
+    description: Adresse der luibui-API.
+    default: https://api.luibui.com
+outputs:
+  ampel:
+    description: Gesamtampel (gruen, gelb, rot oder gesperrt).
+    value: ${{ steps.pruefen.outputs.ampel }}
+  note:
+    description: Note von 0 bis 100.
+    value: ${{ steps.pruefen.outputs.note }}
+  bericht:
+    description: Link zum Bericht im Entwicklerbereich.
+    value: ${{ steps.pruefen.outputs.bericht }}
+  sarif:
+    description: Pfad der SARIF-Datei.
+    value: ${{ steps.pruefen.outputs.sarif }}
+runs:
+  using: composite
+  steps:
+    - id: pruefen
+      shell: bash
+      env:
+        LUIBUI_TOKEN: ${{ inputs.token }}
+        LUIBUI_PROJEKT: ${{ inputs.projekt }}
+        LUIBUI_PFAD: ${{ inputs.pfad }}
+        LUIBUI_SCHWELLE: ${{ inputs.schwelle }}
+        LUIBUI_SARIF: ${{ inputs.sarif }}
+        LUIBUI_ZEITLIMIT: ${{ inputs.zeitlimit }}
+        LUIBUI_API: ${{ inputs.api }}
+      run: '"$GITHUB_ACTION_PATH/pruefen.sh"'

@@ -1,0 +1,450 @@
+{
+ "lokal mit Status": {
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+   {
+    "tool": {
+     "driver": {
+      "name": "luibui",
+      "version": "0.1.0",
+      "informationUri": "https://luibui.com",
+      "rules": [
+       {
+        "id": "LB-B01-unicode-tags",
+        "shortDescription": {
+         "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen"
+        },
+        "fullDescription": {
+         "text": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+        },
+        "help": {
+         "text": "Zeichen U+E0000 bis U+E007F entfernen."
+        },
+        "properties": {
+         "tags": [
+          "sicherheit",
+          "ebene-B",
+          "OWASP-ASI01"
+         ],
+         "security-severity": "9.5"
+        }
+       },
+       {
+        "id": "LB-E01-paket",
+        "shortDescription": {
+         "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen"
+        },
+        "fullDescription": {
+         "text": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+        },
+        "help": {
+         "text": "Zeichen U+E0000 bis U+E007F entfernen."
+        },
+        "properties": {
+         "tags": [
+          "dsgvo",
+          "ebene-B"
+         ],
+         "security-severity": "9.5"
+        }
+       }
+      ]
+     }
+    },
+    "results": [
+     {
+      "suppressions": [
+       {
+        "kind": "external",
+        "status": "accepted",
+        "justification": "Absicht"
+       }
+      ],
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "error",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "SKILL.md"
+         },
+         "region": {
+          "startLine": 12
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "K",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+       "luibui_status": "Akzeptiert"
+      }
+     },
+     {
+      "suppressions": [
+       {
+        "kind": "external",
+        "status": "underReview"
+       }
+      ],
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "warning",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "ordner%20mit%20leer/%C3%84%26b%23c.md"
+         },
+         "region": {
+          "startLine": 1
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "M",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+       "luibui_status": "Bestritten"
+      }
+     },
+     {
+      "suppressions": [
+       {
+        "kind": "external",
+        "status": "rejected",
+        "justification": "Nein"
+       }
+      ],
+      "ruleId": "LB-E01-paket",
+      "ruleIndex": 1,
+      "level": "error",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "luibui.json"
+         },
+         "region": {
+          "startLine": 1
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "K",
+       "achse": "dsgvo",
+       "nachweisgrad": "statisch_erkannt",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+       "luibui_status": "Vom Autor bestritten"
+      }
+     },
+     {
+      "suppressions": [
+       {
+        "kind": "external",
+        "status": "accepted"
+       }
+      ],
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "note",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "SKILL.md"
+         },
+         "region": {
+          "startLine": 12
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "N",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+       "luibui_status": "Fehlalarm, Regel angepasst"
+      }
+     },
+     {
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "note",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "abs/x.py"
+         },
+         "region": {
+          "startLine": 7
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "I",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+       "luibui_status": "Behoben"
+      }
+     }
+    ],
+    "properties": {
+     "scan_art": "lokal",
+     "pruefumfang": "einzeldatei",
+     "paket": "SKILL.md",
+     "geprueft_am": "2026-09-26T18:00:00Z",
+     "ampeln": {
+      "sicherheit": "gesperrt",
+      "dsgvo": "nicht_bewertet",
+      "gesamt": "gesperrt"
+     },
+     "note": 60,
+     "freigabe": "blockiert",
+     "hinweise": [
+      "Einzeldatei-Prüfung"
+     ]
+    }
+   }
+  ]
+ },
+ "schnell ohne Status": {
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+   {
+    "tool": {
+     "driver": {
+      "name": "luibui",
+      "version": "0.1.0",
+      "informationUri": "https://luibui.com",
+      "rules": [
+       {
+        "id": "LB-B01-unicode-tags",
+        "shortDescription": {
+         "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen"
+        },
+        "fullDescription": {
+         "text": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+        },
+        "help": {
+         "text": "Zeichen U+E0000 bis U+E007F entfernen."
+        },
+        "properties": {
+         "tags": [
+          "sicherheit",
+          "ebene-B",
+          "OWASP-ASI01"
+         ],
+         "security-severity": "9.5"
+        }
+       },
+       {
+        "id": "LB-E01-paket",
+        "shortDescription": {
+         "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen"
+        },
+        "fullDescription": {
+         "text": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+        },
+        "help": {
+         "text": "Zeichen U+E0000 bis U+E007F entfernen."
+        },
+        "properties": {
+         "tags": [
+          "dsgvo",
+          "ebene-B"
+         ],
+         "security-severity": "9.5"
+        }
+       }
+      ]
+     }
+    },
+    "results": [
+     {
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "error",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "SKILL.md"
+         },
+         "region": {
+          "startLine": 12
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "K",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen."
+      }
+     },
+     {
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "warning",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "ordner%20mit%20leer/%C3%84%26b%23c.md"
+         },
+         "region": {
+          "startLine": 1
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "M",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen."
+      }
+     },
+     {
+      "ruleId": "LB-E01-paket",
+      "ruleIndex": 1,
+      "level": "error",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "luibui.json"
+         },
+         "region": {
+          "startLine": 1
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "K",
+       "achse": "dsgvo",
+       "nachweisgrad": "statisch_erkannt",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen."
+      }
+     },
+     {
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "note",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "SKILL.md"
+         },
+         "region": {
+          "startLine": 12
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "N",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen."
+      }
+     },
+     {
+      "ruleId": "LB-B01-unicode-tags",
+      "ruleIndex": 0,
+      "level": "note",
+      "message": {
+       "text": "Unsichtbare Anweisung in Unicode-Tag-Zeichen: Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest."
+      },
+      "locations": [
+       {
+        "physicalLocation": {
+         "artifactLocation": {
+          "uri": "abs/x.py"
+         },
+         "region": {
+          "startLine": 7
+         }
+        }
+       }
+      ],
+      "properties": {
+       "schwere": "I",
+       "achse": "sicherheit",
+       "nachweisgrad": "statisch_erkannt",
+       "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+       "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen."
+      }
+     }
+    ],
+    "properties": {
+     "scan_art": "schnell",
+     "pruefumfang": "einzeldatei",
+     "paket": "SKILL.md",
+     "geprueft_am": "2026-09-26T18:00:00Z",
+     "ampeln": {
+      "sicherheit": "gesperrt",
+      "dsgvo": "nicht_bewertet",
+      "gesamt": "gesperrt"
+     },
+     "note": 60,
+     "freigabe": "blockiert",
+     "hinweise": [
+      "Schnellscan: eingeschränkter Umfang, ohne Gewähr.",
+      "Ein Hinweis."
+     ]
+    }
+   }
+  ]
+ }
+}

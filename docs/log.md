@@ -2443,3 +2443,29 @@ aufgabe. Die Liste im Register zeigt die Herkunft noch nicht.
 
 Außerdem: gitleaks meldete in der CI den Test-Signierschlüssel aus `5cd0e8c`
 (`SIGNING_KEY_B64`, Platzhalter) – Fingerprint in `.gitleaksignore`.
+
+## 2026-10-03 – S5-5 (Teil): GitHub Action, Projekt-Token, SARIF aus der API
+
+**Was:**
+- **Projekt-Token:** `POST /api/v1/tokens` nimmt `project_id`. Ein solcher Token darf nur vier
+  Routen (Prüfung des eigenen Projekts starten, Projekt lesen, Prüfung lesen, Bericht als SARIF/PDF),
+  alles andere 403 `projekt_token`; `get_owned` liefert für Ressourcen anderer Projekte 404. Die
+  Spalte `tokens.project_id` gab es schon (Löschen des Projekts löscht seine Tokens).
+- **SARIF in der API:** `GET /api/v1/scans/{id}/bericht.sarif`, erzeugt von
+  `luibui_scan/sarif.py`, einem Port von `apps/web/lib/sarif.ts`. Beide werden gegen dieselbe
+  Referenz (`spec/tests/sarif-eingabe.json` → `sarif-referenz.json`) getestet.
+- **Action** `action/` (Composite, Bash + curl + jq): packt nur eingecheckte Dateien
+  (`git archive HEAD:<pfad>`), lädt per Projekt-Token hoch, wartet, schreibt SARIF, Outputs und
+  Step-Summary, schlägt ab `schwelle` fehl. Eingaben nur über Umgebungsvariablen, Projekt-ID,
+  Schwelle, Zeitlimit und API-Adresse werden geprüft, der Token maskiert. Tests gegen einen
+  Stub-Server (`action/tests`).
+- Entwicklerbereich: Abschnitt „In der CI prüfen“ auf der Projektseite (Token erzeugen, Workflow
+  zum Kopieren); Hochladen von SARIF bleibt ein eigener Schritt mit
+  `github/codeql-action/upload-sarif`.
+
+**Warum so:** Prüfung über die API statt `luibui scan` im Runner – dort fehlen die externen
+Scanner und die Offline-Datenbanken; so ist das Ergebnis dasselbe wie im Entwicklerbereich.
+
+**Offen:** Codeberg/Forgejo-Action und pre-commit-Hook; ein fester Release-Tag der Action statt
+`@main`. Der Workflow im Entwicklerbereich nennt `herrlen/luibui/action` – damit verweist die
+Oberfläche erstmals auf das (jetzt öffentliche) Repository.

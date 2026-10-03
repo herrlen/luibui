@@ -1,5 +1,6 @@
 """Start a scan for a project and read its status and report (S1-1)."""
 
+import json
 import uuid
 from datetime import datetime
 from typing import Any, Literal
@@ -19,6 +20,7 @@ from luibui_api.routes.befunde import BefundStatus, status_for_scan
 from luibui_api.settings import get_settings
 from luibui_api.uploads import Upload, ablesen, create_scan
 from luibui_scan.intake import DEFAULT_LIMITS
+from luibui_scan.sarif import bericht_als_sarif
 from luibui_scan.scan import Eingabe
 
 router = APIRouter(tags=["scans"])
@@ -203,6 +205,34 @@ async def bericht_pdf(
         )
     status_ = {fp: st.model_dump() for fp, st in (status_for_scan(db, scan) or {}).items()}
     return await pdf_antwort(scan.report, umfang, status_)
+
+
+@router.get(
+    "/api/v1/scans/{scan_id}/bericht.sarif",
+    response_class=Response,
+    responses={200: {"content": {"application/sarif+json": {}}}},
+)
+def bericht_sarif(scan_id: uuid.UUID, caller: CurrentCaller, db: DbSession) -> Response:
+    """The finished report as SARIF 2.1.0 for GitHub Code Scanning (S5-5, the GitHub Action),
+    with the owner's finding status as suppressions."""
+    scan = get_owned(db, Scan, scan_id, caller)
+    if scan.report is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {"code": "nicht_fertig", "text": "Die Prüfung ist noch nicht fertig."},
+        )
+    status_ = {
+        fp: st.model_dump(mode="json") for fp, st in (status_for_scan(db, scan) or {}).items()
+    }
+    return Response(
+        json.dumps(bericht_als_sarif(scan.report, status_), ensure_ascii=False, indent=2),
+        media_type="application/sarif+json",
+        headers={
+            "Content-Disposition": 'attachment; filename="luibui.sarif"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 async def pdf_antwort(

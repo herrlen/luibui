@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { beispielbericht } from "@/content/beispiel";
@@ -141,5 +144,20 @@ describe("finding status in the downloads (S3-7)", () => {
   it("without a status nothing changes (public pages, quick scan)", () => {
     expect(JSON.parse(inhalt(mitStatus(), "json")).befund_status).toBeUndefined();
     expect(sarif(mitStatus()).runs[0].results[0].suppressions).toBeUndefined();
+  });
+});
+
+describe("SARIF reference shared with the engine (luibui_scan/sarif.py)", () => {
+  it("produces exactly the reference output", () => {
+    const eingabe = JSON.parse(readFileSync(path.resolve(__dirname, "../../../spec/tests/sarif-eingabe.json"), "utf8")) as {
+      faelle: { name: string; bericht: Bericht; status: Record<string, BefundStatus> | null }[];
+    };
+    const referenz = JSON.parse(readFileSync(path.resolve(__dirname, "../../../spec/tests/sarif-referenz.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    for (const fall of eingabe.faelle) {
+      expect(JSON.parse(JSON.stringify(berichtAlsSarif(fall.bericht, fall.status)))).toEqual(referenz[fall.name]);
+    }
   });
 });

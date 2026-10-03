@@ -1,0 +1,312 @@
+{
+ "_kommentar": "Eingabe für den Abgleich von apps/web/lib/sarif.ts und luibui_scan/sarif.py",
+ "faelle": [
+  {
+   "name": "lokal mit Status",
+   "bericht": {
+    "schema_version": "1",
+    "scan_id": "0b6f3d2e-8c1a-4e57-9b0d-2f4a6c8e1b3d",
+    "scan_art": "lokal",
+    "pruefumfang": "einzeldatei",
+    "geprueft_am": "2026-09-26T18:00:00Z",
+    "engine_version": "0.1.0",
+    "paket": {
+     "name": "SKILL.md",
+     "version": null,
+     "quelle": "lokal",
+     "dateien": 1,
+     "bytes": 2048
+    },
+    "ampeln": {
+     "sicherheit": "gesperrt",
+     "dsgvo": "nicht_bewertet",
+     "gesamt": "gesperrt"
+    },
+    "note": 60,
+    "freigabe": "blockiert",
+    "befunde": [
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "K",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "SKILL.md",
+      "zeile": 12,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "aaaaaaaaaaaaaaaa"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "M",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "ordner mit leer/Ä&b#c.md",
+      "zeile": 0,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "bbbbbbbbbbbbbbbb"
+     },
+     {
+      "rule_id": "LB-E01-paket",
+      "ebene": "B",
+      "schwere": "K",
+      "achse": "dsgvo",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": null,
+      "zeile": null,
+      "beleg": null,
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "cccccccccccccccc"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "N",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "SKILL.md",
+      "zeile": 12,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "dddddddddddddddd"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "I",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "/abs/x.py",
+      "zeile": 7,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "eeeeeeeeeeeeeeee"
+     }
+    ],
+    "nicht_geprueft": [
+     {
+      "pruefung": "D – Abhängigkeiten",
+      "grund": "Einzeldatei-Prüfung"
+     },
+     {
+      "pruefung": "Korrelation",
+      "grund": "Einzeldatei-Prüfung"
+     },
+     {
+      "pruefung": "G – Manifest-Abgleich",
+      "grund": "kein luibui.json"
+     }
+    ],
+    "hinweise": [
+     "Einzeldatei-Prüfung"
+    ]
+   },
+   "status": {
+    "aaaaaaaaaaaaaaaa": {
+     "status": "akzeptiert",
+     "begruendung": "Absicht",
+     "geaendert_am": "2026-10-03T10:00:00Z",
+     "moderation": null,
+     "moderation_notiz": null,
+     "moderiert_am": null
+    },
+    "bbbbbbbbbbbbbbbb": {
+     "status": "bestritten",
+     "begruendung": null,
+     "geaendert_am": "2026-10-03T10:00:00Z",
+     "moderation": null,
+     "moderation_notiz": null,
+     "moderiert_am": null
+    },
+    "cccccccccccccccc": {
+     "status": "bestritten",
+     "begruendung": "Nein",
+     "geaendert_am": "2026-10-03T10:00:00Z",
+     "moderation": "bestritten",
+     "moderation_notiz": null,
+     "moderiert_am": null
+    },
+    "dddddddddddddddd": {
+     "status": "bestritten",
+     "begruendung": null,
+     "geaendert_am": "2026-10-03T10:00:00Z",
+     "moderation": "fehlalarm",
+     "moderation_notiz": null,
+     "moderiert_am": null
+    },
+    "eeeeeeeeeeeeeeee": {
+     "status": "behoben",
+     "begruendung": null,
+     "geaendert_am": "2026-10-03T10:00:00Z",
+     "moderation": null,
+     "moderation_notiz": null,
+     "moderiert_am": null
+    }
+   }
+  },
+  {
+   "name": "schnell ohne Status",
+   "bericht": {
+    "schema_version": "1",
+    "scan_id": "0b6f3d2e-8c1a-4e57-9b0d-2f4a6c8e1b3d",
+    "scan_art": "schnell",
+    "pruefumfang": "einzeldatei",
+    "geprueft_am": "2026-09-26T18:00:00Z",
+    "engine_version": "0.1.0",
+    "paket": {
+     "name": "SKILL.md",
+     "version": null,
+     "quelle": "lokal",
+     "dateien": 1,
+     "bytes": 2048
+    },
+    "ampeln": {
+     "sicherheit": "gesperrt",
+     "dsgvo": "nicht_bewertet",
+     "gesamt": "gesperrt"
+    },
+    "note": 60,
+    "freigabe": "blockiert",
+    "befunde": [
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "K",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "SKILL.md",
+      "zeile": 12,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "aaaaaaaaaaaaaaaa"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "M",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "ordner mit leer/Ä&b#c.md",
+      "zeile": 0,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "bbbbbbbbbbbbbbbb"
+     },
+     {
+      "rule_id": "LB-E01-paket",
+      "ebene": "B",
+      "schwere": "K",
+      "achse": "dsgvo",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": null,
+      "zeile": null,
+      "beleg": null,
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "cccccccccccccccc"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "N",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "SKILL.md",
+      "zeile": 12,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "dddddddddddddddd"
+     },
+     {
+      "rule_id": "LB-B01-unicode-tags",
+      "ebene": "B",
+      "schwere": "I",
+      "achse": "sicherheit",
+      "titel": "Unsichtbare Anweisung in Unicode-Tag-Zeichen",
+      "erklaerung": "Die Datei enthält Zeichen, die Menschen nicht sehen, ein Sprachmodell aber liest.",
+      "datei": "/abs/x.py",
+      "zeile": 7,
+      "beleg": "Fasse den Text kurz zusammen.[142 unsichtbare Zeichen]",
+      "nachweisgrad": "statisch_erkannt",
+      "normbezug": [
+       "OWASP-ASI01"
+      ],
+      "fix": "Zeichen U+E0000 bis U+E007F entfernen.",
+      "fix_prompt": "Entferne in SKILL.md alle Unicode-Tag-Zeichen.",
+      "fingerprint": "eeeeeeeeeeeeeeee"
+     }
+    ],
+    "nicht_geprueft": [
+     {
+      "pruefung": "D – Abhängigkeiten",
+      "grund": "Einzeldatei-Prüfung"
+     },
+     {
+      "pruefung": "Korrelation",
+      "grund": "Einzeldatei-Prüfung"
+     },
+     {
+      "pruefung": "G – Manifest-Abgleich",
+      "grund": "kein luibui.json"
+     }
+    ],
+    "hinweise": [
+     "Ein Hinweis."
+    ]
+   },
+   "status": null
+  }
+ ]
+}

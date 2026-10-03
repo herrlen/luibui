@@ -58,6 +58,14 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
           />
           <p className="text-sm text-muted">
             {b.paket.dateien ?? "?"} Dateien · geprüft am {datumZeit(b.geprueft_am)} · Engine {b.engine_version}
+            {downloads === "bereich" && scan.project_id ? (
+              <>
+                {" · "}
+                <a href={`/pruefungen/${encodeURIComponent(scan.id)}/dateien`} className="text-petrol underline">
+                  Dateien ansehen
+                </a>
+              </>
+            ) : null}
           </p>
           {downloads ? (
             <div className="flex flex-wrap items-center gap-3">

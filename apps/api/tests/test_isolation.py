@@ -25,12 +25,14 @@ def _ids_von_a(a: Any, paypal: FakePayPal) -> dict[str, list[str]]:
     kaufen(a, paypal)
     (beleg,) = a.get("/api/v1/guthaben").json()["kaeufe"]
     (version,) = a.get(f"/api/v1/projects/{pid}/versions").json()
+    datei = a.get(f"/api/v1/scans/{scan}/dateien").json()["dateien"][0]["id"]
     return {
         "project_id": [pid],
         "scan_id": [scan, einzelpruefung],
         "token_id": [token],
         "payment_id": [beleg["id"]],
         "version_id": [version["id"]],
+        "datei_id": [datei],
         # Moderation: without is_admin the routes do not exist; any ID will do.
         "einspruch_id": [str(uuid.uuid4())],
     }

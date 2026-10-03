@@ -210,3 +210,21 @@ export type Vergleich = {
   unveraendert: VergleichEintrag[];
   gleicher_umfang: boolean;
 };
+
+/** Files of a checked version (S4-8). */
+export type Dateiliste = {
+  verfuegbar: boolean;
+  grund: string | null;
+  dateien: { id: string; path: string; size: number; befunde: number }[];
+};
+
+export type DateiAnsicht = {
+  id: string;
+  path: string;
+  size: number;
+  sha256: string;
+  /** null: binary or not UTF-8, download only. */
+  text: string | null;
+  gekuerzt: boolean;
+  befunde: { zeile: number | null; schwere: string; titel: string; rule_id: string; fingerprint: string | null }[];
+};

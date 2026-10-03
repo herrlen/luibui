@@ -6,6 +6,7 @@ from luibui_api import errors
 from luibui_api.routes import (
     auth,
     befunde,
+    dateien,
     guthaben,
     health,
     kontakt,
@@ -42,4 +43,5 @@ def create_app() -> FastAPI:
     app.include_router(konto.router)
     app.include_router(teilen.router)
     app.include_router(verlauf.router)
+    app.include_router(dateien.router)
     return app

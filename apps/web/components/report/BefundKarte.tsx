@@ -77,6 +77,14 @@ export function BefundKarte({
         <p className="mt-3 text-[15px] leading-[1.6] text-ink-2">
           <MitCode text={b.erklaerung} />
         </p>
+        {scanId && b.datei ? (
+          <a
+            href={`/pruefungen/${encodeURIComponent(scanId)}/dateien?pfad=${encodeURIComponent(b.datei)}${b.zeile ? `&zeile=${b.zeile}` : ""}`}
+            className="mt-2 inline-block text-sm text-petrol underline"
+          >
+            In der Datei zeigen
+          </a>
+        ) : null}
         {b.beleg ? (
           <figure className="mt-3">
             <figcaption className="text-xs text-muted">Beleg aus {ort(b)}</figcaption>

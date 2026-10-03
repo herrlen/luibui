@@ -2026,3 +2026,33 @@ Meldungen ohne Hängen, Enkelprozess sieht keinen offenen Deskriptor, ohne Zuhö
 Worker-Tests mit Datenbank (nur bei `laeuft`, späte Meldung ändert nichts, Worker reicht durch und
 leert), API-Test, Web-Tests (Anzeige als Text, nur bei `laeuft`). Lokal mit API und Worker: ein
 Paket hochgeladen und mitgelesen, Schritt 1 → 5 → 13 von 13, danach leer.
+
+## 2026-10-03 – S4-8: Dateien der geprüften Version (Sprint 4 begonnen)
+
+**Was:** Len: Sprint-3-Reste, dann Sprint 4. S4-8 zuerst, weil es auf nichts anderem aufbaut.
+- API `routes/dateien.py`, nur über die eigene Prüfung (`get_owned` auf den Scan, dann dessen
+  Version, Datei muss zu dieser Version und diesem Eigentümer gehören, sonst 404):
+  `GET /api/v1/scans/{id}/dateien` (Dateien mit Anzahl der Befunde, oder ein Grund, warum es
+  keine gibt: Einzelprüfung, Git-Projekt, Dateien gelöscht), `GET …/dateien/{datei_id}` (Text bis
+  1 MB, an einer Zeile gekürzt, dazu die Befunde dieser Datei), `GET …/dateien/{datei_id}/download`
+  (`application/octet-stream`, `attachment` mit ASCII- und UTF-8-Dateinamen, `nosniff`,
+  `no-store`, Audit `datei.heruntergeladen`). Entschlüsselt wird ganz im Speicher und erst dann
+  gesendet, bis 50 MB; nie Klartext auf Platte. Binärdateien und Text, der kein UTF-8 ist, gibt es
+  nur zum Herunterladen.
+- Oberfläche: „Dateien ansehen“ im Bericht, Dateibaum `/pruefungen/<id>/dateien`, Ansicht
+  `/pruefungen/<id>/dateien/<datei>` mit Zeilennummern, Befunden unter ihrer Zeile (Farbe nach
+  der schwersten), Befunden zur ganzen Datei oben. „In der Datei zeigen“ an jedem Befund springt
+  über `?pfad=…&zeile=…` an die Zeile. Unsichtbare und Steuerzeichen (dieselben Kategorien wie
+  `visible()` der Engine) erscheinen als `<U+202E>` usw., sonst könnte eine Datei vor genau der
+  Ansicht Text verstecken, die ihn zeigen soll. CRLF wird nicht als Zeichen markiert.
+
+**Geprüft:** 7 API-Tests (Baum mit Befundzahlen, Text und Befunde, Binär und Latin-1 ohne Text,
+Kürzung nur in der Ansicht, Download byte-gleich mit Kopfzeilen und bösem Dateinamen, Nutzer B
+und andere Versionen 404, gelöschte Dateien und Git-Projekt mit Grund); der zentrale
+Isolationstest kennt `datei_id`. 3 Web-Tests für `lib/sichtbar.ts`, 3 für die Ansicht (`<script>`
+als Text, Markierung, Binärdatei). Lokal mit API, Worker und Website: Paket aus entschärften
+Fixtures, aus dem Befund in Zeile 3 der `SKILL.md` gesprungen, versteckte Unicode-Tags sichtbar,
+Download über die Website byte-gleich als Anhang.
+
+**Offen:** Git-Projekte (Konzept: Commit bei Bedarf über `safe_git` neu holen). Dateien aus
+entpackten Paketformaten (`.whl` usw.) sind nicht gespeichert; der Befund-Link sagt das.

@@ -207,7 +207,7 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         )
     archiv = _zip(dateien)
     sha = hashlib.sha256(archiv).hexdigest()
-    jetzt = datetime.now(UTC).replace(microsecond=0)
+    jetzt = datetime.now(UTC)  # exact: versions in the same second must keep their order
     aussage = {
         "schema": "luibui-veroeffentlichung/1",
         "paket": f"{ns.name}/{paket.name}",
@@ -218,7 +218,7 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         "scan_id": str(scan.id),
         "ampel": scan.ampel_gesamt,
         "note": scan.note,
-        "veroeffentlicht_am": jetzt.isoformat(),
+        "veroeffentlicht_am": jetzt.replace(microsecond=0).isoformat(),
     }
     data_key, data_key_enc = project_data_key(paket.id, paket.data_key_enc)
     paket.data_key_enc = data_key_enc

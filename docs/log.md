@@ -2150,3 +2150,8 @@ Route als öffentlich. 2 Web-Tests für das Rechte-Label. Lokal angesehen: Liste
 `beispiel/wetter-skill`, Archiv über die Website abgerufen.
 
 **Offen:** Paketseiten in die Sitemap (mit S4-4), Badge, Installationsanleitung (mit S4-5).
+
+**Nachtrag S4-2 (gefunden mit dem Listentest von S4-3):** Die Veröffentlichungszeit wurde auf
+volle Sekunden gekürzt gespeichert; zwei Versionen in derselben Sekunde hatten dann keine feste
+Reihenfolge, und „neueste“ war zufällig. Jetzt wird die genaue Zeit gespeichert, nur die
+signierte Aussage nennt sie sekundengenau.

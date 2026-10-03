@@ -162,7 +162,7 @@ nur für Python und JavaScript/TypeScript.
 | C07 | **Persistenz im Code:** Schreiben in Shell-Profile, Crontab, LaunchAgents, systemd, Autostart, Agent-Konfiguration | K | ● | ✓ ✓ ✓ – | Opengrep | ASI06, ASI10 |
 | C08 | **Verschleierter Code:** mehrstufiges Dekodieren mit anschließender Ausführung, gepackte Strings, absichtlich unlesbare Bezeichner | K | ● | ✓ ✓ ✓ – | Opengrep, YARA-X | ASI05 |
 | C09 | **Zeitbomben:** Verhalten abhängig von Datum, Aufrufzähler oder Umgebung (CI erkannt → harmlos) | K | ● | ✓ ✓ ✓ – | Opengrep; ab Sprint 6 Sandbox (F04) | ASI10 |
-| C10 | **Schadmuster:** Reverse Shell, Keylogger, Krypto-Miner, Ransomware-Muster, Anti-Analyse | K | ● | ✓ ✓ ✓ – | YARA-X | ASI10 |
+| C10 | **Schadmuster:** Reverse Shell, Keylogger, Krypto-Miner, Ransomware-Muster, Anti-Analyse | K | ● | ✓ ✓ ✓ – | YARA-X (`rules/yara`, nur Programmdateien; Keylogger und Anti-Analyse H), Opengrep | ASI10 |
 | C11 | **Unsichere Netzwerknutzung:** TLS-Prüfung abgeschaltet, `http://` für Daten, Server lauscht auf `0.0.0.0` ohne Auth | M | – | ✓ ✓ ✓ – | Opengrep, Bandit | ASI07 |
 | C12 | **Pfad- und Dateizugriffe ohne Grenze:** Tool-Parameter als Pfad ohne Normalisierung (Path Traversal), Löschen außerhalb eines Arbeitsordners | H | – | ✓ ✓ ✓ – | Opengrep | ASI02, LLM06 |
 | C13 | **Sonstige Code-Schwächen:** SQL-Injection, schwache Kryptografie, hartkodierte Temp-Pfade (Bandit mittel und niedrig) | N | – | ✓ ✓ ✓ – | Bandit, Opengrep | – |

@@ -31,6 +31,7 @@ MANIFEST_NAME = "luibui.json"
 _SCHNELL = {
     "a_dateien": "A – Dateien",
     "a_schadsoftware": "A08 – Bekannte Schadsoftware",
+    "a_yara": "A – Schadmuster in Programmdateien",
     "b_inhalte": "B – Versteckte Inhalte",
     "b_muster": "B – Anweisungsmuster",
     "secrets": "B20 – Secrets",

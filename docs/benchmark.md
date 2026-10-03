@@ -1,6 +1,6 @@
 # Benchmark
 
-Stand `875b18f`, gemessen am 2026-10-03 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im Prüfkatalog §14, der Verlauf in `docs/log.md`.
+Stand `faaeb61+lokal`, gemessen am 2026-10-03 mit `python -m luibui_scan.benchmark` (S3-2). Erzeugt, nicht von Hand ändern. Begründungen der Kalibrierung stehen im Prüfkatalog §14, der Verlauf in `docs/log.md`.
 
 ## Ergebnis
 

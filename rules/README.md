@@ -7,6 +7,7 @@ einen negativen Testfall. Regel-IDs: `LB-<Prüfkatalog-ID>-<kurzname>`.
 |---|---|---|
 | `b-muster/` | Anweisungsmuster B08–B17 (YAML, Regex) | Testfälle in jeder Regeldatei |
 | `opengrep/` | Code-Regeln C01–C12 für Python, JavaScript/TypeScript und Shell | gleichnamige Testdateien daneben (`# ruleid:` / `# ok:`), `opengrep scan --test rules/opengrep` |
+| `yara/` | YARA-X-Regeln für Programmdateien: Schadmuster C10 (Miner, Reverse Shell, Lösegeld, Keylogger, Anti-Analyse), gepackte Programme A04 | Positiv- und Negativfall je Regel in `packages/engine/tests/test_analyzer_a_yara.py` |
 | `bandit/` | leere Konfiguration, damit Bandit keine `.bandit` aus dem Paket liest | – |
 | `gitleaks/` | gitleaks-Konfiguration für B20 | – |
 | `external/` | übernommene Regeln mit eigener Lizenz | – |

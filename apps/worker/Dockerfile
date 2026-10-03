@@ -26,6 +26,11 @@ ADD --checksum=sha256:35779bdd72e92129c8df2a77f0c55e8c08356801ea92591ef32108d6b2
     /usr/local/bin/opengrep
 RUN HOME=/tmp XDG_CACHE_HOME=/opt/opengrep-cache /usr/local/bin/opengrep --version \
  && chmod -R a+rX,a-w /opt/opengrep-cache
+# YARA-X command line (BSD-3-Clause) for luibui's own rules on program files (S4-10).
+ADD --checksum=sha256:01585181e8979e36ac10ab123fcf8921cf8ba879bf942916413e091e18d64852 \
+    https://github.com/VirusTotal/yara-x/releases/download/v1.21.0/yara-x-v1.21.0-x86_64-unknown-linux-gnu.tar.gz \
+    /tmp/yr.tgz
+RUN tar -xzf /tmp/yr.tgz -C /usr/local/bin yr && chmod 755 /usr/local/bin/yr && /usr/local/bin/yr --version
 # Presidio with the German spaCy model for G07 (S3-13): own venv, every package and the model
 # pinned by hash, read-only. Started per check as a subprocess (luibui_scan/tools/presidio.py).
 COPY apps/worker/presidio.txt /tmp/presidio.txt
@@ -35,7 +40,7 @@ RUN python -m venv /opt/presidio \
  && chmod -R a+rX,a-w /opt/presidio
 
 FROM python:3.12-slim-trixie
-COPY --from=scanners /usr/local/bin/gitleaks /usr/local/bin/osv-scanner /usr/local/bin/opengrep /usr/local/bin/
+COPY --from=scanners /usr/local/bin/gitleaks /usr/local/bin/osv-scanner /usr/local/bin/opengrep /usr/local/bin/yr /usr/local/bin/
 COPY --from=scanners /opt/opengrep-cache /opt/opengrep-cache
 COPY --from=scanners /opt/presidio /opt/presidio
 RUN useradd --system --uid 10001 --no-create-home --home-dir /nonexistent luibui \
@@ -49,7 +54,7 @@ ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     LUIBUI_OSV_SCANNER=/usr/local/bin/osv-scanner LUIBUI_OSV_DB=/rules/osv \
     LUIBUI_MALWARE_DB=/rules/malware/sha256.bin \
     LUIBUI_OPENGREP=/usr/local/bin/opengrep LUIBUI_OPENGREP_CACHE=/opt/opengrep-cache \
-    LUIBUI_PRESIDIO_PYTHON=/opt/presidio/bin/python \
+    LUIBUI_PRESIDIO_PYTHON=/opt/presidio/bin/python LUIBUI_YARA=/usr/local/bin/yr \
     LUIBUI_NETZ_ISOLIEREN=1
 USER 10001
 WORKDIR /scratch

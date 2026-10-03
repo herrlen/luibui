@@ -17,6 +17,7 @@ from luibui_scan.scan import ScanResult
 
 DATEITYP = "Dateityp und Tarnung"
 SCHADSOFTWARE = "Bekannte Schadsoftware"
+SCHADMUSTER = "Schadmuster in Programmdateien (YARA)"
 SECRETS = "Zugangsdaten im Klartext"
 VERSTECKT = "Versteckte Zeichen und kodierte Inhalte"
 ANWEISUNGEN = "Anweisungen an die KI (Prompt-Injection)"
@@ -35,6 +36,7 @@ PERSONEN = "DSGVO: Personendaten in Datendateien und Notebook-Ausgaben (Stichpro
 ANALYZER: dict[str, str] = {
     DATEITYP: "a_dateien",
     SCHADSOFTWARE: "a_schadsoftware",
+    SCHADMUSTER: "a_yara",
     SECRETS: "secrets",
     VERSTECKT: "b_inhalte",
     ANWEISUNGEN: "b_muster",
@@ -143,7 +145,9 @@ def _vorgesehen(
 ) -> list[tuple[str, str | None]]:
     """Checks for this kind of file; a reason instead of ``None`` means: not for this kind."""
     checks: list[tuple[str, str | None]] = [(DATEITYP, None), (SCHADSOFTWARE, None)]
-    if art in ("Binärdateien, Bilder und Archive", "macOS-Begleitdateien"):
+    if art == "Binärdateien, Bilder und Archive":
+        return [*checks, (SCHADMUSTER, None)]
+    if art == "macOS-Begleitdateien":
         return checks
     checks.append((SECRETS, None))
     checks.append((VERSTECKT, None))

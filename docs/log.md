@@ -2285,3 +2285,27 @@ nicht; zweite Instanz wartet auf die Sperre).
 
 **Offen:** Teil 2 (öffentliche Anzeige nach 14 Tagen) mit der Disclosure-Richtlinie; Anzeige der
 Nachprüfungen für den Autor im Bereich „Register“.
+
+## 2026-10-03 – S4-10: YARA-X mit eigenen Regeln (ClamAV zurückgestellt)
+
+**Was:**
+- `rules/yara/luibui.yar`: sechs eigene Regeln mit Regel-ID, Schwere und Titel in `meta`:
+  Krypto-Miner (Pool-Adressen oder zwei Miner-Merkmale, K), Reverse Shell (`/dev/tcp/` mit
+  interaktiver Shell, `nc -e`, `socat … exec … pty`, K), Lösegeldforderung (K), Keylogger
+  (Windows-Hooks und Tastaturabfrage, H), Anti-Analyse (zwei Debugger-Prüfungen und ein
+  VM-/Sandbox-Merkmal, H), UPX-gepackt (A04, M). K-Befunde aus C10 sperren (Sperrliste).
+- `tools/yara.py`: Adapter für die Kommandozeile `yr` von YARA-X 1.21.0 (BSD-3), Scan-Liste,
+  leere Umgebung, ein Thread, 50 MB je Datei, Zeitlimit, JSON, Pfade außerhalb des Pakets
+  verworfen. Analyzer `a_yara` (auch im Schnellscan): nur Programm- und Binärdateien, Textdateien
+  nie (dort zitierte Befehle in Dokus sollen nicht anschlagen); ohne Binärdateien startet `yr`
+  nicht. „Was geprüft wurde“ nennt bei Binärdateien „Schadmuster in Programmdateien (YARA)“.
+- Worker-Image: `yr` mit Prüfsumme, `LUIBUI_YARA` an den Prüfprozess durchgereicht.
+- **ClamAV zurückgestellt** (Begründung im Eintrag zu S4-11).
+
+**Geprüft:** 13 Tests (jede Regel mit Positiv- und Negativfall gegen das echte `yr`, Metadaten
+vollständig, Miner sperrt und README mit derselben Zeichenkette wird nicht geprüft, ohne
+Binärdateien kein `yr` nötig, drei Fehlerfälle, fremde Pfade). Im Worker-Image ohne Netz:
+Miner-Probe erkannt.
+
+**Benchmark** mit dem YARA-Image: 39/39 erkannt, 0/60 Fehlalarme, 0/37 im eigenen Korpus, kein
+YARA-Treffer auf den echten Paketen.

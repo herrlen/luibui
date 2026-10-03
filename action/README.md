@@ -55,3 +55,24 @@ Ausgaben: `ampel`, `note`, `bericht` (Link in den Entwicklerbereich), `sarif`.
 Jede Prüfung kostet wie eine manuelle. Grün heißt „Keine bekannten Befunde“, nicht „sicher“.
 Befunde, die du im Entwicklerbereich akzeptiert hast oder die als Fehlalarm bestätigt sind,
 erscheinen in Code Scanning als unterdrückt.
+
+## Codeberg und Forgejo
+
+Forgejo Actions führen dieselbe Action aus, wenn sie mit voller URL eingebunden wird. Code
+Scanning gibt es dort nicht; die SARIF-Datei lässt sich als Artefakt ablegen, die Ampel und der
+Link zum Bericht stehen im Log.
+
+```yaml
+on: [push]
+jobs:
+  pruefen:
+    runs-on: docker
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+      - uses: https://github.com/herrlen/luibui/action@main
+        with:
+          token: ${{ secrets.LUIBUI_TOKEN }}
+          projekt: <Projekt-ID>
+```
+
+Der Runner braucht `bash`, `curl`, `jq` und `git` (oder `zip`).

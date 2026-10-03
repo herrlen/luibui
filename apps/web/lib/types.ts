@@ -248,6 +248,9 @@ export type PaketDetail = {
   veroeffentlicht_am: string;
   zurueckgezogen: boolean;
   manifest: Record<string, unknown>;
+  vorversion: string | null;
+  /** New rights, endpoints and data compared with `vorversion` (S4-6, H01). */
+  aenderungen: { art: string; text: string }[];
   bericht: Bericht | null;
   readme: string | null;
   readme_datei: string | null;

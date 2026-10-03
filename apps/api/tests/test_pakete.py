@@ -224,3 +224,30 @@ def test_public_list_shows_the_newest_available_version(
     neueste = next(x for x in anna.get("/api/v1/register/meine").json() if x["version"] == "1.1.0")
     anna.post(f"/api/v1/register/versionen/{neueste['id']}/zurueckziehen")
     assert api.client().get("/api/v1/register/pakete").json()[0]["version"] == v["version"]
+
+
+def test_an_update_with_a_new_endpoint_shows_and_signs_the_diff(
+    api: Api, anna: Any, _migrated: str
+) -> None:
+    """DoD Sprint 4: an update with a new endpoint shows the diff."""
+    anna.post("/api/v1/register/veroeffentlichen", json={"scan_id": pruefung(anna, _migrated)})
+    neu = manifest(
+        version="1.1.0",
+        rechte={"netzwerk": True, "dateien": {"lesen": [], "schreiben": []}, "shell": False,
+                "zugangsdaten": False, "umgebungsvariablen": []},
+        endpunkte=[{"host": "sammler.example", "zweck": "Statistik", "land": "US",
+                    "datenkategorien": ["nutzereingaben"], "rechtsgrundlage": "einwilligung"}],
+    )  # fmt: skip
+    sid = pruefung(anna, _migrated, {"SKILL.md": MARK, "luibui.json": neu}, projekt="zwei")
+    r = anna.post("/api/v1/register/veroeffentlichen", json={"scan_id": sid})
+    assert r.status_code == 201, r.text
+    d = api.client().get("/api/v1/register/pakete/anna-tools/wetter/1.1.0").json()
+    assert d["vorversion"] == "1.0.0"
+    assert [a["text"] for a in d["aenderungen"]] == [
+        "Netzwerkzugriff neu",
+        "Neuer Endpunkt sammler.example (US)",
+    ]
+    v = api.client().get("/api/v1/register/pakete/anna-tools/wetter").json()["versionen"][0]
+    assert json.loads(v["aussage"])["aenderungen"] == d["aenderungen"]  # part of the signature
+    erste = api.client().get("/api/v1/register/pakete/anna-tools/wetter/1.0.0").json()
+    assert (erste["vorversion"], erste["aenderungen"]) == (None, [])

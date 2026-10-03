@@ -63,6 +63,26 @@ export default async function PaketSeite(p: Params) {
         ) : null}
       </header>
 
+      {d.vorversion ? (
+        <section
+          aria-labelledby="neu"
+          className={`flex flex-col gap-2 rounded-[14px] border p-5 ${d.aenderungen.length ? "border-gelb bg-gelb-bg" : "border-linie bg-surface"}`}
+        >
+          <h2 id="neu" className="font-display text-lg font-bold">
+            Neu gegenüber {d.vorversion}
+          </h2>
+          {d.aenderungen.length ? (
+            <ul className="list-disc pl-5 text-sm">
+              {d.aenderungen.map((a, i) => (
+                <li key={i}>{a.text}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-ink-2">Keine neuen Rechte, Endpunkte oder Datenkategorien laut luibui.json.</p>
+          )}
+        </section>
+      ) : null}
+
       <section aria-labelledby="rechte" className="flex flex-col gap-3">
         <h2 id="rechte" className="font-display text-xl font-bold">
           Rechte laut luibui.json

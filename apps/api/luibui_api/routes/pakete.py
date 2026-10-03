@@ -26,6 +26,7 @@ from sqlalchemy.exc import IntegrityError
 
 from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, SessionCaller, get_owned
+from luibui_api.diff import aenderungen as diff
 from luibui_api.errors import fehler
 from luibui_api.models import (
     Namespace,
@@ -205,6 +206,13 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
             f"Version {version[:40]} gibt es schon. Veröffentlichte Versionen sind unveränderlich; "
             "erhöhe die Version in luibui.json.",
         )
+    vorige = db.scalar(
+        select(PackageVersion)
+        .where(PackageVersion.package_id == paket.id, PackageVersion.yanked_at.is_(None))
+        .order_by(PackageVersion.published_at.desc())
+        .limit(1)
+    )
+    neu = diff(vorige.manifest if vorige else None, manifest)
     archiv = _zip(dateien)
     sha = hashlib.sha256(archiv).hexdigest()
     jetzt = datetime.now(UTC)  # exact: versions in the same second must keep their order
@@ -219,6 +227,8 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         "ampel": scan.ampel_gesamt,
         "note": scan.note,
         "veroeffentlicht_am": jetzt.replace(microsecond=0).isoformat(),
+        "vorversion": vorige.version if vorige else None,
+        "aenderungen": neu,
     }
     data_key, data_key_enc = project_data_key(paket.id, paket.data_key_enc)
     paket.data_key_enc = data_key_enc
@@ -233,6 +243,8 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         archive_bytes=len(archiv),
         storage_key=key,
         manifest=manifest,
+        aenderungen=neu,
+        vorversion=vorige.version if vorige else None,
         statement=kanonisch(aussage).decode(),
         signature=signieren(aussage),
         published_at=jetzt,
@@ -299,6 +311,9 @@ class OeffentlicheVersion(BaseModel):
     archiv_bytes: int
     veroeffentlicht_am: datetime
     zurueckgezogen: bool
+    vorversion: str | None
+    aenderungen: list[dict[str, str]]
+    """New rights, endpoints and data compared with ``vorversion`` (H01)."""
     aussage: str
     """The signed statement, exactly as signed."""
     signatur: str
@@ -384,6 +399,8 @@ def paket(namespace: str, name: str, db: DbSession) -> OeffentlichesPaket:
                 archiv_bytes=v.archive_bytes,
                 veroeffentlicht_am=v.published_at,
                 zurueckgezogen=v.yanked_at is not None,
+                vorversion=v.vorversion,
+                aenderungen=v.aenderungen,
                 aussage=v.statement,
                 signatur=base64.b64encode(v.signature or b"").decode(),
                 manifest=v.manifest,
@@ -397,6 +414,7 @@ class VersionKurz(BaseModel):
     version: str
     veroeffentlicht_am: datetime
     zurueckgezogen: bool
+    aenderungen: list[dict[str, str]]
 
 
 class PaketDetail(BaseModel):
@@ -407,6 +425,8 @@ class PaketDetail(BaseModel):
     veroeffentlicht_am: datetime
     zurueckgezogen: bool
     manifest: dict[str, Any]
+    vorversion: str | None
+    aenderungen: list[dict[str, str]]
     bericht: dict[str, Any] | None
     """The report of the check this version was published from, as it was then."""
     readme: str | None
@@ -462,6 +482,8 @@ def paket_version(namespace: str, name: str, version: str, db: DbSession) -> Pak
         veroeffentlicht_am=v.published_at,
         zurueckgezogen=v.yanked_at is not None,
         manifest=v.manifest,
+        vorversion=v.vorversion,
+        aenderungen=v.aenderungen,
         bericht=scan.report if scan else None,
         readme=readme,
         readme_datei=readme_datei,
@@ -474,6 +496,7 @@ def paket_version(namespace: str, name: str, version: str, db: DbSession) -> Pak
                 version=x.version,
                 veroeffentlicht_am=x.published_at,
                 zurueckgezogen=x.yanked_at is not None,
+                aenderungen=x.aenderungen,
             )
             for x in alle
         ],

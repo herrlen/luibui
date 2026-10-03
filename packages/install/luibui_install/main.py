@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from luibui_install.entpacken import entpacken
-from luibui_install.register import InstallError, Version, laden
+from luibui_install.register import InstallError, Version, info, laden, verlauf
 
 EXIT_OK = 0
 EXIT_FEHLER = 1
@@ -80,6 +80,37 @@ def zusammenfassung(v: Version, out: TextIO) -> None:
     print(f"Bericht:  https://luibui.com/pakete/{v.paket}?version={v.version}", file=out)
 
 
+def seit(
+    verlauf_: list[tuple[str, list[dict[str, str]]]], installiert: str, ziel: str
+) -> list[str]:
+    """Changes of every version after ``installiert`` up to ``ziel`` (newest first in the
+    history), without repeats. If ``installiert`` is not in the history: all up to ``ziel``."""
+    texte: list[str] = []
+    drin = False
+    for version, aenderungen in verlauf_:
+        if version == ziel:
+            drin = True
+        if version == installiert:
+            break
+        if drin:
+            for a in aenderungen:
+                t = sauber(a.get("text", "") if isinstance(a, dict) else a, 300)
+                if t not in texte:
+                    texte.append(t)
+    return texte
+
+
+def _installiert(paket: str, ziel: str) -> str | None:
+    try:
+        daten = json.loads((luibui_home() / "luibui.lock").read_text("utf-8"))
+    except (OSError, ValueError):
+        return None
+    for p in daten.get("pakete", []):
+        if isinstance(p, dict) and p.get("paket") == paket and p.get("ziel") == ziel:
+            return str(p.get("version"))
+    return None
+
+
 def _ordner(v: Version, ziel: str, basis: Path | None) -> Path:
     ns, name = v.paket.split("/")
     if ziel == "claude":
@@ -134,6 +165,16 @@ def _lock(v: Version, ziel: str, ordner: Path) -> Path:
 def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
     v = laden(args.paket)
     zusammenfassung(v, out)
+    vorher = _installiert(v.paket, args.ziel)
+    if vorher and vorher != v.version:
+        neuerungen = seit(v.verlauf, vorher, v.version)
+        print(f"\nUpdate von {sauber(vorher)} auf {sauber(v.version)}.", file=out)
+        if neuerungen:
+            print("Neu seitdem (laut luibui.json, von luibui signiert):", file=out)
+            for t in neuerungen:
+                print(f"  ! {t}", file=out)
+        else:
+            print("Keine neuen Rechte, Endpunkte oder Datenkategorien.", file=out)
     ampel = v.aussage.get("ampel")
     if ampel == "gesperrt":
         raise InstallError("Gesperrte Pakete werden nicht installiert.")
@@ -170,6 +211,37 @@ def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
     return EXIT_OK
 
 
+def aktualisierungen(out: TextIO) -> int:
+    """For every installed package: is there a newer version, and what does it bring?"""
+    try:
+        daten = json.loads((luibui_home() / "luibui.lock").read_text("utf-8"))
+    except (OSError, ValueError):
+        print("Noch nichts installiert.", file=out)
+        return EXIT_OK
+    for p in daten.get("pakete", []):
+        if not isinstance(p, dict):
+            continue
+        try:
+            paket, versionen = info(str(p.get("paket")))
+        except InstallError as exc:
+            print(f"{sauber(p.get('paket'))}: {exc}", file=out)
+            continue
+        neueste = next((v for v in versionen if not v.get("zurueckgezogen")), None)
+        installiert = str(p.get("version"))
+        zurueck = any(
+            v.get("version") == installiert and v.get("zurueckgezogen") for v in versionen
+        )
+        hinweis = " (deine Version wurde zurückgezogen)" if zurueck else ""
+        if neueste is None or neueste.get("version") == installiert:
+            print(f"{sauber(paket)} {sauber(installiert)}: aktuell{hinweis}", file=out)
+            continue
+        ziel = str(neueste.get("version"))
+        print(f"{sauber(paket)}: {sauber(installiert)} → {sauber(ziel)}{hinweis}", file=out)
+        for t in seit(verlauf(versionen), installiert, ziel):
+            print(f"  ! {t}", file=out)
+    return EXIT_OK
+
+
 def liste(out: TextIO) -> int:
     try:
         daten = json.loads((luibui_home() / "luibui.lock").read_text("utf-8"))
@@ -199,6 +271,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--ersetzen", action="store_true", help="vorhandene Installation ersetzen")
     p.add_argument("--trotzdem", action="store_true", help="auch bei roter Ampel installieren")
     p.add_argument("--liste", action="store_true", help="installierte Pakete anzeigen")
+    p.add_argument(
+        "--aktualisierungen",
+        action="store_true",
+        help="neuere Versionen der installierten Pakete und was sie neu dürfen",
+    )
     return p
 
 
@@ -209,6 +286,8 @@ def main(
     args = build_parser().parse_args(argv)
     if args.liste:
         return liste(out)
+    if args.aktualisierungen:
+        return aktualisierungen(out)
     if not args.paket:
         build_parser().print_help(out)
         return EXIT_FEHLER

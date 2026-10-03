@@ -2189,3 +2189,22 @@ schluessel`. Wheel gebaut: nur der Installer, rund 17 KB.
 
 **Offen (Len):** Veröffentlichung auf PyPI (Konto, Token, Name `luibui-install`; PyPI wird von
 der PSF in den USA betrieben). Danach kommt die Installationsanleitung auf die Paketseite.
+
+## 2026-10-03 – S4-6: Diff gegenüber der Vorversion (H01)
+
+**Was:**
+- `diff.py`: vergleicht die Manifeste zweier aufeinanderfolgender Versionen und meldet nur
+  Zuwächse: Netzwerk, Shell, Zugangsdaten neu; neue Lese- und Schreibpfade; neue
+  Umgebungsvariablen; neue Endpunkte mit Land; bekannter Endpunkt in einem anderen Land; neue
+  Datenkategorien je Endpunkt und insgesamt. Was wegfällt, ist kein Risiko und zählt nicht.
+- Beim Veröffentlichen gegen die neueste nicht zurückgezogene Version; Ergebnis und Vorversion
+  stehen an der Version (Migration `0010`) **und in der signierten Aussage**.
+- Paketseite: Kasten „Neu gegenüber <Vorversion>“ (gelb, wenn etwas neu ist).
+- `luibui-install`: beim Update von einer installierten Version alle Neuerungen der dazwischen
+  liegenden Versionen (ohne Doppelungen), nur aus Aussagen mit gültiger luibui-Signatur;
+  `luibui-install --aktualisierungen` zeigt für alle installierten Pakete neuere Versionen, was
+  sie neu dürfen und ob die installierte zurückgezogen wurde.
+
+**Geprüft:** 4 Tests für den Vergleich, API-Test für die Sprint-4-DoD („ein Update mit neuem
+Endpunkt zeigt den Diff“, auch in der Signatur), 2 Installer-Tests (über zwei Versionen hinweg,
+gefälschte Aussage dazwischen wird ignoriert).

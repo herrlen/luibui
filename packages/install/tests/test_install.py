@@ -37,6 +37,7 @@ class Register:
     def __init__(self) -> None:
         self.key = Ed25519PrivateKey.generate()
         self.antworten: dict[str, bytes] = {}
+        self.versionen: dict[str, list[dict[str, Any]]] = {}
 
     def veroeffentlichen(
         self,
@@ -51,26 +52,25 @@ class Register:
         aussage = {
             "paket": paket, "version": version, "archiv_bytes": len(archiv),
             "archiv_sha256": hashlib.sha256(archiv).hexdigest(), "ampel": ampel, "note": 90,
+            "aenderungen": [{"art": "endpunkt", "text": t} for t in falsch.get("neu", [])],
         } | falsch.get("aussage", {})  # fmt: skip
         text = json.dumps(aussage, sort_keys=True, separators=(",", ":"))
         signatur = (falsch.get("key") or self.key).sign(text.encode())
-        info = {
-            "paket": paket,
-            "versionen": [
-                {
-                    "version": version,
-                    "zurueckgezogen": falsch.get("zurueckgezogen", False),
-                    "aussage": text,
-                    "signatur": base64.b64encode(signatur).decode(),
-                    "manifest": {
-                        "typ": typ, "lizenz": "MIT", "beschreibung": "Wetter\x1b[31m rot",
-                        "einstieg": "server.py",
-                        "rechte": {"netzwerk": True, "shell": False},
-                        "endpunkte": [{"host": "api.wetter.example"}],
-                    },
-                }
-            ],
+        eintrag = {
+            "version": version,
+            "zurueckgezogen": falsch.get("zurueckgezogen", False),
+            "aussage": text,
+            "signatur": base64.b64encode(signatur).decode(),
+            "manifest": {
+                "typ": typ, "lizenz": "MIT", "beschreibung": "Wetter\x1b[31m rot",
+                "einstieg": "server.py",
+                "rechte": {"netzwerk": True, "shell": False},
+                "endpunkte": [{"host": "api.wetter.example"}],
+            },
         }  # fmt: skip
+        liste = [v for v in self.versionen.get(paket, []) if v["version"] != version]
+        self.versionen[paket] = [eintrag, *liste]  # newest first, like the register
+        info = {"paket": paket, "versionen": self.versionen[paket]}
         ns, name = paket.split("/")
         self.antworten[f"/api/v1/register/pakete/{ns}/{name}"] = json.dumps(info).encode()
         self.antworten[f"/api/v1/register/pakete/{ns}/{name}/{version}/archiv.zip"] = falsch.get(
@@ -198,3 +198,33 @@ def test_without_tty_it_asks_for_ja_and_refuses_plain_http(
     monkeypatch.setenv("LUIBUI_REGISTER_URL", "http://register.example")
     code, text = run("acme/wetter", "--ordner", str(tmp_path / "s"), "--ja")
     assert code == 1 and "HTTPS" in text
+
+
+def test_an_update_shows_what_the_skipped_versions_bring(
+    register: Register, tmp_path: Path
+) -> None:
+    ziel = ["--ordner", str(tmp_path / "s"), "--ja"]
+    register.veroeffentlichen(version="1.0.0")
+    assert run("acme/wetter", *ziel)[0] == 0
+    register.veroeffentlichen(version="1.1.0", neu=["Neuer Endpunkt a.example (US)"])
+    register.veroeffentlichen(
+        version="1.2.0", neu=["Shell-Befehle neu", "Neuer Endpunkt a.example (US)"]
+    )
+    code, text = run("--aktualisierungen")
+    assert "acme/wetter: 1.0.0 → 1.2.0" in text
+    assert text.count("Neuer Endpunkt a.example (US)") == 1 and "Shell-Befehle neu" in text
+    code, text = run("acme/wetter", *ziel, "--ersetzen")
+    assert code == 0, text
+    assert "Update von 1.0.0 auf 1.2.0" in text and "! Shell-Befehle neu" in text
+    assert "aktuell" in run("--aktualisierungen")[1]
+
+
+def test_changes_from_unsigned_statements_are_ignored(register: Register, tmp_path: Path) -> None:
+    ziel = ["--ordner", str(tmp_path / "s"), "--ja"]
+    register.veroeffentlichen(version="1.0.0")
+    run("acme/wetter", *ziel)
+    fremd = Ed25519PrivateKey.generate()
+    register.veroeffentlichen(version="1.1.0", neu=["gefälscht"], key=fremd)
+    register.veroeffentlichen(version="1.2.0", neu=["echt"])
+    code, text = run("acme/wetter", *ziel, "--ersetzen")
+    assert code == 0 and "! echt" in text and "gefälscht" not in text

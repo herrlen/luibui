@@ -402,6 +402,11 @@ class PackageVersion(Base):
     archive_bytes: Mapped[int] = mapped_column(BigInteger)
     storage_key: Mapped[str] = mapped_column(String(100), unique=True)
     manifest: Mapped[dict[str, Any]]
+    aenderungen: Mapped[list[dict[str, str]]] = mapped_column(
+        JSONB, server_default=text("'[]'::jsonb")
+    )
+    """New rights, endpoints and data compared with ``vorversion`` (S4-6, H01); signed too."""
+    vorversion: Mapped[str | None] = mapped_column(String(100))
     statement: Mapped[str] = mapped_column(Text)
     """The canonical JSON that was signed, byte for byte."""
     signature: Mapped[bytes | None] = mapped_column(LargeBinary)

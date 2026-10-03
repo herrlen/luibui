@@ -65,6 +65,37 @@ class Version:
     aussage: dict[str, Any]
     manifest: dict[str, Any]
     archiv: bytes
+    verlauf: list[tuple[str, list[dict[str, str]]]]
+    """All versions newest first with their signed changes (H01); unverifiable ones are left out."""
+
+
+def _gepruefte_aussage(v: dict[str, Any]) -> dict[str, Any] | None:
+    text = str(v.get("aussage", ""))
+    try:
+        schluessel().verify(base64.b64decode(str(v.get("signatur", ""))), text.encode())
+        aussage = json.loads(text)
+    except (InvalidSignature, ValueError):
+        return None
+    return aussage if isinstance(aussage, dict) else None
+
+
+def verlauf(versionen: list[dict[str, Any]]) -> list[tuple[str, list[dict[str, str]]]]:
+    out = []
+    for v in versionen:
+        a = _gepruefte_aussage(v)
+        if a is not None and a.get("version") == v.get("version"):
+            aenderungen = a.get("aenderungen")
+            out.append((str(a["version"]), aenderungen if isinstance(aenderungen, list) else []))
+    return out
+
+
+def info(angabe: str) -> tuple[str, list[dict[str, Any]]]:
+    ns, name, _ = name_teilen(angabe)
+    try:
+        daten = json.loads(_holen(f"/api/v1/register/pakete/{quote(ns)}/{quote(name)}", MAX_JSON))
+    except ValueError:
+        raise InstallError("Antwort des Registers nicht lesbar.") from None
+    return f"{ns}/{name}", [v for v in daten.get("versionen", []) if isinstance(v, dict)]
 
 
 def name_teilen(angabe: str) -> tuple[str, str, str | None]:
@@ -78,11 +109,7 @@ def name_teilen(angabe: str) -> tuple[str, str, str | None]:
 
 def laden(angabe: str) -> Version:
     ns, name, gewuenscht = name_teilen(angabe)
-    try:
-        info = json.loads(_holen(f"/api/v1/register/pakete/{quote(ns)}/{quote(name)}", MAX_JSON))
-    except ValueError:
-        raise InstallError("Antwort des Registers nicht lesbar.") from None
-    versionen = [v for v in info.get("versionen", []) if isinstance(v, dict)]
+    _, versionen = info(angabe)
     if gewuenscht:
         v = next((x for x in versionen if x.get("version") == gewuenscht), None)
     else:
@@ -115,4 +142,6 @@ def laden(angabe: str) -> Version:
     if len(archiv) != groesse or hashlib.sha256(archiv).hexdigest() != aussage.get("archiv_sha256"):
         raise InstallError("Das Archiv passt nicht zur signierten Prüfsumme; nichts installiert.")
     manifest = v.get("manifest") if isinstance(v.get("manifest"), dict) else {}
-    return Version(paket, str(aussage["version"]), aussage, manifest or {}, archiv)
+    return Version(
+        paket, str(aussage["version"]), aussage, manifest or {}, archiv, verlauf(versionen)
+    )

@@ -239,6 +239,18 @@ export type PaketVersion = {
   veroeffentlicht_am: string;
   zurueckgezogen_am: string | null;
   scan_id: string;
+  herkunft?: Herkunft | null;
+};
+
+/** Origin check against the Git tag of the version (S5-7, H03), part of the signed statement. */
+export type Herkunft = {
+  status: "uebereinstimmend" | "abweichend" | "kein_tag" | "nicht_pruefbar" | "keine_angabe";
+  repository?: string;
+  tag?: string;
+  commit?: string;
+  hinweis?: string;
+  abweichungen?: string[];
+  abweichungen_gesamt?: number;
 };
 
 /** A published version as the public package page shows it (S4-3). */
@@ -258,5 +270,6 @@ export type PaketDetail = {
   archiv_bytes: number;
   aussage: string;
   signatur: string;
+  herkunft: Herkunft | null;
   versionen: { version: string; veroeffentlicht_am: string; zurueckgezogen: boolean }[];
 };

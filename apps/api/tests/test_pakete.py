@@ -295,7 +295,7 @@ def test_git_projects_show_files_and_publish_with_their_commit(
 ) -> None:
     from pathlib import Path
 
-    from luibui_api import uploads
+    from luibui_api import herkunft, uploads
     from luibui_scan.intake.safe_git import CloneResult, canonical_url
 
     commit = "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d"
@@ -306,6 +306,9 @@ def test_git_projects_show_files_and_publish_with_their_commit(
         return CloneResult(canonical_url(raw), commit, ["SKILL.md", "luibui.json"], [], False)
 
     monkeypatch.setattr(uploads, "clone_into", clone)
+    monkeypatch.setattr(
+        herkunft, "tag_commits", lambda url, tags, work: {"v1.0.0": commit} if url else {}
+    )
     pid = project(anna, name="git", quelle="git", git_url="https://github.com/anna/wetter")
     sid = anna.post(
         f"/api/v1/projects/{pid}/scans", data={"art": "git"}, files={"x": ("", b"")}
@@ -322,3 +325,13 @@ def test_git_projects_show_files_and_publish_with_their_commit(
     aussage = json.loads(v["aussage"])
     assert aussage["repository"] == "https://github.com/anna/wetter.git"
     assert aussage["commit"] == commit
+    # H03: the tag of the version points at the checked commit, nothing to clone.
+    assert aussage["herkunft"] == {
+        "status": "uebereinstimmend",
+        "repository": "https://github.com/anna/wetter.git",
+        "tag": "v1.0.0",
+        "commit": commit,
+    }
+    detail = api.client().get("/api/v1/register/pakete/anna-tools/wetter/1.0.0").json()
+    assert detail["herkunft"]["status"] == "uebereinstimmend"
+    assert r.json()["herkunft"]["status"] == "uebereinstimmend"

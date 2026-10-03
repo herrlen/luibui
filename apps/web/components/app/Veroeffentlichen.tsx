@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { senden } from "@/lib/client-api";
+import { herkunftAnzeige } from "@/lib/herkunft";
 import type { PaketVersion } from "@/lib/types";
 
 /** Publish this check's package to the register (S4-2). The server checks everything again. */
@@ -10,15 +11,24 @@ export function Veroeffentlichen({ scanId }: { scanId: string }) {
   const [ergebnis, setErgebnis] = useState<PaketVersion | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
-  if (ergebnis)
+  if (ergebnis) {
+    const h = herkunftAnzeige(ergebnis.herkunft);
     return (
-      <p role="status" className="rounded-lg bg-gruen-bg px-4 py-3 text-sm text-gruen">
-        Veröffentlicht: <span className="font-mono font-semibold">{ergebnis.paket}</span> {ergebnis.version}.{" "}
-        <a href="/register" className="underline">
-          Zu deinen Paketen
-        </a>
-      </p>
+      <div className="flex flex-col gap-2">
+        <p role="status" className="rounded-lg bg-gruen-bg px-4 py-3 text-sm text-gruen">
+          Veröffentlicht: <span className="font-mono font-semibold">{ergebnis.paket}</span> {ergebnis.version}.{" "}
+          <a href="/register" className="underline">
+            Zu deinen Paketen
+          </a>
+        </p>
+        {h.ton === "rot" || h.ton === "gelb" ? (
+          <p className={`rounded-lg px-4 py-3 text-sm ${h.ton === "rot" ? "bg-rot-bg text-rot" : "bg-gelb-bg text-gelb"}`}>
+            Herkunft: {h.titel}. {h.text} Das steht so auf der Paketseite; eine neue Version mit passendem Tag behebt es.
+          </p>
+        ) : null}
+      </div>
     );
+  }
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
@@ -38,7 +48,7 @@ export function Veroeffentlichen({ scanId }: { scanId: string }) {
         >
           {laeuft ? "Wird veröffentlicht …" : "Im Register veröffentlichen"}
         </button>
-        <span className="text-sm text-muted">Öffentlich, signiert, Name und Version aus luibui.json.</span>
+        <span className="text-sm text-muted">Öffentlich, signiert, Name und Version aus luibui.json. Nennt sie ein Repository, gleicht luibui mit dem Tag der Version ab.</span>
       </div>
       {fehler ? (
         <p role="alert" className="rounded-lg bg-rot-bg px-3 py-2 text-sm text-rot">

@@ -268,7 +268,7 @@ Nur für veröffentlichte oder zu veröffentlichende Pakete. Sprint 4–5.
 |---|---|---|---|---|---|---|
 | H01 | **Neue Rechte oder Endpunkte gegenüber der Vorversion** (Diff) | M | – | ✓ – – – | Register (S4-6) | ASI04 |
 | H02 | **Nächtliche Nachprüfung:** neuer Treffer in D01/D02/A08 für eine bereits veröffentlichte Version | wie Quelle | – | ✓ – – – | Register (Cron) | ASI04, LLM03 |
-| H03 | **Herkunft:** veröffentlichtes Paket stimmt nicht mit dem angegebenen Git-Tag überein | H | – | ✓ – – – | Register (S5-7) | ASI04, LLM03 |
+| H03 | **Herkunft:** veröffentlichtes Paket stimmt nicht mit dem angegebenen Git-Tag überein. Erscheint als Markierung auf der Paketseite und in der signierten Aussage, nicht als Befund im Bericht; sperrt nicht (Len, 03.10.2026) | H | – | ✓ – – – | Register (S5-7) | ASI04, LLM03 |
 | H04 | **Namensverwechslung:** Paket- oder Namespace-Name nah an einem bestehenden | H | – | ✓ – – – | Register (S4-1) | ASI04 |
 
 ---

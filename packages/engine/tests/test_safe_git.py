@@ -7,7 +7,14 @@ from pathlib import Path
 import pytest
 
 from luibui_scan.intake import Ablehnung, IntakeRejectedError, Limits
-from luibui_scan.intake.safe_git import GIT_LIMITS, GitError, _clone_checked, canonical_url
+from luibui_scan.intake.safe_git import (
+    GIT_LIMITS,
+    GitError,
+    _clone_checked,
+    canonical_url,
+    clone_into,
+    tag_commits,
+)
 
 # --- URL -------------------------------------------------------------------------------------
 
@@ -198,3 +205,33 @@ def test_timeout(tmp_path: Path, dirs: tuple[Path, Path]) -> None:
     with pytest.raises(GitError):
         clone(repo, dirs, timeout=0)
     assert leftovers(dirs[1]) == []
+
+
+def test_tag_commits_resolves_light_and_annotated_tags(
+    tmp_path: Path, dirs: tuple[Path, Path]
+) -> None:
+    repo = make_repo(tmp_path, {"SKILL.md": b"# Skill"})
+    head = git(repo, "rev-parse", "HEAD").strip()
+    git(repo, "tag", "v1.0.0")
+    git(repo, "tag", "-a", "1.1.0", "-m", "LUIBUI-TESTFIXTURE")
+    _, work = dirs
+    found = tag_commits(f"file://{repo}", ["v1.0.0", "1.1.0", "v2.0.0"], work, protocols=("file",))
+    assert found == {"v1.0.0": head, "1.1.0": head}
+    assert not [p for p in work.iterdir() if p.name.startswith(".ls-remote-")]
+
+
+def test_clone_of_a_tag(tmp_path: Path, dirs: tuple[Path, Path]) -> None:
+    repo = make_repo(tmp_path, {"SKILL.md": b"# alt"})
+    git(repo, "tag", "v1.0.0")
+    (repo / "SKILL.md").write_bytes(b"# neu")
+    git(repo, "commit", "-qam", "LUIBUI-TESTFIXTURE")
+    clone(repo, dirs, tag="v1.0.0")
+    assert (dirs[0] / "SKILL.md").read_bytes() == b"# alt"
+
+
+@pytest.mark.parametrize("tag", ["-v1", "a..b", "v1.lock", "v 1", "v1/../x", "", "x" * 101])
+def test_bad_tag_names(tag: str, dirs: tuple[Path, Path]) -> None:
+    with pytest.raises(ValueError):
+        clone_into("https://github.com/a/b", dirs[0], dirs[1], tag=tag)
+    with pytest.raises(ValueError):
+        tag_commits("https://github.com/a/b", [tag], dirs[1])

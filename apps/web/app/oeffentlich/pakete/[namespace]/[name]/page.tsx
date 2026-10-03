@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Kopieren } from "@/components/Kopieren";
 import { ReportView } from "@/components/report/ReportView";
 import { datumZeit } from "@/lib/format";
+import { herkunftAnzeige } from "@/lib/herkunft";
 import { rechte } from "@/lib/rechte";
 import { apiGet } from "@/lib/server-api";
 import { teile, zeilen } from "@/lib/sichtbar";
@@ -13,6 +14,13 @@ import type { PaketDetail } from "@/lib/types";
 // Public package page (S4-3). Everything from the package (name, description, README, findings)
 // is shown as text; nothing is rendered as HTML or Markdown (CLAUDE.md rule 6).
 export const dynamic = "force-dynamic";
+
+const TON = {
+  gruen: "border-gruen bg-gruen-bg",
+  gelb: "border-gelb bg-gelb-bg",
+  rot: "border-rot bg-rot-bg",
+  neutral: "border-linie bg-surface",
+} as const;
 
 type Params = { params: Promise<{ namespace: string; name: string }>; searchParams: Promise<{ version?: string }> };
 
@@ -40,6 +48,8 @@ export default async function PaketSeite(p: Params) {
   const d = r.data;
   const m = d.manifest;
   const text = (k: string) => (typeof m[k] === "string" ? (m[k] as string) : null);
+  const herkunft = herkunftAnzeige(d.herkunft);
+  const h = d.herkunft;
   const archiv = `/api/v1/register/pakete/${d.paket}/${encodeURIComponent(d.version)}/archiv.zip`;
   return (
     <article className="flex max-w-5xl flex-col gap-6 pt-10">
@@ -83,6 +93,44 @@ export default async function PaketSeite(p: Params) {
           )}
         </section>
       ) : null}
+
+      <section
+        aria-labelledby="herkunft"
+        className={`flex flex-col gap-2 rounded-[14px] border p-5 ${TON[herkunft.ton]}`}
+      >
+        <h2 id="herkunft" className="font-display text-lg font-bold">
+          Herkunft: {herkunft.titel}
+        </h2>
+        <p className="text-sm">{herkunft.text}</p>
+        {h?.repository ? (
+          <dl className="grid gap-1 text-sm sm:grid-cols-[8rem_1fr]">
+            <dt className="text-muted">Repository</dt>
+            <dd className="break-all font-mono text-xs">{h.repository}</dd>
+            {h.tag ? (
+              <>
+                <dt className="text-muted">Tag</dt>
+                <dd className="break-all font-mono text-xs">{h.tag}</dd>
+              </>
+            ) : null}
+            {h.commit ? (
+              <>
+                <dt className="text-muted">Commit</dt>
+                <dd className="break-all font-mono text-xs">{h.commit}</dd>
+              </>
+            ) : null}
+          </dl>
+        ) : null}
+        {h?.abweichungen?.length ? (
+          <ul className="list-disc pl-5 font-mono text-xs">
+            {h.abweichungen.map((pfad) => (
+              <li key={pfad}>{teile(pfad).map((t) => t.text).join("")}</li>
+            ))}
+            {(h.abweichungen_gesamt ?? 0) > h.abweichungen.length ? (
+              <li>… und {(h.abweichungen_gesamt ?? 0) - h.abweichungen.length} weitere</li>
+            ) : null}
+          </ul>
+        ) : null}
+      </section>
 
       <section aria-labelledby="rechte" className="flex flex-col gap-3">
         <h2 id="rechte" className="font-display text-xl font-bold">
@@ -158,7 +206,7 @@ export default async function PaketSeite(p: Params) {
           <dd className="break-all font-mono text-xs">{d.signatur}</dd>
         </dl>
         <p className="text-sm text-muted">
-          luibui signiert zu jeder Version, was geprüft wurde: Archiv, Bericht, Ampel und Note. Den öffentlichen Schlüssel gibt es
+          luibui signiert zu jeder Version, was geprüft wurde: Archiv, Bericht, Ampel, Note und Herkunft. Den öffentlichen Schlüssel gibt es
           unter <a href="/api/v1/register/schluessel" className="text-petrol underline">/api/v1/register/schluessel</a>.
         </p>
       </section>

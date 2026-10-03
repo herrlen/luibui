@@ -237,7 +237,7 @@
 | S5-4 | ✅ **(03.10.2026)** `luibui.com/badge/<namespace>/<name>.svg` (Ampel und Note der neuesten Version, nur feste Wörter im SVG), Markdown-Snippet mit Kopierknopf auf der Paketseite. Badge-SVG und Einbettungs-Snippet | 2 |
 | S5-5 | GitHub-Action + Codeberg/Forgejo-Action + pre-commit-Hook (`luibui scan` lokal, SARIF-Upload) | 5 |
 | S5-6 | websecureaudit-Anbindung für Remote-MCP-URLs (interne API, Befunde als Ebene E7) | 4 |
-| S5-7 | Herkunft (H3): Paket gegen Git-Tag abgleichen | 3 |
+| S5-7 | ✓ **(03.10.2026)** Herkunft (H3): Paket gegen Git-Tag abgleichen. Tag `v<version>` oder `<version>` per `ls-remote`, Klon des Tags über `safe_git`, Paketdateien müssen byte-gleich im Wurzel- oder Manifest-Ordner liegen. Ergebnis in der signierten Aussage und auf der Paketseite, markiert statt gesperrt (Len) | 3 |
 | S5-8 | ◐ **(03.10.2026)** Webhook je Git-Projekt (GitHub, Codeberg/Forgejo, GitLab) mit eigenem verschlüsseltem Geheimnis und Signaturprüfung, Prüfung bei Push auf den Standard-Branch oder Tag, höchstens 1/min. Offen: CI-Snippet und Projekt-Token (mit S5-5). **app.luibui.com – Automatisierung:** Git-Repository verbinden (GitHub, Codeberg, GitLab), Webhook mit Signaturprüfung, Prüfung bei Push/Tag, CI-Snippet und Projekt-Token | 5 |
 | S5-9 | ◐ **(03.10.2026)** Einstellungen im Konto (Nachprüfung, Einspruchs-Entscheidung), Mail an den Autor bei Entscheidung der Moderation, Nachprüfungs-Mail richtet sich danach. Offen: Mails bei Push (mit S5-8) und „Meldungen“ (mit dem DSA-Meldeweg). **Benachrichtigungen:** Mail bei neuen Befunden (Neuprüfung, Push), Einspruchs-Entscheidung, Meldungen; Einstellungen im Konto | 3 |
 

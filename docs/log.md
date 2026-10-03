@@ -2420,3 +2420,26 @@ vor dem Fremdschlüssel-Kreis `scans` ↔ `versions` (seit der Nachprüfung). Be
 Client aus PGDG, `yr` 1.21.0 mit Prüfsumme, Presidio-venv aus `apps/worker/presidio.txt` mit
 Hashes, mypy auch für `apps/ops`, Zeitlimit 25 min; `use_alter` am Fremdschlüssel
 `scans.paketversion_id`.
+
+## 2026-10-03 – S5-7: Herkunft (H03), Paket gegen Git-Tag
+
+**Was:** Beim Veröffentlichen sucht luibui im Repository aus `luibui.json` (`repository`) bzw.
+im Repository des Git-Projekts den Tag `v<version>` oder `<version>` (`git ls-remote`, ohne
+Klon). Wurde ein Git-Projekt genau am Commit des Tags geprüft, ist der Abgleich fertig. Sonst
+wird der Tag über `safe_git` geklont (neuer Parameter `tag`, Name streng geprüft) und jede Datei
+des Pakets muss byte-gleich im Wurzelordner oder im Ordner mit derselben `luibui.json` liegen
+(Monorepos); weitere Dateien im Repository sind erlaubt. Ergebnis
+(`uebereinstimmend`/`abweichend`/`kein_tag`/`nicht_pruefbar`/`keine_angabe`, Repository, Tag,
+Commit, bis 20 abweichende Pfade) steht in der signierten Aussage (`herkunft`) und farbig auf der
+Paketseite, nach dem Veröffentlichen auch im Entwicklerbereich. Nennt `luibui.json` ein anderes
+Repository als das geprüfte Git-Projekt, gilt das als abweichend.
+
+**Warum so:** Len: markieren statt sperren, Klonen beim Veröffentlichen ist in Ordnung. Kein
+Befund im Bericht, weil der Bericht zur Prüfung gehört und unveränderlich ist; die Herkunft ist
+eine Eigenschaft der Veröffentlichung. Keine Migration: das Ergebnis wird aus der Aussage gelesen.
+
+**Offen:** Der Klon (bis 45 s) läuft synchron in der Anfrage; bei Bedarf später als Hintergrund-
+aufgabe. Die Liste im Register zeigt die Herkunft noch nicht.
+
+Außerdem: gitleaks meldete in der CI den Test-Signierschlüssel aus `5cd0e8c`
+(`SIGNING_KEY_B64`, Platzhalter) – Fingerprint in `.gitleaksignore`.

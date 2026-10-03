@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from luibui_api import herkunft
 from luibui_api.audit import audit
 from luibui_api.auth import CurrentCaller, DbSession, SessionCaller, get_owned
 from luibui_api.diff import aenderungen as diff
@@ -70,6 +71,8 @@ class VersionInfo(BaseModel):
     veroeffentlicht_am: datetime
     zurueckgezogen_am: datetime | None
     scan_id: uuid.UUID
+    herkunft: dict[str, Any] | None = None
+    """Origin check against the Git tag (H03); never blocks publishing."""
 
 
 def _abbruch(code: str, text: str, http: int = status.HTTP_409_CONFLICT) -> HTTPException:
@@ -129,6 +132,14 @@ def _manifest(dateien: list[tuple[StoredFile, bytes]]) -> dict[str, Any]:
     return manifest
 
 
+def herkunft_von(v: PackageVersion) -> dict[str, Any] | None:
+    try:
+        wert = json.loads(v.statement or "{}").get("herkunft")
+    except (ValueError, AttributeError):
+        return None
+    return wert if isinstance(wert, dict) else None
+
+
 def _info(p: Package, ns: Namespace, v: PackageVersion) -> VersionInfo:
     return VersionInfo(
         id=v.id,
@@ -139,6 +150,7 @@ def _info(p: Package, ns: Namespace, v: PackageVersion) -> VersionInfo:
         veroeffentlicht_am=v.published_at,
         zurueckgezogen_am=v.yanked_at,
         scan_id=v.scan_id,
+        herkunft=herkunft_von(v),
     )
 
 
@@ -227,11 +239,21 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         "vorversion": vorige.version if vorige else None,
         "aenderungen": neu,
     }
+    git_commit = None
     if project.git_url and scan.version_id:
-        # Origin for Git projects: the repository and the commit that was checked (H03 later).
+        # Origin for Git projects: the repository and the commit that was checked.
         pv = db.get(ProjectVersion, scan.version_id)
+        git_commit = pv.commit_sha if pv else None
         aussage["repository"] = project.git_url
-        aussage["commit"] = pv.commit_sha if pv else None
+        aussage["commit"] = git_commit
+    # H03: compare with the tag of the version; marked, never blocking (S5-7).
+    aussage["herkunft"] = herkunft.pruefen(
+        manifest_repository=manifest.get("repository"),
+        version=version,
+        dateien={f.path: inhalt for f, inhalt in dateien},
+        git_url=project.git_url,
+        git_commit=git_commit,
+    )
     data_key, data_key_enc = project_data_key(paket.id, paket.data_key_enc)
     paket.data_key_enc = data_key_enc
     key = new_storage_key()
@@ -501,6 +523,8 @@ class PaketDetail(BaseModel):
     archiv_bytes: int
     aussage: str
     signatur: str
+    herkunft: dict[str, Any] | None
+    """Origin check against the Git tag (H03), from the signed statement; None before S5-7."""
     versionen: list[VersionKurz]
 
 
@@ -556,6 +580,7 @@ def paket_version(namespace: str, name: str, version: str, db: DbSession) -> Pak
         archiv_bytes=v.archive_bytes,
         aussage=v.statement,
         signatur=base64.b64encode(v.signature or b"").decode(),
+        herkunft=herkunft_von(v),
         versionen=[
             VersionKurz(
                 version=x.version,

@@ -31,6 +31,7 @@ CLONE_TIMEOUT_SECONDS = 60.0
 
 _SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
 _SHA = re.compile(r"^[0-9a-f]{40}([0-9a-f]{24})?$")
+_TAG = re.compile(r"^[0-9A-Za-z][0-9A-Za-z._+-]{0,99}$")
 _POLL = 0.2
 
 
@@ -159,6 +160,7 @@ def _clone(
     timeout: float,
     max_bytes: int,
     protocols: tuple[str, ...],
+    tag: str | None = None,
 ) -> None:
     """Run ``git clone`` and kill it when it runs too long or the clone grows too large."""
     argv = [
@@ -169,6 +171,7 @@ def _clone(
         "--no-tags",
         "--no-recurse-submodules",
         "--quiet",
+        *([f"--branch={tag}"] if tag else []),
         "--",
         url,
         str(dest),
@@ -218,14 +221,82 @@ def clone_into(
     timeout: float = CLONE_TIMEOUT_SECONDS,
     max_bytes: int = CLONE_MAX_BYTES,
     limits: Limits = GIT_LIMITS,
+    tag: str | None = None,
 ) -> CloneResult:
     """Clone ``raw_url`` and copy its working tree into ``root`` through the folder intake.
 
     ``work_dir`` holds the temporary clone and is emptied afterwards. Raises ``ValueError`` for a
-    bad URL, ``GitError`` if the clone fails and ``IntakeRejectedError`` for hostile content.
+    bad URL or tag name, ``GitError`` if the clone fails and ``IntakeRejectedError`` for hostile
+    content. With ``tag`` the clone is of that tag instead of the default branch.
     """
     url = canonical_url(raw_url)
-    return _clone_checked(url, root, work_dir, timeout=timeout, max_bytes=max_bytes, limits=limits)
+    if tag is not None:
+        _check_tag(tag)
+    return _clone_checked(
+        url, root, work_dir, timeout=timeout, max_bytes=max_bytes, limits=limits, tag=tag
+    )
+
+
+def _check_tag(tag: str) -> None:
+    if not _TAG.match(tag) or ".." in tag or tag.endswith((".", ".lock")):
+        raise ValueError("Ungültiger Tag-Name")
+
+
+def tag_commits(
+    raw_url: str,
+    tags: list[str],
+    work_dir: Path,
+    *,
+    timeout: float = 20.0,
+    protocols: tuple[str, ...] = HTTPS_ONLY,
+) -> dict[str, str]:
+    """Commits of those ``tags`` that exist in the repository, without cloning (``ls-remote``).
+
+    Annotated tags resolve to the commit they point at. ``protocols`` exists for tests with local
+    repositories. Raises ``ValueError`` for a bad URL or tag name and ``GitError`` if the
+    repository cannot be read.
+    """
+    url = raw_url if protocols != HTTPS_ONLY else canonical_url(raw_url)
+    for t in tags:
+        _check_tag(t)
+    tmp = work_dir / f".ls-remote-{uuid.uuid4().hex}"
+    home = tmp / "home"
+    home.mkdir(parents=True, mode=0o700)
+    try:
+        proc = subprocess.run(  # noqa: S603 - fixed argv, no shell, validated URL and tags
+            [
+                *_argv(protocols),
+                "ls-remote",
+                "--tags",
+                "--",
+                url,
+                *(r for t in tags for r in (f"refs/tags/{t}", f"refs/tags/{t}^{{}}")),
+            ],
+            cwd=home,
+            env=_env(home, protocols),
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise GitError("Zeitlimit überschritten") from None
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    if proc.returncode != 0:
+        raise GitError("Repository nicht gefunden oder nicht öffentlich")
+    direkt: dict[str, str] = {}
+    geschaelt: dict[str, str] = {}
+    for zeile in proc.stdout.decode("ascii", errors="replace").splitlines()[:100]:
+        sha, _, ref = zeile.partition("\t")
+        if not _SHA.match(sha) or not ref.startswith("refs/tags/"):
+            continue
+        name = ref[len("refs/tags/") :]
+        if name.endswith("^{}"):
+            geschaelt[name[:-3]] = sha
+        else:
+            direkt[name] = sha
+    return {t: geschaelt.get(t) or direkt[t] for t in tags if t in direkt}
 
 
 def _clone_checked(
@@ -237,6 +308,7 @@ def _clone_checked(
     max_bytes: int,
     limits: Limits,
     protocols: tuple[str, ...] = HTTPS_ONLY,
+    tag: str | None = None,
 ) -> CloneResult:
     """``protocols`` exists for tests with local repositories; ``clone_into`` never passes it."""
     tmp = work_dir / f".clone-{uuid.uuid4().hex}"
@@ -244,7 +316,7 @@ def _clone_checked(
     home.mkdir(parents=True, mode=0o700)
     clone = tmp / "repo"
     try:
-        _clone(url, clone, home, timeout=timeout, max_bytes=max_bytes, protocols=protocols)
+        _clone(url, clone, home, timeout=timeout, max_bytes=max_bytes, protocols=protocols, tag=tag)
         commit = _git(["rev-parse", "HEAD"], clone, home, 30).strip()
         if not _SHA.match(commit):
             raise GitError("Commit nicht lesbar")

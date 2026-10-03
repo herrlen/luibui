@@ -203,6 +203,12 @@ export default async function Doku() {
             <span className="font-medium text-ink">endpunkte</span>: alle Hosts, mit denen das Paket spricht, mit Zweck,
             Land und den übermittelten Daten. Leer, wenn <span className="font-mono text-sm">netzwerk</span> false ist.
           </li>
+          <li>
+            <span className="font-medium text-ink">repository</span> (optional): das öffentliche Git-Repository auf
+            GitHub, Codeberg oder GitLab. Beim Veröffentlichen im Register gleicht luibui das Paket mit dem Tag der Version
+            ab (<span className="font-mono text-sm">v1.2.0</span> oder <span className="font-mono text-sm">1.2.0</span>) und
+            zeigt das Ergebnis auf der Paketseite. Abweichungen werden markiert, nicht gesperrt.
+          </li>
         </ul>
       </section>
     </article>

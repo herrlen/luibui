@@ -2155,3 +2155,37 @@ Route als öffentlich. 2 Web-Tests für das Rechte-Label. Lokal angesehen: Liste
 volle Sekunden gekürzt gespeichert; zwei Versionen in derselben Sekunde hatten dann keine feste
 Reihenfolge, und „neueste“ war zufällig. Jetzt wird die genaue Zeit gespeichert, nur die
 signierte Aussage nennt sie sekundengenau.
+
+## 2026-10-03 – S4-5: `luibui-install`, Installation aus dem Register
+
+**Entscheidung Len (03.10.2026):** keine Veröffentlichung der ganzen CLI (der Code bleibt nicht
+öffentlich), sondern ein schlankes Installationspaket ohne Engine und ohne Prüfregeln.
+
+**Was:** `packages/install` (Distribution `luibui-install`, Befehl `luibui-install`, einzige
+Abhängigkeit `cryptography`; die interne CLI leitet `luibui install …` dorthin weiter).
+1. Paketinfo vom Register (`https://luibui.com`, nur HTTPS; HTTP nur für localhost in Tests),
+   neueste nicht zurückgezogene oder die angegebene Version (`ns/name@1.2.3`).
+2. Signatur der Aussage mit dem **fest eingebauten** öffentlichen Schlüssel prüfen (nie den vom
+   Server nehmen), Aussage muss zu Paket und Version passen; Archiv laden (höchstens die
+   signierte Größe, bis 50 MB), SHA-256 und Größe gegen die Aussage.
+3. Paket, Lizenz, Ampel, Note und Rechte laut `luibui.json` zeigen; Text aus dem Paket ohne
+   Steuerzeichen. Rot nur mit `--trotzdem`, gesperrt nie. Rückfrage, ohne Terminal nur mit `--ja`.
+4. Entpacken in einen neuen Ordner neben dem Ziel (keine absoluten Pfade, kein `..`, keine
+   Backslashes, keine Links, höchstens 10.000 Dateien und 200 MB), dann an seinen Platz; ein
+   vorhandenes Ziel nur mit `--ersetzen`.
+5. Ziele: `claude` (nur Skills, `~/.claude/skills/<name>`) und `mcp` (`~/.luibui/pakete/<ns>/
+   <name>/<version>`, gibt einen Konfigurationsschnipsel aus, ändert keine Client-Konfiguration).
+6. Lockfile `~/.luibui/luibui.lock` (Paket, Version, SHA-256, Ziel, Ordner, Zeitpunkt);
+   `luibui-install --liste`.
+
+**Geprüft:** 12 Tests gegen ein lokales Test-Register mit eigenem Schlüssel (Skill installiert
+und eingetragen, MCP mit Schnipsel, MCP-Server nicht als Claude-Skill; falscher Schlüssel,
+falsches Archiv, Aussage für ein anderes Paket, zurückgezogen; `../`, absoluter Pfad, Backslash,
+Link im Archiv hinterlassen keine Datei; Rot, Ersetzen, Gesperrt; ohne Terminal, HTTP),
+Weiterleitungstest der CLI. Ganz durch mit der echten API: `beispiel/wetter-skill` 1.0.1
+veröffentlicht und mit `luibui-install` installiert; mit dem eingebauten Produktionsschlüssel
+dagegen abgelehnt, wie es sein muss. Eingebauter Schlüssel = `luibui.com/api/v1/register/
+schluessel`. Wheel gebaut: nur der Installer, rund 17 KB.
+
+**Offen (Len):** Veröffentlichung auf PyPI (Konto, Token, Name `luibui-install`; PyPI wird von
+der PSF in den USA betrieben). Danach kommt die Installationsanleitung auf die Paketseite.

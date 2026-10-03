@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "luibui command line: scan, init, lint, publish, install, audit"
 requires-python = ">=3.12"
 license = "LicenseRef-Proprietary"
-dependencies = ["luibui-scan"]
+dependencies = ["luibui-scan", "luibui-install"]
 
 [project.scripts]
 luibui = "luibui_cli.main:main"

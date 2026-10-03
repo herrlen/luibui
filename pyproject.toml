@@ -4,17 +4,18 @@ version = "0.0.0"
 description = "luibui monorepo workspace (not published)"
 requires-python = ">=3.12"
 license = "LicenseRef-Proprietary"
-dependencies = ["luibui-scan", "luibui", "luibui-api", "luibui-worker", "luibui-ops"]
+dependencies = ["luibui-scan", "luibui", "luibui-install", "luibui-api", "luibui-worker", "luibui-ops"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["packages/engine", "packages/cli", "apps/api", "apps/worker", "apps/ops"]
+members = ["packages/engine", "packages/cli", "packages/install", "apps/api", "apps/worker", "apps/ops"]
 
 [tool.uv.sources]
 luibui-scan = { workspace = true }
 luibui = { workspace = true }
+luibui-install = { workspace = true }
 luibui-api = { workspace = true }
 luibui-worker = { workspace = true }
 luibui-ops = { workspace = true }
@@ -33,7 +34,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests", "apps/api/tests", "apps/worker/tests", "apps/ops/tests"]
+testpaths = ["spec/tests", "packages/engine/tests", "packages/cli/tests", "packages/install/tests", "apps/api/tests", "apps/worker/tests", "apps/ops/tests"]
 addopts = "-ra --strict-markers --import-mode=importlib"
 markers = ["db: needs a PostgreSQL database (DATABASE_URL)"]
 
@@ -47,7 +48,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "N"]
 ignore = ["RUF001", "RUF002", "RUF003"]  # German text uses typographic quotes and dashes
 
 [tool.ruff.lint.isort]
-known-first-party = ["luibui_scan", "luibui_cli", "luibui_api", "luibui_worker", "luibui_ops"]
+known-first-party = ["luibui_scan", "luibui_cli", "luibui_api", "luibui_worker", "luibui_ops", "luibui_install"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S108"]

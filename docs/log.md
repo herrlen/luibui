@@ -2124,3 +2124,29 @@ veröffentlicht, Paket und Archiv ohne Anmeldung abgerufen.
 
 **Offen:** Git-Projekte veröffentlichen (wie bei der Dateiansicht), Paketseite (S4-3),
 `luibui install` (S4-5), Diff gegen die Vorversion (S4-6), Badge.
+
+## 2026-10-03 – S4-3: öffentliche Paketseite und Registerübersicht
+
+**Was:**
+- API (öffentlich): `GET /api/v1/register/pakete` (alle Pakete mit ihrer neuesten nicht
+  zurückgezogenen Version, Ampel, Note, höchstens 200, neueste zuerst) und
+  `GET /api/v1/register/pakete/{namespace}/{name}/{version}` (`neueste` erlaubt): Manifest,
+  Bericht der Prüfung, aus der die Version veröffentlicht wurde, README aus dem Archiv
+  (README.md, README, README.txt, README.rst oder SKILL.md im Hauptordner, höchstens 64 KB, nur
+  UTF-8), SHA-256, Aussage, Signatur, alle Versionen.
+- luibui.com: `/pakete` (Liste mit Ampel und Note) und `/pakete/<namespace>/<name>?version=…`:
+  Beschreibung, Version, Lizenz, Typ; Rechte-Label laut `luibui.json` (Netzwerk, Dateien, Shell,
+  Zugangsdaten inkl. Umgebungsvariablen, Drittland außerhalb des EWR) mit dem Hinweis, dass es
+  Angaben des Autors sind und Abweichungen als Befunde im Bericht stehen; der Bericht selbst
+  (dieselbe `ReportView` wie überall); README als Text mit sichtbar gemachten unsichtbaren
+  Zeichen, nie als Markdown; Archiv-Download, SHA-256, Signatur, Link zum öffentlichen
+  Schlüssel; Versionsliste. Zurückgezogene Versionen tragen einen Hinweis und keinen Download.
+- Die Website reicht die öffentlichen Register-Lesepfade an die API durch; „Register“ in Kopf,
+  Fuß und Sitemap.
+
+**Geprüft:** 2 API-Tests (Daten der Paketseite, README roh mit `<script>`; Liste zeigt die
+neueste verfügbare Version, nach dem Zurückziehen die vorige), der Isolationstest führt die neue
+Route als öffentlich. 2 Web-Tests für das Rechte-Label. Lokal angesehen: Liste und Paketseite von
+`beispiel/wetter-skill`, Archiv über die Website abgerufen.
+
+**Offen:** Paketseiten in die Sitemap (mit S4-4), Badge, Installationsanleitung (mit S4-5).

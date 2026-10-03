@@ -53,6 +53,9 @@ const config: NextConfig = {
           destination: `${API}/api/v1/quickscans/:id/bericht.pdf`,
         },
         { source: "/api/v1/kontakt", destination: `${API}/api/v1/kontakt` },
+        // Public register reads (S4-2, S4-3): package info, archives, the signing key.
+        { source: "/api/v1/register/pakete/:path*", destination: `${API}/api/v1/register/pakete/:path*` },
+        { source: "/api/v1/register/schluessel", destination: `${API}/api/v1/register/schluessel` },
       ],
       afterFiles: [],
       fallback: [],

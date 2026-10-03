@@ -180,3 +180,47 @@ def test_same_files_in_any_order_give_the_same_bytes() -> None:
     eins = _zip(dateien)  # type: ignore[arg-type]
     zwei = _zip(list(reversed(dateien)))  # type: ignore[arg-type]
     assert eins == zwei and hashlib.sha256(eins).digest() == hashlib.sha256(zwei).digest()
+
+
+def test_public_version_page_data(api: Api, anna: Any, _migrated: str) -> None:
+    files = {
+        "README.md": MARK + b"# Wetter\n<script>alert(1)</script>\n",
+        "SKILL.md": MARK,
+        "luibui.json": manifest(),
+    }
+    sid = pruefung(anna, _migrated, files)
+    anna.post("/api/v1/register/veroeffentlichen", json={"scan_id": sid})
+    oeffentlich = api.client()
+    d = oeffentlich.get("/api/v1/register/pakete/anna-tools/wetter/neueste").json()
+    assert (d["paket"], d["version"], d["readme_datei"]) == (
+        "anna-tools/wetter",
+        "1.0.0",
+        "README.md",
+    )
+    assert "<script>" in d["readme"]  # raw text; the page renders it as text
+    assert d["bericht"]["note"] == 80 and d["manifest"]["lizenz"] == "MIT"
+    assert [v["version"] for v in d["versionen"]] == ["1.0.0"]
+    assert oeffentlich.get("/api/v1/register/pakete/anna-tools/wetter/9.9.9").status_code == 404
+
+
+def test_public_list_shows_the_newest_available_version(
+    api: Api, anna: Any, _migrated: str
+) -> None:
+    assert api.client().get("/api/v1/register/pakete").json() == []
+    v = anna.post(
+        "/api/v1/register/veroeffentlichen", json={"scan_id": pruefung(anna, _migrated)}
+    ).json()
+    files = {"SKILL.md": MARK, "luibui.json": manifest(version="1.1.0")}
+    anna.post(
+        "/api/v1/register/veroeffentlichen",
+        json={"scan_id": pruefung(anna, _migrated, files, projekt="zwei")},
+    )
+    (eintrag,) = api.client().get("/api/v1/register/pakete").json()
+    assert (eintrag["paket"], eintrag["version"], eintrag["ampel"]) == (
+        "anna-tools/wetter",
+        "1.1.0",
+        "gelb",
+    )
+    neueste = next(x for x in anna.get("/api/v1/register/meine").json() if x["version"] == "1.1.0")
+    anna.post(f"/api/v1/register/versionen/{neueste['id']}/zurueckziehen")
+    assert api.client().get("/api/v1/register/pakete").json()[0]["version"] == v["version"]

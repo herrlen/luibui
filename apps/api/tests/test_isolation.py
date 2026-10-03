@@ -19,6 +19,7 @@ OEFFENTLICH = {
     # The register is public by design: published packages, by name (S4-2, test_pakete.py).
     "/api/v1/register/pakete/{namespace}/{name}",
     "/api/v1/register/pakete/{namespace}/{name}/{version}/archiv.zip",
+    "/api/v1/register/pakete/{namespace}/{name}/{version}",
 }
 """Public by design: the random link token itself is the permission (S2-12, test_teilen.py)."""
 

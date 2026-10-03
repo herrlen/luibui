@@ -214,7 +214,7 @@
 |---|---|---|
 | S4-1 | ✅ **(03.10.2026)** Namespaces, mehrere je Konto (höchstens 5, Len), reservierte Namen und Verwechslungsprüfung (H04), Verwaltung im Konto. Organisationen mit Rollen bleiben nach Sprint 7. Organisationen/Namespaces, Namensverwechslungs-Prüfung (H4) | 3 |
 | S4-2 | ✅ **(03.10.2026)** Aus einer Paket-Prüfung (nicht gesperrt, SPDX-Lizenz, Namespace des Kontos), Name und Version aus `luibui.json`, reproduzierbares ZIP verschlüsselt abgelegt, Ed25519-signierte Aussage, Versionen per Datenbank-Trigger unveränderlich, Zurückziehen, Seite „Register“, öffentliche API für `luibui install`. Git-Projekte folgen. **app.luibui.com – Veröffentlichen:** Paket aus einem Projekt/Bericht ins Register (nicht bei gesperrt), Versionen unveränderlich und signiert, Versionsverwaltung | 5 |
-| S4-3 | Paketseite: zwei Ampeln, Note, **Rechte-Label**, Befunde, README (sanitized), Versionen | 6 |
+| S4-3 | ✅ **(03.10.2026)** `luibui.com/pakete/<namespace>/<name>` mit Rechte-Label laut Manifest, Bericht der Version, README als Text, Archiv mit SHA-256 und Signatur, Versionen; Übersicht `/pakete` (Suche folgt mit S4-4). Paketseite: zwei Ampeln, Note, **Rechte-Label**, Befunde, README (sanitized), Versionen | 6 |
 | S4-4 | Suche mit Filtern (Ziel, Ampel, Typ, Rechte) | 4 |
 | S4-5 | `luibui install` mit Adaptern **Claude** und **MCP**, Lockfile | 5 |
 | S4-6 | **Diff-Prüfung** (H1): neue Rechte/Endpunkte gegenüber Vorversion hervorheben | 4 |

@@ -322,6 +322,51 @@ def _paket(db: DbSession, namespace: str, name: str) -> tuple[Package, Namespace
     return row[0], row[1]
 
 
+class PaketEintrag(BaseModel):
+    paket: str
+    version: str
+    beschreibung: str | None
+    typ: str | None
+    ampel: str | None
+    note: int | None
+    veroeffentlicht_am: datetime
+
+
+@router.get("/api/v1/register/pakete")
+def pakete(db: DbSession) -> list[PaketEintrag]:
+    """All packages with their newest version that is not withdrawn, newest first. Search and
+    filters follow with S4-4."""
+    rows = db.execute(
+        select(Package, Namespace, PackageVersion, Scan)
+        .join(Namespace, Namespace.id == Package.namespace_id)
+        .join(PackageVersion, PackageVersion.package_id == Package.id)
+        .join(Scan, Scan.id == PackageVersion.scan_id)
+        .where(PackageVersion.yanked_at.is_(None))
+        .order_by(PackageVersion.published_at.desc())
+    )
+    gesehen: set[uuid.UUID] = set()
+    eintraege = []
+    for p, ns, v, scan in rows:
+        if p.id in gesehen:
+            continue
+        gesehen.add(p.id)
+        m = v.manifest
+        eintraege.append(
+            PaketEintrag(
+                paket=f"{ns.name}/{p.name}",
+                version=v.version,
+                beschreibung=str(m.get("beschreibung"))[:300] if m.get("beschreibung") else None,
+                typ=str(m.get("typ")) if m.get("typ") else None,
+                ampel=scan.ampel_gesamt,
+                note=scan.note,
+                veroeffentlicht_am=v.published_at,
+            )
+        )
+        if len(eintraege) >= 200:
+            break
+    return eintraege
+
+
 @router.get("/api/v1/register/pakete/{namespace}/{name}")
 def paket(namespace: str, name: str, db: DbSession) -> OeffentlichesPaket:
     p, ns = _paket(db, namespace, name)
@@ -344,6 +389,93 @@ def paket(namespace: str, name: str, db: DbSession) -> OeffentlichesPaket:
                 manifest=v.manifest,
             )
             for v in versionen
+        ],
+    )
+
+
+class VersionKurz(BaseModel):
+    version: str
+    veroeffentlicht_am: datetime
+    zurueckgezogen: bool
+
+
+class PaketDetail(BaseModel):
+    """One version for the public package page (S4-3)."""
+
+    paket: str
+    version: str
+    veroeffentlicht_am: datetime
+    zurueckgezogen: bool
+    manifest: dict[str, Any]
+    bericht: dict[str, Any] | None
+    """The report of the check this version was published from, as it was then."""
+    readme: str | None
+    """README (or SKILL.md) from the archive as plain text, at most 64 KB; shown as text only."""
+    readme_datei: str | None
+    archiv_sha256: str
+    archiv_bytes: int
+    aussage: str
+    signatur: str
+    versionen: list[VersionKurz]
+
+
+MAX_README = 64 * 1024
+_README = ("readme.md", "readme", "readme.txt", "readme.rst", "skill.md")
+
+
+def _readme(archiv: bytes) -> tuple[str | None, str | None]:
+    with zipfile.ZipFile(io.BytesIO(archiv)) as zf:
+        namen = {n.lower(): n for n in zf.namelist() if "/" not in n}
+        for kandidat in _README:
+            if kandidat in namen:
+                roh = zf.read(namen[kandidat])[:MAX_README]
+                try:
+                    return roh.decode("utf-8"), namen[kandidat]
+                except UnicodeDecodeError:
+                    return None, namen[kandidat]
+    return None, None
+
+
+@router.get("/api/v1/register/pakete/{namespace}/{name}/{version}")
+def paket_version(namespace: str, name: str, version: str, db: DbSession) -> PaketDetail:
+    """``version`` may be ``neueste``: the newest version that is not withdrawn."""
+    p, ns = _paket(db, namespace, name)
+    alle = list(
+        db.scalars(
+            select(PackageVersion)
+            .where(PackageVersion.package_id == p.id)
+            .order_by(PackageVersion.published_at.desc())
+        )
+    )
+    if version == "neueste":
+        v = next((x for x in alle if x.yanked_at is None), alle[0] if alle else None)
+    else:
+        v = next((x for x in alle if x.version == version), None)
+    if v is None or p.data_key_enc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    scan = db.get(Scan, v.scan_id)
+    data_key, _ = project_data_key(p.id, p.data_key_enc)
+    readme, readme_datei = _readme(b"".join(blob_store().open(v.storage_key, data_key)))
+    return PaketDetail(
+        paket=f"{ns.name}/{p.name}",
+        version=v.version,
+        veroeffentlicht_am=v.published_at,
+        zurueckgezogen=v.yanked_at is not None,
+        manifest=v.manifest,
+        bericht=scan.report if scan else None,
+        readme=readme,
+        readme_datei=readme_datei,
+        archiv_sha256=v.archive_sha256,
+        archiv_bytes=v.archive_bytes,
+        aussage=v.statement,
+        signatur=base64.b64encode(v.signature or b"").decode(),
+        versionen=[
+            VersionKurz(
+                version=x.version,
+                veroeffentlicht_am=x.published_at,
+                zurueckgezogen=x.yanked_at is not None,
+            )
+            for x in alle
         ],
     )
 

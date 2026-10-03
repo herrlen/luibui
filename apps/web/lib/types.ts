@@ -240,3 +240,20 @@ export type PaketVersion = {
   zurueckgezogen_am: string | null;
   scan_id: string;
 };
+
+/** A published version as the public package page shows it (S4-3). */
+export type PaketDetail = {
+  paket: string;
+  version: string;
+  veroeffentlicht_am: string;
+  zurueckgezogen: boolean;
+  manifest: Record<string, unknown>;
+  bericht: Bericht | null;
+  readme: string | null;
+  readme_datei: string | null;
+  archiv_sha256: string;
+  archiv_bytes: number;
+  aussage: string;
+  signatur: string;
+  versionen: { version: string; veroeffentlicht_am: string; zurueckgezogen: boolean }[];
+};

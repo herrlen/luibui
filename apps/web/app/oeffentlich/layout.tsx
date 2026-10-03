@@ -23,6 +23,9 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
           <Link href="/so-pruefen-wir" className="text-[15px] font-medium text-ink hover:text-petrol">
             So prüfen wir
           </Link>
+          <Link href="/pakete" className="text-[15px] font-medium text-ink hover:text-petrol">
+            Register
+          </Link>
           <Link href="/doku" className="text-[15px] font-medium text-ink hover:text-petrol">
             Doku
           </Link>
@@ -58,6 +61,9 @@ export default async function OeffentlichLayout({ children }: { children: ReactN
               </Link>
               <Link href="/doku" className="text-ink-2 hover:text-petrol">
                 Doku
+              </Link>
+              <Link href="/pakete" className="text-ink-2 hover:text-petrol">
+                Register
               </Link>
               <a href={anmelden} className="text-ink-2 hover:text-petrol">
                 Anmelden

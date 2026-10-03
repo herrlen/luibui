@@ -5,6 +5,7 @@ export const OEFFENTLICHE_SEITEN = [
   "/",
   "/so-pruefen-wir",
   "/doku",
+  "/pakete",
   "/impressum",
   "/datenschutz",
   "/nutzungsbedingungen",

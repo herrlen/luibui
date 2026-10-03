@@ -1,0 +1,8 @@
+# Known vulnerabilities in our own web dependencies that are accepted for a limited time.
+# Read by the CI step "osv-scanner" (next to pnpm-lock.yaml). Every entry needs a reason and an
+# end date; the CI fails again after it.
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"  # CVE-2026-93687, braces <= 3.0.3, no fixed version yet
+ignoreUntil = 2026-11-03
+reason = "Only via eslint-config-next (dev dependency, lint in CI); the glob patterns come from our own config, never from uploads. No fixed braces release exists."

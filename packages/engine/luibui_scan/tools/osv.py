@@ -3,7 +3,8 @@
 Always offline: ``--offline`` and ``--offline-vulnerabilities`` against a database that a cron job
 puts under ``LUIBUI_OSV_DB`` (layout ``<dir>/osv-scalibr/<Ökosystem>/all.zip``). Never with call
 analysis (it would run build scripts, CLAUDE.md rule 1) and never with transitive resolution.
-Empty environment, temporary HOME outside the package, timeout.
+Our own empty ``--config`` (otherwise an ``osv-scanner.toml`` in the package could ignore its own
+vulnerabilities), empty environment, temporary HOME outside the package, timeout.
 """
 
 import json
@@ -60,9 +61,14 @@ def _score(value: object) -> float | None:
 def scan(root: Path, timeout: float = TIMEOUT_SECONDS) -> list[Vuln]:
     db = database()
     home = Path(tempfile.mkdtemp(prefix="luibui-osv-"))
+    # Our own empty config: otherwise osv-scanner reads osv-scanner.toml from the package, and an
+    # upload could hide its own vulnerabilities with [[IgnoredVulns]] or [[PackageOverrides]].
+    config = home / "osv-scanner.toml"
+    config.write_text("")
     argv = [
         binary(),
         "scan", "source", "--recursive",
+        "--config", str(config),
         "--offline", "--offline-vulnerabilities",
         "--no-resolve",
         "--no-call-analysis=all",

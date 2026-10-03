@@ -2485,3 +2485,20 @@ lokalen Ort, also eine Datei zum Hochladen statt eines Umwegs über Anbieter-API
 **Offen:** MCP-Pakete als Gemini-CLI-Extension (`gemini-extension.json`), Import in Open WebUI
 per API, Python-Tools für Open WebUI erst mit eigener Prüfung (laufen im Serverprozess, `pip`
 aus dem Frontmatter). Die Paketseite nennt die Installationsbefehle erst mit PyPI.
+
+## 2026-10-03 – osv-scanner las Konfiguration aus dem Paket (behoben)
+
+**Was:** Beim Nachsehen eines CI-Fehlers aufgefallen: Der osv-Adapter rief osv-scanner ohne
+`--config` auf. osv-scanner liest dann `osv-scanner.toml` aus dem geprüften Ordner – ein Paket
+konnte mit `[[IgnoredVulns]]` oder `[[PackageOverrides]] ignore = true` seine eigenen
+Schwachstellen- und Schadpaket-Befunde (D01/D02) unterdrücken. Im Worker-Image nachgestellt
+(lodash 4.17.20: ohne Override 0 Befunde, mit eigener leerer Konfiguration 5). Jetzt übergibt der
+Adapter immer eine eigene leere Konfiguration; Test mit einer feindlichen `osv-scanner.toml`
+(schlägt ohne die Änderung fehl). gitleaks, Opengrep und Bandit waren schon gehärtet.
+
+**Außerdem:** Die CI scheiterte an GHSA-vfj7-8cjw-p6xm (`braces` ≤ 3.0.3, ReDoS/Stapelüberlauf),
+nur über `eslint-config-next` (Entwicklung), Muster nur aus eigener Konfiguration, keine
+korrigierte Version. Befristet bis 2026-11-03 in `apps/web/osv-scanner.toml` ausgenommen.
+
+**Offen:** Prüfen, ob schon veröffentlichte Berichte betroffen sind: nur Pakete mit eigener
+`osv-scanner.toml`; die nächtliche Nachprüfung prüft Register-Versionen ohnehin neu.

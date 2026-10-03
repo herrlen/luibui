@@ -233,6 +233,25 @@ def test_osv_malicious_package_locks_and_vulnerability_is_rated(
 
 
 @pytest.mark.skipif(osv_missing, reason="osv-scanner nicht installiert (CI installiert es)")
+def test_osv_ignores_a_config_from_the_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An osv-scanner.toml in the upload must not hide its own vulnerabilities."""
+    monkeypatch.setenv("LUIBUI_OSV_DB", str(fake_db(tmp_path / "db")))
+    files = {
+        "requirements.txt": "luibui-testfixture-boese==1.0.0\nluibui-testfixture-alt==1.5.0\n",
+        "osv-scanner.toml": (
+            "# LUIBUI-TESTFIXTURE: entschärft, nicht ausführen\n"
+            '[[IgnoredVulns]]\nid = "GHSA-test-0000-0001"\nreason = "x"\n'
+            '[[PackageOverrides]]\nname = "luibui-testfixture-boese"\necosystem = "PyPI"\n'
+            'ignore = true\nreason = "x"\n'
+        ),
+    }
+    found = {f.rule_id for f in OsvAnalyzer().analyze(ctx_for(tmp_path / "pkg", files))}
+    assert found == {"osv:MAL-2026-9999", "osv:GHSA-test-0000-0001"}
+
+
+@pytest.mark.skipif(osv_missing, reason="osv-scanner nicht installiert (CI installiert es)")
 def test_osv_without_dependencies(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LUIBUI_OSV_DB", str(fake_db(tmp_path / "db")))
     assert OsvAnalyzer().analyze(ctx_for(tmp_path / "pkg", {"SKILL.md": "# x"})) == []

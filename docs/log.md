@@ -2544,3 +2544,18 @@ aus: kritische und hohe Befunde, deren Fingerprint in der vorigen fertigen Prüf
 fehlte, gehen per Mail an den Eigentümer (neue Einstellung „push“, standardmäßig an). Die Spalten
 `nachpruefung_ausgewertet_at`/`nachpruefung_neu` dienen auch hier als „ausgewertet“ und Anzahl.
 Offen bleibt nur „Meldungen“, das am DSA-Meldeweg (S3-8, Len/Anwalt) hängt.
+
+## 2026-10-03 – Sprintende 5: Definition of Done
+
+| DoD-Punkt | Ergebnis |
+|---|---|
+| Ein Paket in allen sechs Zielen installierbar | **Lokal erfüllt:** `luibui-install` hat Ziele für Claude, ChatGPT (Codex-Ordner bzw. Upload-ZIP), Gemini (Skill-Ordner, CLI-Extension für MCP, Upload-ZIP), Mistral Vibe, Open WebUI (SKILL.md-Import) und MCP-Clients; je ein Test gegen ein Schein-Register mit echter Signaturprüfung. **Offen:** in Produktion ist noch kein Paket veröffentlicht, `luibui-install` liegt nicht auf PyPI (Len). |
+| Push in ein verbundenes Repo erzeugt automatisch eine Prüfung | **Mit signierten Testaufrufen erfüllt** (GitHub, Forgejo, GitLab), in Produktion ist der Endpunkt erreichbar und lehnt Unsigniertes mit 404 ab. **Offen:** einmal mit einem echten Repository (Len). |
+| Die Action meldet Befunde als SARIF | **Gegen einen Schein-Server erfüllt** (Upload, Warten, SARIF, Schwelle), SARIF-Ausgabe aus API und Web gegen dieselbe Referenz getestet; Tag `v1` gesetzt. **Offen:** ein Lauf in einem echten GitHub-Repository mit Code Scanning (Len). |
+
+Aufgaben: S5-1, S5-2, S5-3, S5-4, S5-5, S5-7, S5-8 erledigt; S5-9 bis auf „Meldungen“
+(hängt am DSA-Meldeweg, S3-8); S5-6 (websecureaudit) auf Lens Wunsch zurückgestellt.
+
+Sprint 6 (Sandbox) braucht einen eigenen Server. Vorschlag mit Bedrohungsmodell:
+`docs/adr/ADR-001-sandbox.md` (gVisor, Sinkhole statt Netz, Köder-Zugangsdaten, Anbindung über
+HTTPS an den Worker). Entscheidung und Buchung: Len.

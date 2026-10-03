@@ -47,6 +47,8 @@ services:
       LUIBUI_ENV: ${LUIBUI_ENV:-dev}
       DATABASE_URL: postgresql+psycopg://luibui:${POSTGRES_PASSWORD}@postgres:5432/luibui
       MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in infra/.env (openssl rand -base64 32)}
+      # Optional locally: without it the register answers 503 (openssl rand -base64 32).
+      REGISTER_SIGNING_KEY: ${REGISTER_SIGNING_KEY:-}
       # Local defaults; production sets none of these, so the safe defaults in settings.py apply.
       ANNAHME_OFFEN: ${ANNAHME_OFFEN:-false}
       APP_ORIGIN: ${APP_ORIGIN:-https://app.luibui.com}

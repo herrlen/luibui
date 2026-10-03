@@ -80,3 +80,23 @@ describe("Fortschritt", () => {
     }
   });
 });
+
+describe("Veröffentlichen", () => {
+  const paket = { ...SCAN, project_id: "p", pruefumfang: "paket", ampeln: { sicherheit: "gelb", dsgvo: "gruen", gesamt: "gelb" } };
+
+  it("is offered for an unlocked package check in the developer area", () => {
+    expect(renderToStaticMarkup(<Bericht scan={paket} downloads="bereich" />)).toContain("Im Register veröffentlichen");
+  });
+
+  it("is not offered when locked, without manifest, without project or outside the area", () => {
+    const faelle = [
+      { scan: { ...paket, ampeln: { ...paket.ampeln, gesamt: "gesperrt" } }, wo: "bereich" as const },
+      { scan: { ...paket, pruefumfang: "auswahl" }, wo: "bereich" as const },
+      { scan: { ...paket, project_id: null }, wo: "bereich" as const },
+      { scan: paket, wo: "schnellscan" as const },
+    ];
+    for (const f of faelle) {
+      expect(renderToStaticMarkup(<Bericht scan={f.scan} downloads={f.wo} />)).not.toContain("Im Register veröffentlichen");
+    }
+  });
+});

@@ -34,6 +34,10 @@ _ERSATZ = (
 )  # fmt: skip
 
 
+PAKETNAME = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){1,49}$")
+"""Package names: like namespaces, up to 50 characters (spec/luibui.schema.json)."""
+
+
 def name_fehler(name: str) -> str | None:
     """German reason why ``name`` is not a valid name, or None."""
     if not NAME.match(name):

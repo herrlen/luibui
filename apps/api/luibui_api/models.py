@@ -365,24 +365,29 @@ class Job(Base):
 
 
 class Package(Base):
-    """Registry package (Sprint 4)."""
+    """Registry package ``namespace/name`` (S4-2). A namespace with packages cannot be deleted."""
 
     __tablename__ = "packages"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
     owner_id: Mapped[uuid.UUID] = _owner()
-    namespace: Mapped[str] = mapped_column(String(40))
+    namespace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("namespaces.id", ondelete="RESTRICT"), index=True
+    )
     name: Mapped[str] = mapped_column(String(50))
     source_project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="SET NULL")
     )
+    data_key_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    """Encrypts the archives of this package on the volume (CLAUDE.md rule 10)."""
     created_at: Mapped[datetime] = _created()
 
-    __table_args__ = (UniqueConstraint("namespace", "name"),)
+    __table_args__ = (UniqueConstraint("namespace_id", "name"),)
 
 
 class PackageVersion(Base):
-    """Immutable, signed package version (Sprint 4)."""
+    """Immutable, signed package version (S4-2). A database trigger refuses any change except
+    withdrawing it (``yanked_at``)."""
 
     __tablename__ = "versions"
 
@@ -394,6 +399,11 @@ class PackageVersion(Base):
     version: Mapped[str] = mapped_column(String(100))
     scan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("scans.id", ondelete="RESTRICT"))
     archive_sha256: Mapped[str] = mapped_column(String(64))
+    archive_bytes: Mapped[int] = mapped_column(BigInteger)
+    storage_key: Mapped[str] = mapped_column(String(100), unique=True)
+    manifest: Mapped[dict[str, Any]]
+    statement: Mapped[str] = mapped_column(Text)
+    """The canonical JSON that was signed, byte for byte."""
     signature: Mapped[bytes | None] = mapped_column(LargeBinary)
     published_at: Mapped[datetime] = _created()
     yanked_at: Mapped[datetime | None]

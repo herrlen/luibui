@@ -3,6 +3,7 @@ import type { ScanStatus } from "@/lib/types";
 
 import { Aktualisieren } from "./Aktualisieren";
 import { Teilen } from "./app/Teilen";
+import { Veroeffentlichen } from "./app/Veroeffentlichen";
 import { ReportView } from "./report/ReportView";
 
 /** PDFs come straight from the API (same host, the session cookie goes along); the rest is built here. */
@@ -84,6 +85,9 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
             </div>
           ) : null}
           {downloads === "bereich" ? <Teilen scanId={scan.id} geteilt={scan.geteilt ?? false} /> : null}
+          {downloads === "bereich" && scan.project_id && scan.pruefumfang === "paket" && scan.ampeln?.gesamt !== "gesperrt" ? (
+            <Veroeffentlichen scanId={scan.id} />
+          ) : null}
         </>
       ) : null}
     </div>

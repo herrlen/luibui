@@ -1,0 +1,377 @@
+"""Publishing to the register (S4-2) and the public read access that ``luibui install`` needs.
+
+A version comes from one finished check of the owner: a package check (with ``luibui.json``) of
+uploaded files, not locked. ``name`` and ``version`` come from the manifest; the namespace must
+be one of the owner's. The stored files become a reproducible ZIP (sorted, fixed timestamps),
+encrypted on the volume like project files, and luibui signs a canonical statement about it with
+its Ed25519 key. Versions never change afterwards (database trigger); they can only be withdrawn.
+"""
+
+import base64
+import hashlib
+import io
+import json
+import re
+import uuid
+import zipfile
+from datetime import UTC, datetime
+from importlib import resources
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Response, status
+from jsonschema import Draft202012Validator
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from luibui_api.audit import audit
+from luibui_api.auth import CurrentCaller, DbSession, SessionCaller, get_owned
+from luibui_api.errors import fehler
+from luibui_api.models import (
+    Namespace,
+    Package,
+    PackageVersion,
+    Project,
+    ProjectVersion,
+    Scan,
+    StoredFile,
+)
+from luibui_api.register import PAKETNAME
+from luibui_api.signatur import SignaturError, kanonisch, oeffentlicher_schluessel, signieren
+from luibui_api.storage import blob_store, new_storage_key, project_data_key
+
+router = APIRouter(tags=["register"])
+
+MAX_PAKET = 50 * 1024 * 1024
+"""Packages are built in memory; the upload limit for a selection is the same 50 MB."""
+_ZIP_ZEIT = (1980, 1, 1, 0, 0, 0)
+_LIZENZ = re.compile(r"^[A-Za-z0-9.+\-() ]+$")
+_KEINE_LIZENZ = {"unlicensed", "proprietary", "none", "noassertion", "see license"}
+
+
+def _manifest_validator() -> Draft202012Validator:
+    schema = json.loads(
+        resources.files("luibui_scan").joinpath("data/luibui.schema.json").read_text("utf-8")
+    )
+    return Draft202012Validator(schema)
+
+
+class Veroeffentlichen(BaseModel):
+    scan_id: uuid.UUID
+
+
+class VersionInfo(BaseModel):
+    id: uuid.UUID
+    paket: str
+    version: str
+    archiv_sha256: str
+    archiv_bytes: int
+    veroeffentlicht_am: datetime
+    zurueckgezogen_am: datetime | None
+    scan_id: uuid.UUID
+
+
+def _abbruch(code: str, text: str, http: int = status.HTTP_409_CONFLICT) -> HTTPException:
+    return fehler(http, code, text)
+
+
+def _dateien(db: DbSession, scan: Scan) -> tuple[Project, list[tuple[StoredFile, bytes]]]:
+    project = db.get(Project, scan.project_id) if scan.project_id else None
+    version = db.get(ProjectVersion, scan.version_id) if scan.version_id else None
+    if project is None or version is None or project.quelle == "git":
+        raise _abbruch(
+            "keine_dateien",
+            "Veröffentlichen geht aus Prüfungen hochgeladener Dateien; Git-Projekte folgen.",
+        )
+    if version.files_deleted_at is not None or project.data_key_enc is None:
+        raise _abbruch("keine_dateien", "Die Dateien dieser Version wurden gelöscht.")
+    if version.bytes > MAX_PAKET:
+        raise _abbruch("zu_gross", "Pakete über 50 MB lassen sich nicht veröffentlichen.")
+    data_key, _ = project_data_key(project.id, project.data_key_enc)
+    rows = db.scalars(
+        select(StoredFile)
+        .where(StoredFile.version_id == version.id, StoredFile.owner_id == scan.owner_id)
+        .order_by(StoredFile.path)
+    )
+    return project, [(f, b"".join(blob_store().open(f.storage_key, data_key))) for f in rows]
+
+
+def _zip(dateien: list[tuple[StoredFile, bytes]]) -> bytes:
+    """Same files, same bytes: no timestamps, no system attributes, sorted by path."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f, inhalt in sorted(dateien, key=lambda x: x[0].path):
+            info = zipfile.ZipInfo(f.path, date_time=_ZIP_ZEIT)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            info.create_system = 3
+            zf.writestr(info, inhalt)
+    return buf.getvalue()
+
+
+def _manifest(dateien: list[tuple[StoredFile, bytes]]) -> dict[str, Any]:
+    roh = next((inhalt for f, inhalt in dateien if f.path == "luibui.json"), None)
+    try:
+        manifest = json.loads(roh or b"")
+    except ValueError:
+        manifest = None
+    if not isinstance(manifest, dict) or any(_manifest_validator().iter_errors(manifest)):
+        raise _abbruch(
+            "manifest_ungueltig",
+            "luibui.json fehlt oder entspricht nicht dem Schema (siehe Doku).",
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    lizenz = str(manifest["lizenz"]).strip()
+    if not _LIZENZ.match(lizenz) or lizenz.lower() in _KEINE_LIZENZ:
+        raise _abbruch(
+            "lizenz_fehlt",
+            "Veröffentlicht werden nur Pakete mit einer SPDX-Lizenz, etwa MIT oder Apache-2.0.",
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    return manifest
+
+
+def _info(p: Package, ns: Namespace, v: PackageVersion) -> VersionInfo:
+    return VersionInfo(
+        id=v.id,
+        paket=f"{ns.name}/{p.name}",
+        version=v.version,
+        archiv_sha256=v.archive_sha256,
+        archiv_bytes=v.archive_bytes,
+        veroeffentlicht_am=v.published_at,
+        zurueckgezogen_am=v.yanked_at,
+        scan_id=v.scan_id,
+    )
+
+
+@router.post("/api/v1/register/veroeffentlichen", status_code=status.HTTP_201_CREATED)
+def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSession) -> VersionInfo:
+    scan = get_owned(db, Scan, body.scan_id, caller)
+    if scan.status != "fertig" or scan.report is None:
+        raise _abbruch("nicht_fertig", "Die Prüfung ist noch nicht fertig.")
+    if scan.ampel_gesamt == "gesperrt":
+        raise _abbruch("gesperrt", "Gesperrte Pakete lassen sich nicht veröffentlichen.")
+    if scan.pruefumfang != "paket":
+        raise _abbruch(
+            "kein_paket",
+            "Veröffentlichen geht nur mit einer Paket-Prüfung, also mit luibui.json im Paket.",
+        )
+    try:
+        oeffentlicher_schluessel()
+    except SignaturError:
+        raise _abbruch(
+            "nicht_eingerichtet",
+            "Das Register ist gerade nicht eingerichtet. Bitte später erneut.",
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from None
+    project, dateien = _dateien(db, scan)
+    manifest = _manifest(dateien)
+    ns_name, paket_name = str(manifest["name"]).split("/", 1)
+    version = str(manifest["version"])
+    ns = db.scalar(
+        select(Namespace).where(Namespace.name == ns_name, Namespace.owner_id == caller.user.id)
+    )
+    if ns is None:
+        raise _abbruch(
+            "namespace_fehlt",
+            f"Der Namespace „{ns_name[:39]}“ aus luibui.json gehört nicht zu deinem Konto. "
+            "Lege ihn im Konto an.",
+        )
+    if not PAKETNAME.match(paket_name):
+        raise _abbruch(
+            "name_ungueltig",
+            "Der Paketname in luibui.json ist ungültig.",
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    paket = db.scalar(
+        select(Package).where(Package.namespace_id == ns.id, Package.name == paket_name)
+    )
+    if paket is None:
+        paket = Package(
+            owner_id=caller.user.id,
+            namespace_id=ns.id,
+            name=paket_name,
+            source_project_id=project.id,
+        )
+        db.add(paket)
+        db.flush()
+    elif db.scalar(
+        select(PackageVersion.id).where(
+            PackageVersion.package_id == paket.id, PackageVersion.version == version
+        )
+    ):
+        raise _abbruch(
+            "version_vorhanden",
+            f"Version {version[:40]} gibt es schon. Veröffentlichte Versionen sind unveränderlich; "
+            "erhöhe die Version in luibui.json.",
+        )
+    archiv = _zip(dateien)
+    sha = hashlib.sha256(archiv).hexdigest()
+    jetzt = datetime.now(UTC).replace(microsecond=0)
+    aussage = {
+        "schema": "luibui-veroeffentlichung/1",
+        "paket": f"{ns.name}/{paket.name}",
+        "version": version,
+        "archiv_sha256": sha,
+        "archiv_bytes": len(archiv),
+        "bericht_sha256": hashlib.sha256(kanonisch(scan.report)).hexdigest(),
+        "scan_id": str(scan.id),
+        "ampel": scan.ampel_gesamt,
+        "note": scan.note,
+        "veroeffentlicht_am": jetzt.isoformat(),
+    }
+    data_key, data_key_enc = project_data_key(paket.id, paket.data_key_enc)
+    paket.data_key_enc = data_key_enc
+    key = new_storage_key()
+    blob_store().put(key, io.BytesIO(archiv), data_key)
+    v = PackageVersion(
+        owner_id=caller.user.id,
+        package_id=paket.id,
+        version=version,
+        scan_id=scan.id,
+        archive_sha256=sha,
+        archive_bytes=len(archiv),
+        storage_key=key,
+        manifest=manifest,
+        statement=kanonisch(aussage).decode(),
+        signature=signieren(aussage),
+        published_at=jetzt,
+    )
+    db.add(v)
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        blob_store().delete(key)
+        raise _abbruch("version_vorhanden", f"Version {version[:40]} gibt es schon.") from None
+    audit(db, caller.user.id, "paket.veroeffentlicht", "version", v.id)
+    db.commit()
+    return _info(paket, ns, v)
+
+
+@router.get("/api/v1/register/meine")
+def meine(caller: CurrentCaller, db: DbSession) -> list[VersionInfo]:
+    rows = db.execute(
+        select(Package, Namespace, PackageVersion)
+        .join(Namespace, Namespace.id == Package.namespace_id)
+        .join(PackageVersion, PackageVersion.package_id == Package.id)
+        .where(Package.owner_id == caller.user.id)
+        .order_by(Namespace.name, Package.name, PackageVersion.published_at.desc())
+    )
+    return [_info(p, ns, v) for p, ns, v in rows]
+
+
+@router.post("/api/v1/register/versionen/{paketversion_id}/zurueckziehen")
+def zurueckziehen(paketversion_id: uuid.UUID, caller: SessionCaller, db: DbSession) -> VersionInfo:
+    """A withdrawn version stays listed (so nobody else can take the number) but is no longer
+    offered for installation."""
+    v = get_owned(db, PackageVersion, paketversion_id, caller)
+    if v.yanked_at is None:
+        v.yanked_at = datetime.now(UTC)
+        audit(db, caller.user.id, "paket.zurueckgezogen", "version", v.id)
+    paket = db.get(Package, v.package_id)
+    ns = db.get(Namespace, paket.namespace_id) if paket else None
+    db.commit()
+    if paket is None or ns is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    return _info(paket, ns, v)
+
+
+# --- public: what `luibui install` needs ------------------------------------------------------
+
+
+class Schluessel(BaseModel):
+    algorithmus: str = "ed25519"
+    oeffentlicher_schluessel: str
+
+
+@router.get("/api/v1/register/schluessel")
+def schluessel() -> Schluessel:
+    try:
+        return Schluessel(oeffentlicher_schluessel=oeffentlicher_schluessel())
+    except SignaturError:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "nicht eingerichtet") from None
+
+
+class OeffentlicheVersion(BaseModel):
+    version: str
+    archiv_sha256: str
+    archiv_bytes: int
+    veroeffentlicht_am: datetime
+    zurueckgezogen: bool
+    aussage: str
+    """The signed statement, exactly as signed."""
+    signatur: str
+    """Ed25519 signature of ``aussage``, base64."""
+    manifest: dict[str, Any]
+
+
+class OeffentlichesPaket(BaseModel):
+    paket: str
+    versionen: list[OeffentlicheVersion]
+
+
+def _paket(db: DbSession, namespace: str, name: str) -> tuple[Package, Namespace]:
+    row = db.execute(
+        select(Package, Namespace)
+        .join(Namespace, Namespace.id == Package.namespace_id)
+        .where(Namespace.name == namespace.lower(), Package.name == name.lower())
+    ).first()
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    return row[0], row[1]
+
+
+@router.get("/api/v1/register/pakete/{namespace}/{name}")
+def paket(namespace: str, name: str, db: DbSession) -> OeffentlichesPaket:
+    p, ns = _paket(db, namespace, name)
+    versionen = db.scalars(
+        select(PackageVersion)
+        .where(PackageVersion.package_id == p.id)
+        .order_by(PackageVersion.published_at.desc())
+    )
+    return OeffentlichesPaket(
+        paket=f"{ns.name}/{p.name}",
+        versionen=[
+            OeffentlicheVersion(
+                version=v.version,
+                archiv_sha256=v.archive_sha256,
+                archiv_bytes=v.archive_bytes,
+                veroeffentlicht_am=v.published_at,
+                zurueckgezogen=v.yanked_at is not None,
+                aussage=v.statement,
+                signatur=base64.b64encode(v.signature or b"").decode(),
+                manifest=v.manifest,
+            )
+            for v in versionen
+        ],
+    )
+
+
+@router.get(
+    "/api/v1/register/pakete/{namespace}/{name}/{version}/archiv.zip",
+    response_class=Response,
+    responses={200: {"content": {"application/octet-stream": {}}}},
+)
+def archiv(namespace: str, name: str, version: str, db: DbSession) -> Response:
+    p, ns = _paket(db, namespace, name)
+    v = db.scalar(
+        select(PackageVersion).where(
+            PackageVersion.package_id == p.id, PackageVersion.version == version
+        )
+    )
+    if v is None or v.yanked_at is not None or p.data_key_enc is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht gefunden")
+    data_key, _ = project_data_key(p.id, p.data_key_enc)
+    inhalt = b"".join(blob_store().open(v.storage_key, data_key))
+    if hashlib.sha256(inhalt).hexdigest() != v.archive_sha256:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Archiv beschädigt")
+    datei = f"{ns.name}-{p.name}-{v.version}.zip"
+    return Response(
+        content=inhalt,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{datei}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

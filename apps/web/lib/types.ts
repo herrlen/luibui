@@ -228,3 +228,15 @@ export type DateiAnsicht = {
   gekuerzt: boolean;
   befunde: { zeile: number | null; schwere: string; titel: string; rule_id: string; fingerprint: string | null }[];
 };
+
+/** A published version of one of the owner's packages (S4-2). */
+export type PaketVersion = {
+  id: string;
+  paket: string;
+  version: string;
+  archiv_sha256: string;
+  archiv_bytes: number;
+  veroeffentlicht_am: string;
+  zurueckgezogen_am: string | null;
+  scan_id: string;
+};

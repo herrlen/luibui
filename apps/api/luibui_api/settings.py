@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     db_pool_size: int = 5
     health_db_timeout_seconds: float = 2.0
     master_key: SecretStr | None = None
+    register_signing_key: SecretStr | None = None
+    """Ed25519 private key (32-byte seed, base64) that signs published versions (S4-2). Like
+    MASTER_KEY it must be kept in a second place: without it no new version can be signed with
+    the key that installed packages trust."""
     """32 random bytes, base64. Encrypts the per-project data keys (S2-7). Never rotate by
     replacing it: every stored file would become unreadable."""
     storage_root: Path = Path("/projects")

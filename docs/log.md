@@ -2083,3 +2083,44 @@ bestehende Namen), 3 API-Tests (Anlegen/Liste/Löschen, fremde und verwechselbar
 Browser angesehen. Beim Testen gefunden: `c1aude` rutschte durch, weil `cl→d` vor `1→l` lief.
 
 **Offen:** Löschen eines Namespace mit veröffentlichten Paketen verhindern (kommt mit S4-2).
+
+## 2026-10-03 – S4-2: Veröffentlichen im Register, signiert und unveränderlich
+
+**Was:**
+- `POST /api/v1/register/veroeffentlichen {scan_id}` (Browser-Sitzung): nur eigene, fertige
+  Paket-Prüfung (mit `luibui.json`) hochgeladener Dateien, nicht gesperrt. Name `namespace/paket`
+  und Version kommen aus dem Manifest; es muss dem Schema entsprechen, eine SPDX-Lizenz tragen
+  (nicht `UNLICENSED`, `proprietary` …), der Namespace muss dem Konto gehören. Aus den
+  gespeicherten Dateien wird ein reproduzierbares ZIP (sortiert, Zeitstempel 1980-01-01, feste
+  Rechte), höchstens 50 MB, verschlüsselt abgelegt wie Projekt-Dateien (eigener Datenschlüssel je
+  Paket, CLAUDE.md Regel 10).
+- Signatur: luibui signiert eine kanonische JSON-Aussage (Paket, Version, SHA-256 und Größe des
+  Archivs, SHA-256 des Berichts, Prüfungs-ID, Gesamtampel, Note, Zeitpunkt) mit Ed25519
+  (`REGISTER_SIGNING_KEY`, `signatur.py`). Aussage und Signatur liegen an der Version.
+  `scripts/release.sh` erzeugt den Schlüssel beim ersten Ausrollen, wenn er im Stack fehlt, und
+  gibt ihn nie aus. Ohne Schlüssel antwortet das Register mit 503.
+- Unveränderlich: Migration `0009` (Pakete hängen jetzt per Fremdschlüssel am Namespace, `ON DELETE
+  RESTRICT`; Versionen bekommen Archivgröße, Speicherschlüssel, Manifest, Aussage) und ein
+  Trigger, der jede Änderung an einer Version außer `yanked_at` ablehnt. Gleiche Version
+  zweimal: 409. Zurückziehen (`POST …/versionen/{paketversion_id}/zurueckziehen`): bleibt
+  gelistet, die Nummer bleibt belegt, das Archiv wird nicht mehr ausgeliefert. Ein Namespace mit
+  Paketen lässt sich nicht löschen (409).
+- Öffentlich (für `luibui install`, S4-5): `GET /api/v1/register/schluessel`,
+  `GET /api/v1/register/pakete/{namespace}/{name}` (Versionen mit Aussage, Signatur, Manifest),
+  `GET …/{version}/archiv.zip` (Hash wird vor dem Ausliefern geprüft).
+- Oberfläche: Knopf „Im Register veröffentlichen“ im Bericht (nur bei passender Prüfung),
+  Menüpunkt „Register“ mit den eigenen Paketen, Versionen und „Zurückziehen“.
+- Entscheidung Len: das Register ist sofort freigeschaltet. Rechtstexte (S3-8) und der
+  DSA-Meldeweg fehlen noch.
+
+**Geprüft:** 11 API-Tests (Veröffentlichen mit Signaturprüfung gegen den öffentlichen Schlüssel,
+manipulierte Aussage scheitert; reproduzierbares ZIP; gesperrt, ohne Manifest, kaputtes Manifest,
+ohne Lizenz, fremder Namespace; unfertig, ohne Schlüssel 503; Trigger lehnt Änderung ab,
+Zurückziehen; Nutzer B kommt nicht an Prüfung und Version, Namespace mit Paketen), der
+Isolationstest veröffentlicht als Nutzer A und kennt `paketversion_id`, die öffentlichen
+Register-Routen stehen dort ausdrücklich als öffentlich. 2 Web-Tests (Knopf nur, wenn passend).
+Lokal mit API, Worker und Website: `corpus/benign/wetter-skill` geprüft, im Browser
+veröffentlicht, Paket und Archiv ohne Anmeldung abgerufen.
+
+**Offen:** Git-Projekte veröffentlichen (wie bei der Dateiansicht), Paketseite (S4-3),
+`luibui install` (S4-5), Diff gegen die Vorversion (S4-6), Badge.

@@ -27,6 +27,7 @@ def _clear_caches() -> None:
 @pytest.fixture(autouse=True)
 def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("LUIBUI_ENV", "test")
+    monkeypatch.setenv("REGISTER_SIGNING_KEY", SIGNING_KEY_B64)
     monkeypatch.setenv(
         "DATABASE_URL", "postgresql+psycopg://nobody:not-the-password@127.0.0.1:1/none"
     )
@@ -43,6 +44,7 @@ def use_database(database_url: str, monkeypatch: pytest.MonkeyPatch) -> str:
 
 
 MASTER_KEY_B64 = "bHVpYnVpLXRlc3QtbWFzdGVyLWtleS0zMi1ieXRlcyE="  # 32 bytes, test only
+SIGNING_KEY_B64 = "bHVpYnVpLXRlc3Qtc2lnbmF0dXIta2V5LTMyLWJ5dGU="  # 32 bytes, test only
 APP = "https://app.luibui.com"
 
 

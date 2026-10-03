@@ -15,6 +15,7 @@ const BEREICHE = [
   { href: "/", text: "Übersicht", aktiv: (p: string) => p === "/" },
   { href: "/projekte", text: "Projekte", aktiv: (p: string) => p.startsWith("/projekte") },
   { href: "/pruefungen", text: "Einzelprüfungen", aktiv: (p: string) => p === "/pruefungen" },
+  { href: "/register", text: "Register", aktiv: (p: string) => p.startsWith("/register") },
   { href: "/konto", text: "Konto", aktiv: (p: string) => p.startsWith("/konto") || p.startsWith("/guthaben") },
 ];
 

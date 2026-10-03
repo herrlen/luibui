@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Datenbank (Konten, Projekte, Berichte, Guthaben) | `pg_dump` im Container `ops`, verschlüsselt mit age an Lens öffentlichen Schlüssel, Volume `luibui-backup` | täglich 01:05 (Berlin) | 14 Dateien im Volume |
 | Alle Volumes (auch `luibui-backup`, `luibui-projects`) | Projekt-Backup von mittwald | täglich 01:39 | 30 Tage bei mittwald |
-| `MASTER_KEY`, `POSTGRES_PASSWORD` | nur in der Stack-Konfiguration bei mittwald | – | **zusätzlich bei Len sichern** |
+| `MASTER_KEY`, `POSTGRES_PASSWORD`, `REGISTER_SIGNING_KEY` | nur in der Stack-Konfiguration bei mittwald | – | **zusätzlich bei Len sichern** |
 
 Vor jeder Verschlüsselung prüft `ops`, ob sich das Backup wiederherstellen lässt: Der Dump wird in
 die Datenbank `luibui_restore_test` auf demselben Server eingespielt, die Zeilenzahl jeder Tabelle
@@ -18,6 +18,10 @@ lesen. Der unverschlüsselte Dump liegt nur kurz in `/tmp` des Containers und wi
 Projekt-Dateien (`luibui-projects`) sind schon mit AES-256-GCM verschlüsselt (CLAUDE.md Regel 10).
 Ihre Datenschlüssel liegen, mit `MASTER_KEY` verschlüsselt, in der Datenbank. **Ohne `MASTER_KEY`
 sind Projekt-Dateien auch mit einem Backup verloren.**
+
+Veröffentlichte Register-Versionen (S4-2) sind mit `REGISTER_SIGNING_KEY` (Ed25519) signiert; ihre
+Archive liegen verschlüsselt wie Projekt-Dateien. **Ohne `REGISTER_SIGNING_KEY` lässt sich keine
+neue Version mehr mit dem Schlüssel signieren, dem installierte Pakete vertrauen.**
 
 ## Einrichten (einmalig, Len)
 

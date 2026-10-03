@@ -96,6 +96,13 @@ PG="$(env_of postgres POSTGRES_PASSWORD)"
 MK="$(env_of api MASTER_KEY)"
 [[ -n "$PG" && -n "$MK" ]] || fehler "Secrets aus dem laufenden Stack nicht lesbar"
 ANNAHME="${ANNAHME_OFFEN:-$(env_of api ANNAHME_OFFEN)}"
+# Register signing key (S4-2): created once, then always taken from the running stack. Never
+# printed; Len copies it from mStudio (container api, environment) into the password manager.
+SK="$(env_of api REGISTER_SIGNING_KEY)"
+if [[ -z "$SK" ]]; then
+  SK="$(openssl rand -base64 32)"
+  echo "Hinweis: REGISTER_SIGNING_KEY neu erzeugt. Bitte aus mStudio (api, Umgebung) zweitsichern."
+fi
 SMTP="${SMTP_PASSWORD:-$(env_of api SMTP_PASSWORD)}"
 # PayPal: ~/.config/luibui/paypal.env (never in the repo) wins over the deployed values.
 PAYPAL_DATEI="${HOME}/.config/luibui/paypal.env"
@@ -123,6 +130,7 @@ ALARM="${ALARM_AN:-$(env_of ops ALARM_AN)}"
 {
   printf 'POSTGRES_PASSWORD=%s\n' "$PG"
   printf 'MASTER_KEY=%s\n' "$MK"
+  printf 'REGISTER_SIGNING_KEY=%s\n' "$SK"
   printf 'IMAGE_TAG=%s\n' "$TAG"
   printf 'LUIBUI_ACCESS_LOG=0\n'
   printf 'ANNAHME_OFFEN=%s\n' "${ANNAHME:-false}"
@@ -134,7 +142,7 @@ ALARM="${ALARM_AN:-$(env_of ops ALARM_AN)}"
   printf 'BACKUP_AGE_RECIPIENT=%s\n' "$BACKUP_KEY"
   printf 'ALARM_AN=%s\n' "$ALARM"
 } >"$ENVFILE"
-unset STATE PG MK SMTP PP_ID PP_SECRET PP_WEBHOOK BACKUP_KEY ALARM
+unset STATE PG MK SK SMTP PP_ID PP_SECRET PP_WEBHOOK BACKUP_KEY ALARM
 echo "Annahme offen: ${ANNAHME:-false}"
 
 # Pull the new images onto the server while the old containers still serve. Each helper runs

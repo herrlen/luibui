@@ -92,4 +92,12 @@ def loeschen(namespace_id: uuid.UUID, caller: SessionCaller, db: DbSession) -> N
     ns = get_owned(db, Namespace, namespace_id, caller)
     db.delete(ns)
     audit(db, caller.user.id, "namespace.geloescht", "namespace", namespace_id)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:  # packages.namespace_id is ON DELETE RESTRICT
+        db.rollback()
+        raise fehler(
+            status.HTTP_409_CONFLICT,
+            "hat_pakete",
+            "In diesem Namespace sind Pakete veröffentlicht; er lässt sich nicht löschen.",
+        ) from None

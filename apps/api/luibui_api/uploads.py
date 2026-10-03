@@ -202,6 +202,7 @@ def create_scan(
     scan_art: ScanArt = ScanArt.INTENSIV,
     name: str,
     owner_id: uuid.UUID | None = None,
+    paketversion_id: uuid.UUID | None = None,
 ) -> Scan:
     """Intake, store and enqueue. Commits; on error nothing stays behind.
 
@@ -236,6 +237,7 @@ def create_scan(
             version_id=version_id,
             scan_art=scan_art.value,
             pruefumfang=pruefumfang_for(upload.art, inventory).value,
+            paketversion_id=paketversion_id,
             expires_at=(
                 datetime.now(UTC) + timedelta(days=QUICKSCAN_DAYS)
                 if scan_art is ScanArt.SCHNELL

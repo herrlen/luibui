@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     health_db_timeout_seconds: float = 2.0
     master_key: SecretStr | None = None
     register_signing_key: SecretStr | None = None
+    nachpruefung: bool = True
+    """Nightly re-check of published versions (S4-7); off in tests, which call it directly."""
     """Ed25519 private key (32-byte seed, base64) that signs published versions (S4-2). Like
     MASTER_KEY it must be kept in a second place: without it no new version can be signed with
     the key that installed packages trust."""

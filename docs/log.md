@@ -2251,3 +2251,37 @@ Verschachtelung, Korpuszeilen). Python 1080 Engine-Tests grün.
 **ClamAV (S4-10)** zurückgestellt: Skills und MCP-Server sind fast nur Text und Code,
 Binärdateien meldet A04 schon; ClamAV bräuchte rund 1,2 GB RAM und Signaturen über ein US-CDN.
 Neu bewerten mit einem eigenen vServer. YARA-X mit eigenen Regeln kommt als Nächstes.
+
+## 2026-10-03 – S4-7 Teil 1: nächtliche Nachprüfung veröffentlichter Versionen (H02)
+
+**Entscheidung Len (03.10.2026):** zuerst die Nachprüfung mit Mail an den Autor; die öffentliche
+Anzeige „Befund offen“ kommt erst mit der Disclosure-Richtlinie (S3-8).
+
+**Was:**
+- `nachpruefung.py`: Ein Thread im API-Prozess (nur außerhalb von Tests, abschaltbar mit
+  `NACHPRUEFUNG=false`) tickt alle fünf Minuten. Nur wer die PostgreSQL-Sperre `pg_try_advisory_lock`
+  bekommt, arbeitet. Ab 03:00 Berlin (Sommer- und Winterzeit) legt er für jede nicht
+  zurückgezogene Version, die seit dem letzten 03:00 keine Nachprüfung hat, eine an: Archiv
+  entschlüsseln (nur die API hat `MASTER_KEY`), über denselben Annahmeweg wie ein ZIP-Upload in
+  den Scratch, normaler Prüfjob. **Der Worker bleibt unverändert.**
+- Danach vergleicht er die K- und H-Befunde (nach Fingerprint) mit der Prüfung, aus der die
+  Version veröffentlicht wurde; neue gehen per Mail an den Autor (höchstens zehn aufgezählt,
+  Link zum Bericht), Audit `paket.nachpruefung_befund`. Fehlgeschlagene Nachprüfungen werden
+  ohne Mail abgehakt.
+- Migration `0011`: `scans.paketversion_id`, `nachpruefung_ausgewertet_at`,
+  `nachpruefung_neu`. Nachprüfungen gehören dem Autor (er kann den Bericht öffnen), kosten kein
+  Guthaben und stehen nicht unter „Einzelprüfungen“.
+- Architektur: neuer Hintergrund-Thread in der API. Vorgeschlagen und begründet in der Sitzung
+  (nur die API kann die Archive entschlüsseln); die API läuft als eine Instanz, die Sperre
+  verhindert Doppelläufe trotzdem.
+
+**Geprüft:** 6 Tests (03:00 Berlin in Sommer- und Winterzeit; eine Nachprüfung je Version und
+Nacht, Scratch angelegt, nicht als Einzelprüfung gelistet, Bericht für den Autor sichtbar; neuer
+H-Befund wird einmal gemailt, alter K-Befund nicht; fehlgeschlagen ohne Mail; Zurückgezogene
+nicht; zweite Instanz wartet auf die Sperre).
+
+**Benchmark** (Worker `875b18f`): 39/39 erkannt (neu MOD-02, MOD-03), 0/60 Fehlalarme,
+0/37 im eigenen Korpus.
+
+**Offen:** Teil 2 (öffentliche Anzeige nach 14 Tagen) mit der Disclosure-Richtlinie; Anzeige der
+Nachprüfungen für den Autor im Bereich „Register“.

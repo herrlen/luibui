@@ -269,7 +269,11 @@ async def einzelpruefung_starten(
 def einzelpruefungen(caller: CurrentCaller, db: DbSession) -> list[Einzelpruefung]:
     rows = db.scalars(
         select(Scan)
-        .where(Scan.owner_id == caller.user.id, Scan.project_id.is_(None))
+        .where(
+            Scan.owner_id == caller.user.id,
+            Scan.project_id.is_(None),
+            Scan.paketversion_id.is_(None),  # nightly re-checks are not single checks
+        )
         .order_by(Scan.created_at.desc())
         .limit(100)
     )

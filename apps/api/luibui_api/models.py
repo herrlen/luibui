@@ -241,6 +241,14 @@ class Scan(Base):
     """While running: {"schritt", "von", "titel"} from the worker (S2-9); cleared at the end."""
     engine_version: Mapped[str | None] = mapped_column(String(50))
     share_token_hash: Mapped[str | None] = mapped_column(Text)
+    paketversion_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("versions.id", ondelete="CASCADE"), index=True
+    )
+    """Set for the nightly re-check of a published version (S4-7, H02); such scans are not
+    listed as single checks."""
+    nachpruefung_ausgewertet_at: Mapped[datetime | None]
+    nachpruefung_neu: Mapped[int | None] = mapped_column(Integer)
+    """New critical or high findings compared with the check the version was published from."""
     error: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = _created()
     started_at: Mapped[datetime | None]

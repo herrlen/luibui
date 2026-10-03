@@ -98,9 +98,9 @@ Jeder Upload ist potenziell feindlich. Die Prüfstelle darf nie selbst zum Angri
 
 ## Infrastruktur
 - Code: GitHub `herrlen/luibui`, https://github.com/herrlen/luibui, Standardzweig `main`. Lizenz **proprietär**
-  (seit 2026-09-27, vorher AGPL-3.0); das Repository wird privat gestellt (Len). Die öffentliche Historie bis dahin
-  bleibt bei allen, die sie geklont haben: weiter keine Secrets, keine Kundendaten, keine internen Dokumente
-  anderer Projekte ins Repo. Die Oberfläche verlinkt weder Quellcode noch Prüfkatalog.
+  (seit 2026-09-27, vorher AGPL-3.0). Das Repository ist **öffentlich** (Len, 2026-10-03), die Lizenz bleibt proprietär:
+  keine Secrets, keine Kundendaten, keine internen Dokumente anderer Projekte ins Repo. Die Oberfläche verlinkt
+  weder Quellcode noch Prüfkatalog. Die GitHub-Action liegt in `action/` (S5-5).
 - Deployment mit `scripts/release.sh` (Docker Desktop: Prüfungen wie die CI, Images aus `git archive HEAD`, Push nach ghcr.io, `mw stack deploy`, Health). GitHub Actions läuft im privaten Repo derzeit nicht (Abrechnung).
 - Nie etwas Kostenpflichtiges buchen. Buchungen macht Len.
 - Nach jedem Deploy: Health prüfen, Container-Logs ansehen, RAM-Verbrauch in `docs/infra-kapazitaet.md` notieren.

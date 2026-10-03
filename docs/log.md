@@ -2396,3 +2396,17 @@ nicht; fremder Branch, fremdes Repository, gelöschter Branch; Tag ja, anderes E
 falsche oder fehlende Signatur, unbekanntes Projekt, nach Erneuern und Abschalten 404; GitLab und
 Forgejo; nur Git-Projekte, nicht mit Token), Isolationstest. Lokal im Browser eingerichtet.
 Gegen ein echtes GitHub-Repository noch nicht ausprobiert.
+
+## 2026-10-03 – Entscheidungen Len: Git-Speicherung, Herkunft, Repo öffentlich
+
+- **Git-Projekte** speichern weiter Commit **und** Dateien (Konzept §3 angepasst): „nur Commit“
+  wäre nicht günstiger – etwas weniger Speicher, dafür ein neuer Klon bei jeder Dateiansicht und
+  Veröffentlichung, und es bräche mit Force-Push oder gelöschtem Repository.
+- **Herkunft (H03, S5-7):** Abweichungen sichtbar markieren, nicht sperren; Klonen beim
+  Veröffentlichen ist in Ordnung.
+- **Repository `herrlen/luibui` ist öffentlich** (Lizenz weiter proprietär, CLAUDE.md angepasst).
+  Damit kann die GitHub-Action im Repository liegen, und GitHub Actions laufen für öffentliche
+  Repositories ohne Abrechnung. Öffentlich sind damit auch Regeln, Prüfkatalog und die Historie
+  (darin die Scanner-Dateien aus `1b0c57a` und die wanalyse-Regeldatei aus `ddc35de`).
+- **S5-1:** Formate von ChatGPT, Gemini, Mistral, Open WebUI recherchieren. **S5-6**
+  (websecureaudit) zurückgestellt.

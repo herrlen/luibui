@@ -108,7 +108,7 @@ Jeder Entwickler bekommt nach der Anmeldung einen eigenen, privaten Bereich. Dor
 - **Nur der Eigentümer** kann sie sehen oder herunterladen. Admin-Zugriff nur im Missbrauchsfall, und jeder Zugriff wird protokolliert.
 - **Kontingent:** 500 MB pro Konto, die letzten 10 Versionen pro Projekt. Ältere Versionen werden gelöscht, ihre Berichte bleiben.
 - **Option „Dateien nach der Prüfung löschen“** pro Projekt. Dann bleiben nur Berichte und Hashes, wie beim Schnellscan.
-- **Git-Projekte** speichern keine Kopie, sondern den Commit. Für die Dateiansicht wird der Commit bei Bedarf neu geholt.
+- **Git-Projekte** speichern den geprüften Commit und, wie Uploads, alle Dateien verschlüsselt (zählt gegen das Kontingent). Entscheidung Len, 03.10.2026: so lassen, weil „nur Commit“ bei jeder Dateiansicht und Veröffentlichung einen neuen Klon bräuchte und mit einem Force-Push oder gelöschten Repo bräche.
 - **Schadsoftware wird nie gespeichert.** Trifft ein Befund aus der Sperrliste der Ebene A (bekannte Schadsoftware), werden die Dateien sofort gelöscht, nur der Hash bleibt.
 - **Dateien werden nie ausgeführt oder als Webseite ausgeliefert.** Die Dateiansicht zeigt escaped Text, Downloads gehen als `application/octet-stream` mit `Content-Disposition: attachment`.
 

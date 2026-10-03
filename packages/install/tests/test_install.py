@@ -228,3 +228,50 @@ def test_changes_from_unsigned_statements_are_ignored(register: Register, tmp_pa
     register.veroeffentlichen(version="1.2.0", neu=["echt"])
     code, text = run("acme/wetter", *ziel, "--ersetzen")
     assert code == 0 and "! echt" in text and "gefälscht" not in text
+
+
+@pytest.mark.parametrize(
+    ("ziel", "standard", "hinweis"),
+    [
+        ("chatgpt", ".agents/skills", "Codex"),
+        ("gemini", ".gemini/skills", "Gemini CLI"),
+        ("mistral", ".vibe/skills", "Mistral Vibe"),
+    ],
+)
+def test_skill_folders_of_other_clients(
+    register: Register,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    ziel: str,
+    standard: str,
+    hinweis: str,
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "nutzer"))
+    register.veroeffentlichen()
+    code, text = run("acme/wetter", "--ziel", ziel, "--ja")
+    assert code == 0, text
+    assert (tmp_path / "nutzer" / standard / "wetter" / "SKILL.md").is_file()
+    assert hinweis in text
+    lock = json.loads((tmp_path / "home" / "luibui.lock").read_text())
+    assert lock["pakete"][0]["ziel"] == ziel
+
+
+def test_upload_writes_the_checked_archive(register: Register, tmp_path: Path) -> None:
+    archiv = zip_von({"SKILL.md": MARK + b"# Wetter\n", "beispiel.txt": b"x"})
+    register.veroeffentlichen(archiv=archiv)
+    code, text = run("acme/wetter", "--ziel", "upload", "--ordner", str(tmp_path), "--ja")
+    assert code == 0, text
+    assert (tmp_path / "wetter-1.0.0.zip").read_bytes() == archiv
+    assert "ChatGPT" in text and not (tmp_path / "home" / "luibui.lock").exists()
+    assert [p.name for p in tmp_path.iterdir() if p.name.startswith(".luibui-")] == []
+
+
+@pytest.mark.parametrize("ziel", ["gemini", "upload"])
+def test_skill_targets_need_a_skill_md(register: Register, tmp_path: Path, ziel: str) -> None:
+    register.veroeffentlichen(archiv=zip_von({"README.md": MARK + b"# kein Skill\n"}))
+    code, text = run("acme/wetter", "--ziel", ziel, "--ordner", str(tmp_path / "z"), "--ja")
+    assert code == 1 and "SKILL.md" in text
+    assert list((tmp_path / "z").iterdir()) == []
+    register.veroeffentlichen(paket="acme/server", typ="mcp-server")
+    code, text = run("acme/server", "--ziel", ziel, "--ordner", str(tmp_path / "z"), "--ja")
+    assert code == 1 and "--ziel mcp" in text

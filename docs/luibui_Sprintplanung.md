@@ -231,7 +231,7 @@
 
 | ID | Task | h |
 |---|---|---|
-| S5-1 | Adapter ChatGPT, Gemini, Mistral, Open WebUI (Formate vorher aktuell recherchieren) | 6 |
+| S5-1 | ◐ **(03.10.2026)** Formate recherchiert (`docs/plattform-formate.md`). `luibui-install --ziel chatgpt|gemini|mistral` schreibt Skills nach `~/.agents/skills`, `~/.gemini/skills`, `~/.vibe/skills`; `--ziel upload` speichert das geprüfte Archiv für ChatGPT Web, Gemini-App und Open WebUI. Offen: Gemini-Extension für MCP, Open-WebUI-Import per API, Open-WebUI-Python-Tools (eigene Prüfung nötig). Adapter ChatGPT, Gemini, Mistral, Open WebUI (Formate vorher aktuell recherchieren) | 6 |
 | S5-2 | ✅ **(03.10.2026, als S4-7 Teil 1)** Nächtliche Neuprüfung aller veröffentlichten Pakete, Benachrichtigung bei Verschlechterung | 4 |
 | S5-3 | `luibui audit` für installierte Pakete | 2 |
 | S5-4 | ✅ **(03.10.2026)** `luibui.com/badge/<namespace>/<name>.svg` (Ampel und Note der neuesten Version, nur feste Wörter im SVG), Markdown-Snippet mit Kopierknopf auf der Paketseite. Badge-SVG und Einbettungs-Snippet | 2 |

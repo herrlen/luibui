@@ -1,4 +1,9 @@
-"""``luibui-install namespace/name[@version] --ziel claude|mcp``.
+"""``luibui-install namespace/name[@version] --ziel claude|chatgpt|gemini|mistral|upload|mcp``.
+
+Skills (``SKILL.md``) go into the skill folder of the client: Claude Code, Codex/ChatGPT,
+Gemini CLI or Mistral Vibe (S5-1, docs/plattform-formate.md). ``upload`` writes the checked
+archive as a ZIP for clients that only take uploads in the browser (ChatGPT, Gemini app,
+Open WebUI imports the SKILL.md from it). ``mcp`` unpacks and prints a config snippet.
 
 1. Fetch the version, verify luibui's signature, the archive's SHA-256 and size (register.py).
 2. Show what luibui found: light, grade, rights from luibui.json. Red needs ``--trotzdem``.
@@ -111,15 +116,37 @@ def _installiert(paket: str, ziel: str) -> str | None:
     return None
 
 
+SKILL_ORDNER = {
+    "claude": (Path(".claude") / "skills", "Claude lädt den Skill beim nächsten Start."),
+    "chatgpt": (
+        Path(".agents") / "skills",
+        "Codex lädt den Skill beim nächsten Start. Für ChatGPT im Browser: --ziel upload.",
+    ),
+    "gemini": (
+        Path(".gemini") / "skills",
+        "Gemini CLI lädt den Skill beim nächsten Start. Für die Gemini-App: --ziel upload.",
+    ),
+    "mistral": (Path(".vibe") / "skills", "Mistral Vibe lädt den Skill beim nächsten Start."),
+}
+ZIELE = [*SKILL_ORDNER, "upload", "mcp"]
+
+
+def _nur_skill(v: Version, ziel: str) -> None:
+    if v.manifest.get("typ") != "skill":
+        raise InstallError(
+            f"Mit --ziel {ziel} lassen sich Skills installieren; dieses Paket ist "
+            f"„{sauber(v.manifest.get('typ'), 20)}“. Versuche --ziel mcp."
+        )
+
+
 def _ordner(v: Version, ziel: str, basis: Path | None) -> Path:
     ns, name = v.paket.split("/")
-    if ziel == "claude":
-        if v.manifest.get("typ") != "skill":
-            raise InstallError(
-                "Mit --ziel claude lassen sich Skills installieren; dieses Paket ist "
-                f"„{sauber(v.manifest.get('typ'), 20)}“. Versuche --ziel mcp."
-            )
-        return (basis or Path.home() / ".claude" / "skills") / name
+    if ziel in SKILL_ORDNER:
+        _nur_skill(v, ziel)
+        return (basis or Path.home() / SKILL_ORDNER[ziel][0]) / name
+    if ziel == "upload":
+        _nur_skill(v, ziel)
+        return (basis or Path.cwd()) / f"{name}-{v.version}.zip"
     return (basis or luibui_home() / "pakete") / ns / name / v.version
 
 
@@ -197,14 +224,29 @@ def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
     with tempfile.TemporaryDirectory(dir=ordner.parent, prefix=".luibui-") as tmp:
         neu = Path(tmp) / "paket"
         anzahl = entpacken(v.archiv, neu)
+        skill = args.ziel in SKILL_ORDNER or args.ziel == "upload"
+        if skill and not (neu / "SKILL.md").is_file():
+            raise InstallError("Im Paket liegt keine SKILL.md im Hauptordner.")
+        if args.ziel == "upload":
+            # The archive itself, already checked against luibui's signature and hash.
+            fertig = Path(tmp) / "upload.zip"
+            fertig.write_bytes(v.archiv)
+            fertig.replace(ordner)
+            print(f"Gespeichert: {ordner}", file=out)
+            print(
+                "Hochladen: ChatGPT unter Plugins → Skills → Upload, die Gemini-App unter "
+                "Skills; Open WebUI importiert die SKILL.md daraus unter Workspace → Skills.",
+                file=out,
+            )
+            return EXIT_OK
         if ordner.exists():
             alt = Path(tmp) / "alt"
             ordner.rename(alt)
         neu.rename(ordner)
     lock = _lock(v, args.ziel, ordner)
     print(f"Installiert: {anzahl} Dateien. Eingetragen in {lock}.", file=out)
-    if args.ziel == "claude":
-        print("Claude lädt den Skill beim nächsten Start.", file=out)
+    if args.ziel in SKILL_ORDNER:
+        print(SKILL_ORDNER[args.ziel][1], file=out)
     else:
         print("\nIn die MCP-Konfiguration deines Clients eintragen:", file=out)
         print(json.dumps(_mcp_schnipsel(v, ordner), indent=2, ensure_ascii=False), file=out)
@@ -263,9 +305,11 @@ def build_parser() -> argparse.ArgumentParser:
         description="Installiert geprüfte Pakete aus dem luibui-Register.",
     )
     p.add_argument("paket", nargs="?", help="namespace/name oder namespace/name@version")
-    p.add_argument("--ziel", choices=["claude", "mcp"], default="claude")
+    p.add_argument("--ziel", choices=ZIELE, default="claude")
     p.add_argument(
-        "--ordner", help="anderer Zielordner (Standard: ~/.claude/skills bzw. ~/.luibui/pakete)"
+        "--ordner",
+        help="anderer Zielordner (Standard: ~/.claude/skills, ~/.agents/skills, ~/.gemini/skills, "
+        "~/.vibe/skills, bei upload der aktuelle Ordner, bei mcp ~/.luibui/pakete)",
     )
     p.add_argument("--ja", action="store_true", help="ohne Rückfrage installieren")
     p.add_argument("--ersetzen", action="store_true", help="vorhandene Installation ersetzen")

@@ -2469,3 +2469,19 @@ Scanner und die Offline-Datenbanken; so ist das Ergebnis dasselbe wie im Entwick
 **Offen:** Codeberg/Forgejo-Action und pre-commit-Hook; ein fester Release-Tag der Action statt
 `@main`. Der Workflow im Entwicklerbereich nennt `herrlen/luibui/action` – damit verweist die
 Oberfläche erstmals auf das (jetzt öffentliche) Repository.
+
+## 2026-10-03 – S5-1 (Teil): Formate recherchiert, Skill-Ziele im Installer
+
+**Was:** Recherche in `docs/plattform-formate.md`: ChatGPT/Codex, Gemini (App und CLI), Mistral
+Vibe und Open WebUI kennen alle Skills mit `SKILL.md`. `luibui-install` hat neue Ziele:
+`chatgpt` (`~/.agents/skills`, Codex), `gemini` (`~/.gemini/skills`), `mistral`
+(`~/.vibe/skills`) und `upload` (das signaturgeprüfte Archiv als `<name>-<version>.zip` für
+ChatGPT im Browser, die Gemini-App und den SKILL.md-Import in Open WebUI). Skill-Ziele verlangen
+`typ: skill` und eine `SKILL.md` im Hauptordner.
+
+**Warum so:** Der kleinste gemeinsame Nenner ist der Skill-Ordner; Browser-Clients haben keinen
+lokalen Ort, also eine Datei zum Hochladen statt eines Umwegs über Anbieter-APIs.
+
+**Offen:** MCP-Pakete als Gemini-CLI-Extension (`gemini-extension.json`), Import in Open WebUI
+per API, Python-Tools für Open WebUI erst mit eigener Prüfung (laufen im Serverprozess, `pip`
+aus dem Frontmatter). Die Paketseite nennt die Installationsbefehle erst mit PyPI.

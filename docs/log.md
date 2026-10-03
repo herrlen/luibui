@@ -2003,3 +2003,26 @@ Passwort, Code, ungültige Adresse, nur neuester Link, gleiche Adresse; inzwisch
 statt Absturz – der Test fand, dass der automatische Flush vor dem `commit` scheiterte;
 Passwort-Links taugen nicht als E-Mail-Links), Migrationstest. Konto-Seite und Fehlerseite lokal
 angesehen; der Mailversand selbst nur mit dem Test-SMTP.
+
+## 2026-10-03 – S2-9: Fortschritt während der Prüfung
+
+**Was:** Letzter offener Punkt aus S2-9. Statt „Prüfung läuft …“ steht im Bericht „Schritt 4 von
+13: C – Code“ mit Balken.
+- Engine: `run_pipeline(..., fortschritt)` meldet vor jedem Analyzer, der läuft (übersprungene
+  zählen nicht), Schritt, Anzahl und Titel; `scan_prepared` reicht das durch.
+- Worker: Der Prüfprozess bekommt einen eigenen Pipe (`pass_fds`, Nummer in der Anfrage) und
+  schreibt dorthin JSON-Zeilen. Er bekommt dafür weder Datenbankzugang noch Dateien im
+  Paketordner. Der Worker liest in einem Thread mit und lässt nur `{schritt, von, titel}` durch:
+  Ganzzahlen 1 ≤ schritt ≤ von ≤ 100, Titel ohne Steuerzeichen, höchstens 80 Zeichen, höchstens
+  200 Meldungen je Prüfung, der Rest wird nur abgelesen, damit der Prozess nie am vollen Pipe
+  hängt. Scanner-Unterprozesse erben den Pipe nicht (geprüft). `scans.fortschritt` (Migration
+  `0007`) wird nur bei `laeuft` geschrieben und beim Ende geleert.
+- API: `fortschritt` im Scan-Status, nur solange die Prüfung läuft. Gilt auch für den
+  Schnellscan.
+
+**Geprüft:** Engine-Test (Reihenfolge, übersprungene nicht gezählt), Runner-Tests (gültige
+Meldung, Steuerzeichen und Überlänge bereinigt, falsche Schlüssel und Werte verworfen, 5.000
+Meldungen ohne Hängen, Enkelprozess sieht keinen offenen Deskriptor, ohne Zuhörer harmlos),
+Worker-Tests mit Datenbank (nur bei `laeuft`, späte Meldung ändert nichts, Worker reicht durch und
+leert), API-Test, Web-Tests (Anzeige als Text, nur bei `laeuft`). Lokal mit API und Worker: ein
+Paket hochgeladen und mitgelesen, Schritt 1 → 5 → 13 von 13, danach leer.

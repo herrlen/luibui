@@ -142,3 +142,67 @@ def test_recover_releases_stale_jobs_and_sweeps_orphans(
     worker.recover()
     assert job_row(engine, stale)["status"] == "queued"
     assert list(scratch_root.iterdir()) == []
+
+
+def _scan(engine: Engine, status: str = "wartend") -> uuid.UUID:
+    with engine.begin() as conn:
+        return conn.execute(
+            text(
+                "INSERT INTO scans (scan_art, pruefumfang, status, expires_at) VALUES "
+                "('schnell', 'einzeldatei', CAST(:s AS scan_status), now() + interval '7 days') "
+                "RETURNING id"
+            ),
+            {"s": status},
+        ).scalar_one()
+
+
+def _fortschritt(engine: Engine, scan_id: uuid.UUID) -> Any:
+    with engine.connect() as conn:
+        return conn.execute(
+            text("SELECT fortschritt FROM scans WHERE id = :id"), {"id": scan_id}
+        ).scalar_one()
+
+
+def test_progress_is_stored_only_while_running_and_cleared_at_the_end(engine: Engine) -> None:
+    from luibui_worker import results
+
+    m = {"schritt": 2, "von": 5, "titel": "B – Inhalte"}
+    wartend, laeuft = _scan(engine), _scan(engine, "laeuft")
+    with engine.begin() as conn:
+        results.set_progress(conn, wartend, m)
+        results.set_progress(conn, laeuft, m)
+    assert _fortschritt(engine, wartend) is None and _fortschritt(engine, laeuft) == m
+    with engine.begin() as conn:
+        results.mark_failed(conn, laeuft, "x")
+        results.set_progress(conn, laeuft, m)  # a late message changes nothing
+    assert _fortschritt(engine, laeuft) is None
+
+
+def test_worker_passes_child_progress_to_the_scan(
+    engine: Engine, scratch_root: Path, migrated: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from luibui_worker import results
+    from luibui_worker.settings import WorkerSettings
+
+    gesehen: list[dict[str, Any]] = []
+    echt = results.set_progress
+    monkeypatch.setattr(
+        results, "set_progress", lambda conn, sid, m: (gesehen.append(m), echt(conn, sid, m))
+    )
+    settings = WorkerSettings(
+        database_url=migrated,  # type: ignore[arg-type]
+        scratch_root=scratch_root,
+        worker_id="test-worker",
+        kill_grace_seconds=1.0,
+    )
+    w = Worker(settings, engine=engine, handlers={"scan": "luibui_worker.selftest:progress"})
+    scan_id = _scan(engine)
+    enqueue(engine, "scan", payload={"scan_id": str(scan_id)})
+    assert w.run_once() is True
+    assert gesehen[0] == {"schritt": 1, "von": 2, "titel": "A – Dateien"}
+    with engine.connect() as conn:
+        status = conn.execute(
+            text("SELECT status FROM scans WHERE id = :id"), {"id": scan_id}
+        ).scalar_one()
+    assert status == "fehlgeschlagen"  # the selftest returns no report
+    assert _fortschritt(engine, scan_id) is None

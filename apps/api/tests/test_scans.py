@@ -387,3 +387,21 @@ def test_deleting_single_checks(api: Api, _migrated: str) -> None:
 def test_single_check_needs_login_and_open_intake(api: Api) -> None:
     anon = api.client()
     assert einzel(anon).status_code == 401
+
+
+def test_progress_is_shown_only_while_the_scan_runs(api: Api, _migrated: str) -> None:
+    c = api.user("anna@example.org")
+    sid = upload_zip(c, project(c)).json()["id"]
+    f = '{"schritt": 2, "von": 9, "titel": "B – Inhalte"}'
+    engine = create_engine(_migrated)
+    for status, erwartet in (("wartend", None), ("laeuft", json.loads(f)), ("fertig", None)):
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "UPDATE scans SET status = CAST(:s AS scan_status), "
+                    "fortschritt = CAST(:f AS jsonb) WHERE id = :id"
+                ),
+                {"s": status, "f": f, "id": sid},
+            )
+        assert c.get(f"/api/v1/scans/{sid}").json()["fortschritt"] == erwartet
+    engine.dispose()

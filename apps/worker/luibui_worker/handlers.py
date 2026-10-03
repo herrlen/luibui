@@ -4,6 +4,7 @@ A handler receives a JobContext and returns a JSON-serialisable dict. It runs in
 with an empty environment and must never execute package content.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -15,6 +16,8 @@ class JobContext:
     kind: str
     payload: dict[str, Any]
     scratch: Path
+    melden: Callable[[dict[str, Any]], None] | None = None
+    """Progress to the parent (``runner.run_in_child``): small dicts, never package content."""
 
 
 class Handler(Protocol):
@@ -32,11 +35,18 @@ def scan(ctx: JobContext) -> dict[str, Any]:
     if not any(ctx.scratch.iterdir()):
         raise RuntimeError("leeres Prüfverzeichnis")
     options = ctx.payload.get("options")
+    melden = ctx.melden
+
+    def fortschritt(schritt: int, von: int, titel: str) -> None:
+        if melden is not None:
+            melden({"schritt": schritt, "von": von, "titel": titel})
+
     result = scan_prepared(
         ctx.scratch,
         Eingabe(ctx.payload["eingabe"]),
         ScanArt(ctx.payload["scan_art"]),
         options=options if isinstance(options, dict) else None,
+        fortschritt=fortschritt,
     )
     report = build_report(
         result, name=str(ctx.payload["name"]), scan_id=uuid.UUID(ctx.payload["scan_id"])

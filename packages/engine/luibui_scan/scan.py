@@ -23,7 +23,7 @@ from luibui_scan.korrelation import (
     verweise,
 )
 from luibui_scan.models import Pruefumfang, ScanArt
-from luibui_scan.pipeline import PipelineResult, run_pipeline
+from luibui_scan.pipeline import Fortschritt, PipelineResult, run_pipeline
 from luibui_scan.scoring import Bewertung, bewerte
 
 MANIFEST_NAME = "luibui.json"
@@ -99,6 +99,7 @@ def scan_prepared(
     registry: AnalyzerRegistry | None = None,
     erwartet: Mapping[str, str] | None = None,
     options: Mapping[str, Any] | None = None,
+    fortschritt: Fortschritt | None = None,
 ) -> ScanResult:
     """Scan the files intake wrote to ``root``. Never executes anything from it.
 
@@ -117,7 +118,7 @@ def scan_prepared(
         entpackt=nested.entpackt,
         nicht_entpackt=nested.abgelehnt,
     )
-    pipeline = run_pipeline(ctx, registry)
+    pipeline = run_pipeline(ctx, registry, fortschritt)
     pipeline.findings[:] = in_testdateien(mit_fingerprints(pipeline.findings))
     if umfang is not Pruefumfang.EINZELDATEI and scan_art is not ScanArt.SCHNELL:
         ziele = verweise(list(text_files(ctx)), {e.path for e in inventory.entries})

@@ -3,6 +3,9 @@
 - empty environment: no DATABASE_URL, no secrets
 - own session / process group: on timeout the whole group is killed, scanner subprocesses included
 - working directory is the job's scratch directory
+- progress: the child writes JSON lines to a pipe of its own; the parent checks every message
+  (known keys, bounded numbers, short printable title) before passing it on, since the child
+  handles hostile packages
 """
 
 import contextlib
@@ -12,6 +15,8 @@ import os
 import signal
 import subprocess
 import sys
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -78,6 +83,39 @@ def _kill_group(proc: subprocess.Popen[bytes], grace: float) -> None:
             continue
 
 
+MAX_MELDUNGEN = 200
+
+
+def fortschritt_pruefen(zeile: bytes) -> dict[str, Any] | None:
+    """A progress message as the parent accepts it, or None."""
+    try:
+        m = json.loads(zeile)
+    except (ValueError, UnicodeDecodeError):
+        return None
+    if not isinstance(m, dict) or set(m) != {"schritt", "von", "titel"}:
+        return None
+    schritt, von, titel = m["schritt"], m["von"], m["titel"]
+    if not (isinstance(schritt, int) and isinstance(von, int) and 1 <= schritt <= von <= 100):
+        return None
+    if not isinstance(titel, str):
+        return None
+    titel = "".join(c for c in titel if c.isprintable())[:80]
+    return {"schritt": schritt, "von": von, "titel": titel}
+
+
+def _lesen(fd: int, melden: Callable[[dict[str, Any]], None] | None) -> None:
+    with os.fdopen(fd, "rb") as kanal:
+        for n, zeile in enumerate(kanal):
+            if n >= MAX_MELDUNGEN or len(zeile) > 1000:
+                continue  # keep draining so the child never blocks on a full pipe
+            m = fortschritt_pruefen(zeile)
+            if m is not None and melden is not None:
+                try:
+                    melden(m)
+                except Exception:
+                    log.exception("progress callback failed")
+
+
 def run_in_child(
     *,
     handler: str,
@@ -88,7 +126,9 @@ def run_in_child(
     timeout: float,
     kill_grace: float = 5.0,
     max_result_bytes: int = 20 * 1024 * 1024,
+    fortschritt: Callable[[dict[str, Any]], None] | None = None,
 ) -> RunResult:
+    lesen, schreiben = os.pipe()
     request = json.dumps(
         {
             "handler": handler,
@@ -96,18 +136,28 @@ def run_in_child(
             "kind": kind,
             "payload": payload,
             "scratch": str(scratch),
+            "fortschritt_fd": schreiben,
         }
     ).encode()
-    proc = subprocess.Popen(
-        [sys.executable, "-I", "-m", "luibui_worker.child"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=None,
-        cwd=scratch,
-        env=child_env(scratch),
-        start_new_session=True,
-        close_fds=True,
-    )
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, "-I", "-m", "luibui_worker.child"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=None,
+            cwd=scratch,
+            env=child_env(scratch),
+            start_new_session=True,
+            close_fds=True,
+            pass_fds=(schreiben,),
+        )
+    except BaseException:
+        os.close(lesen)
+        raise
+    finally:
+        os.close(schreiben)  # only the child keeps the write end; EOF when it exits
+    leser = threading.Thread(target=_lesen, args=(lesen, fortschritt), daemon=True)
+    leser.start()
     try:
         stdout, _ = proc.communicate(request, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -120,6 +170,7 @@ def run_in_child(
         else:
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(proc.pid, signal.SIGKILL)
+        leser.join(timeout=kill_grace)
 
     if len(stdout) > max_result_bytes:
         return RunResult(Outcome.FAILED, error="Ergebnis zu groß")

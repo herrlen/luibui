@@ -37,6 +37,7 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
       {laeuft ? (
         <div className="rounded-[14px] border border-linie bg-surface p-6" aria-live="polite">
           <p className="font-semibold">Prüfung {STATUS_TEXT[scan.status]} …</p>
+          {scan.status === "laeuft" && scan.fortschritt ? <Fortschritt {...scan.fortschritt} /> : null}
           <p className="mt-1 text-sm text-muted">
             Das dauert je nach Größe wenige Sekunden bis etwa eine Minute. Die Seite aktualisiert sich selbst.
           </p>
@@ -77,6 +78,29 @@ export function Bericht({ scan, downloads }: { scan: ScanStatus; downloads?: Dow
           {downloads === "bereich" ? <Teilen scanId={scan.id} geteilt={scan.geteilt ?? false} /> : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+/** Step n of m with the title of the current check. Titles come from the engine, shown as text. */
+export function Fortschritt({ schritt, von, titel }: { schritt: number; von: number; titel: string }) {
+  const anteil = von > 0 ? Math.min(1, Math.max(0, (schritt - 1) / von)) : 0;
+  return (
+    <div className="mt-3 flex max-w-md flex-col gap-1.5">
+      <p className="text-sm">
+        Schritt {schritt} von {von}: {titel}
+      </p>
+      <div
+        role="progressbar"
+        aria-label="Fortschritt der Prüfung"
+        aria-valuemin={0}
+        aria-valuemax={von}
+        aria-valuenow={schritt - 1}
+        aria-valuetext={`Schritt ${schritt} von ${von}`}
+        className="h-2 overflow-hidden rounded-full bg-flaeche-2"
+      >
+        <div className="h-full bg-petrol transition-[width]" style={{ width: `${anteil * 100}%` }} />
+      </div>
     </div>
   );
 }

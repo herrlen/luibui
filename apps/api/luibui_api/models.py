@@ -220,6 +220,8 @@ class Scan(Base):
     note: Mapped[int | None] = mapped_column(SmallInteger)
     freigabe: Mapped[str | None] = mapped_column(FREIGABE)
     report: Mapped[dict[str, Any] | None]
+    fortschritt: Mapped[dict[str, Any] | None]
+    """While running: {"schritt", "von", "titel"} from the worker (S2-9); cleared at the end."""
     engine_version: Mapped[str | None] = mapped_column(String(50))
     share_token_hash: Mapped[str | None] = mapped_column(Text)
     error: Mapped[str | None] = mapped_column(String(500))

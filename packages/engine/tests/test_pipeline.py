@@ -122,3 +122,14 @@ def test_evidence_of_every_analyzer_is_masked(ctx: ScanContext) -> None:
     reg.add(Fixed("b_x", [make_finding(beleg=f"Nutze den Schlüssel {token} hier.")]))
     (f,) = run_pipeline(ctx, reg).findings
     assert f.beleg is not None and token not in f.beleg and "sk-A…" in f.beleg
+
+
+def test_progress_is_reported_before_each_analyzer_that_runs(ctx: ScanContext) -> None:
+    reg = AnalyzerRegistry()
+    reg.add(Fixed("a", []))
+    reg.add(Fixed("b", [], scan_arts=frozenset({ScanArt.SCHNELL})))  # skipped: never counted
+    reg.add(Fixed("c", []))
+    gemeldet: list[tuple[int, int, str]] = []
+    result = run_pipeline(ctx, reg, lambda *s: gemeldet.append(s))
+    assert gemeldet == [(1, 2, "a"), (2, 2, "c")]
+    assert result.ran == ["a", "c"] and [s.analyzer for s in result.skipped] == ["b"]

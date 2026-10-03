@@ -5,6 +5,7 @@ refuse a green light for an incomplete scan.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from luibui_scan.analyzers._common import mask_tokens
@@ -60,15 +61,29 @@ def _skip_reason(analyzer: Analyzer, ctx: ScanContext) -> str | None:
     return None
 
 
-def run_pipeline(ctx: ScanContext, registry: AnalyzerRegistry | None = None) -> PipelineResult:
+Fortschritt = Callable[[int, int, str], None]
+"""Called before each analyzer that runs: step (from 1), number of steps, the analyzer's title."""
+
+
+def run_pipeline(
+    ctx: ScanContext,
+    registry: AnalyzerRegistry | None = None,
+    fortschritt: Fortschritt | None = None,
+) -> PipelineResult:
     registry = default_registry if registry is None else registry
     result = PipelineResult()
+    laufen = []
     for analyzer in registry:
         info = analyzer.info
         reason = _skip_reason(analyzer, ctx)
-        if reason is not None:
+        if reason is None:
+            laufen.append(analyzer)
+        else:
             result.skipped.append(Skipped(info.name, info.titel, reason))
-            continue
+    for schritt, analyzer in enumerate(laufen, start=1):
+        info = analyzer.info
+        if fortschritt is not None:
+            fortschritt(schritt, len(laufen), info.titel)
         try:
             findings = analyzer.analyze(ctx)
         except Exception as exc:

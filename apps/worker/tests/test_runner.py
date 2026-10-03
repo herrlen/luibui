@@ -90,3 +90,31 @@ def test_required_isolation_is_real_or_fails_closed(
     else:
         assert result.outcome is Outcome.FAILED
         assert result.error is not None and "Netzisolation nicht möglich" in result.error
+
+
+def test_progress_reaches_the_parent_checked_and_never_blocks(tmp_path: Path) -> None:
+    scratch = tmp_path / "s"
+    scratch.mkdir()
+    gemeldet: list[dict[str, object]] = []
+    result = run_in_child(
+        handler="luibui_worker.selftest:progress",
+        job_id="j",
+        kind="progress",
+        payload={},
+        scratch=scratch,
+        timeout=20,
+        kill_grace=1.0,
+        fortschritt=gemeldet.append,
+    )
+    assert result.outcome is Outcome.OK
+    assert result.result == {"offene_fds_im_enkel": 0}  # scanners never inherit the pipe
+    assert gemeldet[0] == {"schritt": 1, "von": 2, "titel": "A – Dateien"}
+    titel = str(gemeldet[1]["titel"])
+    assert len(titel) == 80 and "\x1b" not in titel and "‮" not in titel
+    assert all(m["titel"] in ("Flut",) for m in gemeldet[2:])
+    assert len(gemeldet) <= 200  # the rest is drained, not passed on
+
+
+def test_progress_without_a_listener_is_harmless(tmp_path: Path) -> None:
+    result = _run(tmp_path, "progress")
+    assert result.outcome is Outcome.OK and result.result == {"offene_fds_im_enkel": 0}

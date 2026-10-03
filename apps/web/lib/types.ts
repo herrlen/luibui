@@ -56,6 +56,8 @@ export type ScanStatus = {
   geteilt?: boolean;
   /** Status per finding fingerprint; only for the owner's checks in a project (S3-7). */
   befund_status?: Record<string, BefundStatus> | null;
+  /** While running: the current check out of all checks (S2-9). */
+  fortschritt?: { schritt: number; von: number; titel: string } | null;
 };
 
 export type BefundStatusWert = "offen" | "behoben" | "akzeptiert" | "bestritten";

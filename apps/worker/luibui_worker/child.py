@@ -1,10 +1,12 @@
 """Entry point of the child process: ``python -m luibui_worker.child``.
 
 Reads one job as JSON from stdin, runs the handler and writes {"ok": true, "result": …} to stdout.
+Progress goes as JSON lines to the file descriptor the parent names in ``fortschritt_fd``.
 On an exception it writes only the exception type and exits with 1, so package content from the
 message never reaches the parent or the database.
 """
 
+import contextlib
 import importlib
 import json
 import os
@@ -63,11 +65,20 @@ def main() -> int:
             json.dump({"ok": False, "error": "Netzisolation nicht möglich"}, sys.stdout)
             return 1
     request: dict[str, Any] = json.load(sys.stdin)
+    fd = request.get("fortschritt_fd")
+    kanal = os.fdopen(fd, "w", buffering=1, encoding="utf-8") if isinstance(fd, int) else None
+
+    def melden(nachricht: dict[str, Any]) -> None:
+        if kanal is not None:
+            with contextlib.suppress(OSError):  # the parent may have stopped reading
+                kanal.write(json.dumps(nachricht) + "\n")
+
     ctx = JobContext(
         job_id=request["job_id"],
         kind=request["kind"],
         payload=request["payload"],
         scratch=Path(request["scratch"]),
+        melden=melden,
     )
     try:
         result = load_handler(request["handler"])(ctx)

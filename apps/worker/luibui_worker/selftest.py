@@ -40,6 +40,29 @@ def hang(ctx: JobContext) -> dict[str, Any]:
     return {}
 
 
+def progress(ctx: JobContext) -> dict[str, Any]:
+    """Valid and hostile progress messages, then a flood, then a grandchild that tries the pipe."""
+    if ctx.melden is None:
+        return {"ohne_kanal": True}
+    ctx.melden({"schritt": 1, "von": 2, "titel": "A – Dateien"})
+    ctx.melden({"schritt": 9, "von": 2, "titel": "zu weit"})
+    ctx.melden({"schritt": 2, "von": 2, "titel": "B\u202e\x1b[31m" + "x" * 500})
+    ctx.melden({"schritt": 2, "von": 2, "titel": "C", "extra": "nein"})
+    for _ in range(5000):  # more than the pipe buffer: the child must never block
+        ctx.melden({"schritt": 2, "von": 2, "titel": "Flut"})
+    zaehlen = (
+        "import os\n"
+        "def offen(fd):\n"
+        "    try:\n        os.fstat(fd)\n    except OSError:\n        return False\n"
+        "    return True\n"
+        "print(sum(offen(fd) for fd in range(3, 1024)))"
+    )
+    enkel = subprocess.run(  # noqa: S603 - fixed test command
+        [sys.executable, "-I", "-c", zaehlen], check=True, capture_output=True, text=True
+    )
+    return {"offene_fds_im_enkel": int(enkel.stdout)}
+
+
 def net(ctx: JobContext) -> dict[str, Any]:
     """Report the network interfaces the child sees (isolation check)."""
     import socket
@@ -49,6 +72,7 @@ def net(ctx: JobContext) -> dict[str, Any]:
 
 SELFTEST_HANDLERS: dict[str, str] = {
     "selftest.net": "luibui_worker.selftest:net",
+    "selftest.progress": "luibui_worker.selftest:progress",
     "selftest.ok": "luibui_worker.selftest:ok",
     "selftest.crash": "luibui_worker.selftest:crash",
     "selftest.fail": "luibui_worker.selftest:fail",

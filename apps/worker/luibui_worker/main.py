@@ -8,9 +8,10 @@ import logging
 import signal
 import threading
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from types import FrameType
+from typing import Any
 
 from sqlalchemy import Engine, create_engine
 
@@ -75,6 +76,15 @@ class Worker:
         if removed:
             log.warning("removed %d orphaned scratch entr(y/ies)", len(removed))
 
+    def _fortschritt(self, scan_id: uuid.UUID) -> Callable[[dict[str, Any]], None]:
+        """Progress messages of the child (already checked by the runner) into the scan row."""
+
+        def melden(m: dict[str, Any]) -> None:
+            with self.engine.begin() as conn:
+                results.set_progress(conn, scan_id, m)
+
+        return melden
+
     def run_once(self) -> bool:
         """Process at most one job. Returns False if the queue was empty."""
         with self.engine.begin() as conn:
@@ -107,6 +117,7 @@ class Worker:
                     timeout=timeout,
                     kill_grace=self.settings.kill_grace_seconds,
                     max_result_bytes=self.settings.max_result_bytes,
+                    fortschritt=self._fortschritt(scan_id) if scan_id is not None else None,
                 )
                 outcome, error = result.outcome, result.error
                 if scan_id is not None and outcome is Outcome.OK:

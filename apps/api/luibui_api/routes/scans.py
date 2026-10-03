@@ -46,6 +46,8 @@ class ScanStatus(BaseModel):
     """Whether a share link is active (S2-12)."""
     befund_status: dict[str, BefundStatus] | None = None
     """Status per finding fingerprint, only for the owner's checks in a project (S3-7)."""
+    fortschritt: dict[str, Any] | None = None
+    """While running: step, number of steps and the title of the current check (S2-9)."""
 
 
 def scan_status_of(scan: Scan) -> ScanStatus:
@@ -70,6 +72,7 @@ def scan_status_of(scan: Scan) -> ScanStatus:
         finished_at=scan.finished_at,
         bericht=scan.report,
         geteilt=scan.share_token_hash is not None,
+        fortschritt=scan.fortschritt if scan.status == "laeuft" else None,
     )
 
 

@@ -4,6 +4,7 @@ The report comes from the child that touched hostile content, so it is validated
 before anything is stored; a report that does not fit is refused as a whole.
 """
 
+import json
 import uuid
 from typing import Any
 
@@ -51,11 +52,21 @@ def mark_running(conn: Connection, scan_id: uuid.UUID) -> None:
     )
 
 
+def set_progress(conn: Connection, scan_id: uuid.UUID, fortschritt: dict[str, Any]) -> None:
+    """Only while the scan runs; a late message never overwrites a finished scan."""
+    conn.execute(
+        text(
+            "UPDATE scans SET fortschritt = CAST(:f AS jsonb) WHERE id = :id AND status = 'laeuft'"
+        ),
+        {"id": scan_id, "f": json.dumps(fortschritt)},
+    )
+
+
 def mark_failed(conn: Connection, scan_id: uuid.UUID, error: str) -> None:
     conn.execute(
         text(
-            "UPDATE scans SET status = 'fehlgeschlagen', error = :error, finished_at = now() "
-            "WHERE id = :id"
+            "UPDATE scans SET status = 'fehlgeschlagen', error = :error, finished_at = now(), "
+            "fortschritt = NULL WHERE id = :id"
         ),
         {"id": scan_id, "error": error[:500]},
     )
@@ -107,7 +118,8 @@ def record_report(conn: Connection, scan_id: uuid.UUID, raw: object) -> None:
             freigabe = CAST(:freigabe AS freigabe),
             report = CAST(:report AS jsonb),
             engine_version = :engine_version,
-            finished_at = now()
+            finished_at = now(),
+            fortschritt = NULL
         WHERE id = :id
         """),
         {

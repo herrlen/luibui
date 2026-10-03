@@ -55,3 +55,28 @@ describe("report downloads", () => {
     expect(links(renderToStaticMarkup(<Bericht scan={SCAN} />))).toEqual([]);
   });
 });
+
+describe("Fortschritt", () => {
+  it("shows step and title while running, as text", () => {
+    const html = renderToStaticMarkup(
+      <Bericht
+        scan={{
+          ...SCAN,
+          status: "laeuft",
+          bericht: null,
+          fortschritt: { schritt: 3, von: 12, titel: "C – Code <script>" },
+        }}
+      />,
+    );
+    expect(html).toContain("Schritt 3 von 12: C – Code &lt;script&gt;");
+    expect(html).toContain('aria-valuenow="2"');
+  });
+
+  it("is not shown while waiting or when finished", () => {
+    const f = { schritt: 3, von: 12, titel: "C – Code" };
+    for (const status of ["wartend", "fertig"] as const) {
+      const html = renderToStaticMarkup(<Bericht scan={{ ...SCAN, status, fortschritt: f }} />);
+      expect(html).not.toContain("Schritt 3 von 12");
+    }
+  });
+});

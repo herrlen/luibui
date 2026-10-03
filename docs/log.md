@@ -2309,3 +2309,18 @@ Miner-Probe erkannt.
 
 **Benchmark** mit dem YARA-Image: 39/39 erkannt, 0/60 Fehlalarme, 0/37 im eigenen Korpus, kein
 YARA-Treffer auf den echten Paketen.
+
+## 2026-10-03 – Sprint 4: Zwischenstand der Definition of Done
+
+- [~] **Ein geprüftes Paket ist aus dem Entwicklerbereich veröffentlicht und per
+  `luibui install --target claude` nutzbar:** lokal komplett belegt (`beispiel/wetter-skill`
+  im Browser veröffentlicht, mit `luibui-install --ziel claude` installiert). In Produktion ist
+  noch kein Paket veröffentlicht, und `luibui-install` ist nicht auf PyPI (wartet auf Len).
+  Die Option heißt `--ziel`, nicht `--target`.
+- [x] **Ein Update mit neuem Endpunkt zeigt den Diff:** API-Test
+  `test_an_update_with_a_new_endpoint_shows_and_signs_the_diff`, Installer-Tests; Paketseite.
+- [x] **Die Dateiansicht markiert Befunde an der richtigen Zeile:** Tests und lokal im Browser
+  (Unicode-Tags in Zeile 3 der `SKILL.md`).
+
+Offen in Sprint 4: S4-7 Teil 2 (öffentliche Anzeige, wartet auf die Disclosure-Richtlinie),
+Git-Projekte in Dateiansicht und Veröffentlichen, ClamAV (zurückgestellt).

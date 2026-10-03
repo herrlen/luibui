@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from luibui_api import mail
 from luibui_api.ratelimit import RateLimiter
-from luibui_api.routes.auth import _email
+from luibui_api.routes.auth import email_normalisieren
 from luibui_api.settings import get_settings
 
 router = APIRouter(prefix="/api/v1/kontakt", tags=["kontakt"])
@@ -32,7 +32,7 @@ class Nachricht(BaseModel):
     website: str = Field(default="", max_length=200)
     """Honeypot: hidden in the form, people leave it empty."""
 
-    _mail = field_validator("email")(_email)
+    _mail = field_validator("email")(email_normalisieren)
     _name = field_validator("name")(_einzeilig)
 
 

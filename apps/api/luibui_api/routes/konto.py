@@ -15,21 +15,23 @@ import uuid
 import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Response, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
+from luibui_api import mail
 from luibui_api.audit import audit
 from luibui_api.auth import DbSession, SessionCaller, cookie_name
 from luibui_api.errors import fehler
 from luibui_api.models import (
     AuditLog,
     CreditEntry,
+    EmailToken,
     FindingStatus,
     Payment,
     Project,
@@ -40,11 +42,19 @@ from luibui_api.models import (
     User,
     UserSession,
 )
-from luibui_api.routes.auth import Passwort, login_limiter
+from luibui_api.routes.auth import (
+    BESTAETIGUNG_STUNDEN,
+    Passwort,
+    bestaetigung_limiter,
+    email_normalisieren,
+    login_limiter,
+)
 from luibui_api.security import (
     PASSWORD_MAX,
     decrypt_totp_secret,
     hash_password,
+    new_secret,
+    sha256_hex,
     verify_password,
     verify_totp,
 )
@@ -123,6 +133,75 @@ def passwort_aendern(
     audit(db, user.id, "konto.passwort_geaendert", "user", user.id)
     db.commit()
     return {"geaendert": True}
+
+
+class EmailAendern(Nachweis):
+    neu: str = Field(max_length=320)
+
+    _norm = field_validator("neu")(email_normalisieren)
+
+
+@router.post("/email", status_code=status.HTTP_202_ACCEPTED)
+def email_aendern(body: EmailAendern, caller: SessionCaller, db: DbSession) -> dict[str, str]:
+    """First half of an address change: a link to the NEW address, which becomes the account's
+    only after the click (``/auth/email-bestaetigen``). The answer is the same whether or not the
+    address already has an account, so nobody can probe addresses with it."""
+    user = db.merge(caller.user)
+    _pruefen(user, body)
+    if body.neu == user.email.lower():
+        raise fehler(status.HTTP_400_BAD_REQUEST, "gleiche_adresse", "Das ist schon deine Adresse")
+    limiter = bestaetigung_limiter()
+    if limiter.blocked(f"email:{user.id}"):
+        raise fehler(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "zu_viele_mails",
+            "Höchstens drei Mails pro Stunde. Bitte schau auch im Spam-Ordner nach.",
+        )
+    limiter.hit(f"email:{user.id}")
+    now = datetime.now(UTC)
+    offene = select(EmailToken).where(
+        EmailToken.owner_id == user.id, EmailToken.zweck == "email", EmailToken.used_at.is_(None)
+    )
+    for alt in db.scalars(offene):
+        alt.used_at = now  # only the newest link works
+    antwort = {
+        "hinweis": f"Wir haben einen Link an {body.neu} geschickt. Erst mit dem Klick "
+        "darauf wird die Adresse geändert."
+    }
+    vergeben = db.scalar(select(User.id).where(func.lower(User.email) == body.neu))
+    audit(db, user.id, "konto.email_aenderung_angefordert", "user", user.id)
+    if vergeben is not None:
+        db.commit()
+        return antwort
+    secret = new_secret()
+    db.add(
+        EmailToken(
+            owner_id=user.id,
+            secret_hash=sha256_hex(secret),
+            zweck="email",
+            neue_email=body.neu,
+            expires_at=now + timedelta(hours=BESTAETIGUNG_STUNDEN),
+        )
+    )
+    db.commit()
+    link = f"{get_settings().app_origin}/email-aendern?token={secret}"
+    try:
+        mail.senden(
+            body.neu,
+            "luibui: Bitte bestätige deine neue E-Mail-Adresse",
+            "Hallo,\n\nfür ein luibui-Konto soll diese Adresse die neue Anmelde-Adresse werden. "
+            f"Bestätige das mit diesem Link:\n\n{link}\n\nDer Link gilt {BESTAETIGUNG_STUNDEN} "
+            "Stunden und nur einmal. Bis dahin bleibt die bisherige Adresse gültig.\n\n"
+            "Hast du das nicht veranlasst, kannst du diese Mail ignorieren.\n\n"
+            "-- \nluibui · luibui.com · Diese Mail wurde automatisch verschickt.\n",
+        )
+    except mail.MailError:
+        raise fehler(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "mail_fehlgeschlagen",
+            "Die Mail konnte gerade nicht verschickt werden. Bitte später erneut.",
+        ) from None
+    return antwort
 
 
 # --- export ------------------------------------------------------------------------------------

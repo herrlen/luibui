@@ -215,3 +215,47 @@ export function PasswortAendern({ totp }: { totp: boolean }) {
     </form>
   );
 }
+
+/** New address: a link goes to it; the account changes only after the click. */
+export function EmailAendern({ totp }: { totp: boolean }) {
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [hinweis, setHinweis] = useState<string | null>(null);
+  const [laeuft, setLaeuft] = useState(false);
+  return (
+    <form
+      method="post"
+      className="flex flex-col gap-3"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const f = new FormData(form);
+        setFehler(null);
+        setHinweis(null);
+        setLaeuft(true);
+        const r = await senden<{ hinweis: string }>("/konto/email", "POST", {
+          neu: f.get("neu"),
+          passwort: f.get("passwort"),
+          code: String(f.get("code") ?? "").replace(/\s/g, "") || undefined,
+        });
+        setLaeuft(false);
+        if (r.ok) {
+          setHinweis(r.data.hinweis);
+          form.reset();
+        } else setFehler(r.status === 422 ? "Keine gültige E-Mail-Adresse." : r.fehler.text);
+      }}
+    >
+      <Feld label="Neue E-Mail-Adresse" name="neu" type="email" autoComplete="email" maxLength={320} required />
+      <Feld label="Passwort" name="passwort" type="password" autoComplete="current-password" required />
+      {totp ? <Feld label="Code aus der Authenticator-App" name="code" {...CODE} required /> : null}
+      <Meldung text={fehler} />
+      {hinweis ? (
+        <p role="status" className="text-sm text-gruen">
+          {hinweis}
+        </p>
+      ) : null}
+      <button type="submit" disabled={laeuft} className={PRIMAER}>
+        Link an die neue Adresse schicken
+      </button>
+    </form>
+  );
+}

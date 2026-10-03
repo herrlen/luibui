@@ -10,7 +10,7 @@ import type { Guthaben, Ich } from "@/lib/types";
 
 import { Abmelden } from "./Abmelden";
 import { DatenExport, KontoLoeschen } from "./DatenUndLoeschen";
-import { PasswortAendern, ZweiFaktor } from "./Sicherheit";
+import { EmailAendern, PasswortAendern, ZweiFaktor } from "./Sicherheit";
 import { type TokenInfo, Tokens } from "./Tokens";
 
 export const metadata = { title: "Konto – luibui" };
@@ -51,6 +51,20 @@ export default async function Konto() {
             Zwei-Faktor-Anmeldung
           </h2>
           <ZweiFaktor aktiv={ich.data.totp_aktiv} />
+        </section>
+        <section
+          id="email"
+          aria-labelledby="email-titel"
+          className="flex scroll-mt-6 flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6"
+        >
+          <h2 id="email-titel" className="font-display text-xl font-bold">
+            E-Mail-Adresse ändern
+          </h2>
+          <p className="text-sm text-muted">
+            Die bisherige Adresse gilt, bis du den Link in der Mail an die neue Adresse anklickst. Danach bekommt die
+            bisherige Adresse eine Nachricht.
+          </p>
+          <EmailAendern totp={ich.data.totp_aktiv} />
         </section>
       </div>
       {guthaben.ok && guthaben.data.aktiv ? (

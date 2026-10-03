@@ -53,7 +53,7 @@ def login_limiter() -> RateLimiter:
     return RateLimiter(s.login_max_attempts, s.login_window_seconds)
 
 
-def _email(value: str) -> str:
+def email_normalisieren(value: str) -> str:
     value = value.strip().lower()
     if len(value) > 320 or not _EMAIL.match(value):
         raise ValueError("Keine gültige E-Mail-Adresse")
@@ -64,7 +64,7 @@ class Registrierung(BaseModel):
     email: str = Field(max_length=320)
     passwort: Passwort
 
-    _norm = field_validator("email")(_email)
+    _norm = field_validator("email")(email_normalisieren)
 
 
 class Anmeldung(BaseModel):
@@ -182,6 +182,56 @@ def bestaetigung_senden(caller: CurrentCaller, db: DbSession) -> dict[str, bool]
             "Die Mail konnte gerade nicht verschickt werden. Bitte später erneut.",
         )
     return {"gesendet": True}
+
+
+@router.post("/email-bestaetigen")
+def email_bestaetigen(body: Bestaetigung, db: DbSession) -> dict[str, str]:
+    """Second half of an address change (S2-10; the first is ``/konto/email``). Works without a
+    session. The old address gets a notice, so a change it did not want does not go unnoticed."""
+    now = datetime.now(UTC)
+    token = db.scalar(
+        select(EmailToken)
+        .where(EmailToken.secret_hash == sha256_hex(body.token), EmailToken.zweck == "email")
+        .with_for_update()
+    )
+    user = db.get(User, token.owner_id) if token is not None else None
+    if token is None or token.used_at is not None or token.expires_at < now or user is None:
+        raise fehler(
+            status.HTTP_400_BAD_REQUEST,
+            "link_ungueltig",
+            "Der Link ist abgelaufen oder wurde schon benutzt. Fordere im Konto einen neuen an.",
+        )
+    token.used_at = now
+    alt, neu = user.email, token.neue_email or ""
+    vergeben = fehler(
+        status.HTTP_409_CONFLICT,
+        "adresse_vergeben",
+        "Für diese Adresse gibt es inzwischen ein anderes Konto.",
+    )
+    andere = select(User.id).where(func.lower(User.email) == neu.lower(), User.id != user.id)
+    if db.scalar(andere) is not None:
+        db.commit()  # the link is used up either way
+        raise vergeben
+    try:
+        user.email = neu
+        if user.email_verified_at is None:
+            user.email_verified_at = now
+            guthaben.startguthaben(db, user)
+        audit(db, user.id, "konto.email_geaendert", "user", user.id)
+        db.commit()
+    except IntegrityError:  # registered in the moment between the check and the commit
+        db.rollback()
+        raise vergeben from None
+    with contextlib.suppress(mail.MailError):
+        mail.senden(
+            alt,
+            "luibui: Deine E-Mail-Adresse wurde geändert",
+            "Hallo,\n\ndie E-Mail-Adresse deines luibui-Kontos wurde eben geändert. Anmeldung, "
+            "Belege und Benachrichtigungen gehen ab jetzt an die neue Adresse.\n\n"
+            "Warst du das nicht, antworte bitte sofort über luibui.com/kontakt.\n\n"
+            "-- \nluibui · luibui.com · Diese Mail wurde automatisch verschickt.\n",
+        )
+    return {"email": neu}
 
 
 # --- password reset ----------------------------------------------------------------------------

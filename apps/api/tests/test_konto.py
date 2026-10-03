@@ -267,3 +267,96 @@ def test_totp_setup_returns_a_square_qr_code(api: Api) -> None:
     n = len(setup["qr"])
     assert n >= 21 and all(len(z) == n and set(z) <= {"0", "1"} for z in setup["qr"])
     assert setup["qr"][0].startswith("1111111")  # finder pattern
+
+
+# --- change of the e-mail address ------------------------------------------------------------
+
+
+def _email_link(sent: list[Any]) -> str:
+    match = re.search(r"/email-aendern\?token=([A-Za-z0-9_-]+)", sent[-1].get_content())
+    assert match, sent[-1].get_content()
+    return match.group(1)
+
+
+@pytest.fixture
+def mails(post: list[Any]) -> list[Any]:
+    from luibui_api.routes.auth import bestaetigung_limiter
+
+    bestaetigung_limiter.cache_clear()
+    return post
+
+
+def test_email_change_needs_the_click_and_tells_the_old_address(api: Api, mails: list[Any]) -> None:
+    a = api.user("anna@example.org")
+    r = a.post("/api/v1/konto/email", json={"passwort": PW, "neu": " Anna.Neu@Example.org "})
+    assert r.status_code == 202 and "anna.neu@example.org" in r.json()["hinweis"]
+    assert mails[-1]["To"] == "anna.neu@example.org"
+    assert a.get("/api/v1/auth/ich").json()["email"] == "anna@example.org"  # not yet
+    token = _email_link(mails)
+    c = api.client()  # the link works on another device, without a session
+    assert c.post("/api/v1/auth/email-bestaetigen", json={"token": token}).json() == {
+        "email": "anna.neu@example.org"
+    }
+    assert a.get("/api/v1/auth/ich").json()["email"] == "anna.neu@example.org"
+    assert mails[-1]["To"] == "anna@example.org" and "geändert" in mails[-1]["Subject"]
+    assert c.post("/api/v1/auth/email-bestaetigen", json={"token": token}).status_code == 400
+    assert login(api, "anna.neu@example.org")[1].status_code == 200
+    assert login(api, "anna@example.org")[1].status_code == 401
+
+
+def test_email_change_does_not_reveal_taken_addresses(api: Api, mails: list[Any]) -> None:
+    a = api.user("anna@example.org")
+    api.user("bert@example.org")
+    vorher = len(mails)
+    r = a.post("/api/v1/konto/email", json={"passwort": PW, "neu": "Bert@example.org"})
+    frei = a.post("/api/v1/konto/email", json={"passwort": PW, "neu": "frei@example.org"})
+    assert r.status_code == frei.status_code == 202
+    assert r.json()["hinweis"].replace("bert", "frei") == frei.json()["hinweis"]
+    assert [m["To"] for m in mails[vorher:]] == ["frei@example.org"]  # nothing to Bert
+
+
+def test_email_change_checks_password_code_and_only_the_newest_link_works(
+    api: Api, mails: list[Any]
+) -> None:
+    a = api.user("anna@example.org")
+    secret = enable_totp(a)
+    ohne = a.post("/api/v1/konto/email", json={"passwort": PW, "neu": "x@example.org"})
+    assert ohne.status_code == 400
+    falsch = a.post("/api/v1/konto/email", json={"passwort": PW, "neu": "kein-mail"})
+    assert falsch.status_code == 422
+    for neu in ("erst@example.org", "dann@example.org"):
+        code = pyotp.TOTP(secret).now()
+        body = {"passwort": PW, "code": code, "neu": neu}
+        assert a.post("/api/v1/konto/email", json=body).status_code == 202
+    erster, zweiter = (
+        re.search(r"token=([A-Za-z0-9_-]+)", m.get_content()).group(1)  # type: ignore[union-attr]
+        for m in mails[-2:]
+    )
+    c = api.client()
+    assert c.post("/api/v1/auth/email-bestaetigen", json={"token": erster}).status_code == 400
+    assert c.post("/api/v1/auth/email-bestaetigen", json={"token": zweiter}).status_code == 200
+    same = a.post(
+        "/api/v1/konto/email",
+        json={"passwort": PW, "code": pyotp.TOTP(secret).now(), "neu": "dann@example.org"},
+    )
+    assert same.status_code == 400
+
+
+def test_email_change_fails_cleanly_when_the_address_was_taken_meanwhile(
+    api: Api, mails: list[Any]
+) -> None:
+    a = api.user("anna@example.org")
+    a.post("/api/v1/konto/email", json={"passwort": PW, "neu": "neu@example.org"})
+    token = _email_link(mails)
+    api.user("neu@example.org")
+    r = api.client().post("/api/v1/auth/email-bestaetigen", json={"token": token})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "adresse_vergeben"
+    assert a.get("/api/v1/auth/ich").json()["email"] == "anna@example.org"
+
+
+def test_email_links_are_not_interchangeable_with_other_links(api: Api, mails: list[Any]) -> None:
+    api.user("anna@example.org")
+    api.client().post("/api/v1/auth/passwort-vergessen", json={"email": "anna@example.org"})
+    token = _link(mails)
+    r = api.client().post("/api/v1/auth/email-bestaetigen", json={"token": token})
+    assert r.status_code == 400

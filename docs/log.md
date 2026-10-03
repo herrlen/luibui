@@ -1981,3 +1981,25 @@ und spaCy größer sind.
 
 **Offen:** Erkennung unbekannter Namenslisten ist nur mit erfundenen Daten belegt; ein Korpus mit
 echten Namenslisten darf es nicht geben (CLAUDE.md Regel 8).
+
+## 2026-10-03 – S2-10: E-Mail-Adresse ändern
+
+**Was:** Letzter offener Punkt aus S2-10.
+- `POST /api/v1/konto/email` (Browser-Sitzung, Passwort und ggf. Code, Fehlversuche wie bei
+  Export und Löschen): schickt einen Link an die **neue** Adresse, gültig 24 h, nur der neueste
+  Link gilt, höchstens drei Mails pro Stunde. Ist die Adresse schon vergeben, gibt es dieselbe
+  Antwort und keine Mail, damit sich Adressen nicht ausforschen lassen.
+- `POST /api/v1/auth/email-bestaetigen` (ohne Sitzung, der Link darf auf einem anderen Gerät
+  aufgehen): stellt um und schreibt der **alten** Adresse, dass geändert wurde. Wurde die Adresse
+  inzwischen vergeben: 409, der Link ist verbraucht. War das Konto noch unbestätigt, zählt der
+  Klick als Bestätigung (Startguthaben wie beim normalen Bestätigen).
+- Migration `0006`: `email_tokens.neue_email`, Zweck `email`, Check, dass nur dieser Zweck eine
+  neue Adresse trägt. `_email` aus `routes/auth.py` heißt jetzt `email_normalisieren`.
+- Oberfläche: Abschnitt „E-Mail-Adresse ändern“ im Konto (Untermenü), Seite `/email-aendern`.
+
+**Geprüft:** 5 neue API-Tests (Umstellung erst nach Klick, Mail an alt und neu, Link einmalig,
+Anmeldung mit neuer Adresse; vergebene Adresse ohne Unterschied in der Antwort und ohne Mail;
+Passwort, Code, ungültige Adresse, nur neuester Link, gleiche Adresse; inzwischen vergeben → 409
+statt Absturz – der Test fand, dass der automatische Flush vor dem `commit` scheiterte;
+Passwort-Links taugen nicht als E-Mail-Links), Migrationstest. Konto-Seite und Fehlerseite lokal
+angesehen; der Mailversand selbst nur mit dem Test-SMTP.

@@ -249,7 +249,9 @@ class Scan(Base):
     engine_version: Mapped[str | None] = mapped_column(String(50))
     share_token_hash: Mapped[str | None] = mapped_column(Text)
     paketversion_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("versions.id", ondelete="CASCADE"), index=True
+        # use_alter: scans and versions point at each other (versions.scan_id)
+        ForeignKey("versions.id", ondelete="CASCADE", use_alter=True),
+        index=True,
     )
     """Set for the nightly re-check of a published version (S4-7, H02); such scans are not
     listed as single checks."""

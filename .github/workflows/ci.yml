@@ -18,7 +18,7 @@ jobs:
   python:
     name: Python (ruff, mypy, pytest)
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17
@@ -56,10 +56,27 @@ jobs:
           echo "35779bdd72e92129c8df2a77f0c55e8c08356801ea92591ef32108d6b28d564c  /tmp/opengrep" | sha256sum -c -
           sudo install -m 755 /tmp/opengrep /usr/local/bin/opengrep
           opengrep --version
+      - name: Install yr 1.21.0 (YARA-X, pinned, checksum from the official release)
+        run: |
+          curl -fsSLo /tmp/yr.tgz https://github.com/VirusTotal/yara-x/releases/download/v1.21.0/yara-x-v1.21.0-x86_64-unknown-linux-gnu.tar.gz
+          echo "01585181e8979e36ac10ab123fcf8921cf8ba879bf942916413e091e18d64852  /tmp/yr.tgz" | sha256sum -c -
+          sudo tar -xzf /tmp/yr.tgz -C /usr/local/bin yr
+          yr --version
+      - name: PostgreSQL 17 client (pg_dump must match the server for the backup tests)
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Presidio in its own venv (hashes in apps/worker/presidio.txt, like the worker image)
+        run: |
+          python3 -m venv /opt/presidio
+          /opt/presidio/bin/pip install -q --require-hashes --only-binary=:all: -r apps/worker/presidio.txt
+          echo "LUIBUI_PRESIDIO_PYTHON=/opt/presidio/bin/python" >> "$GITHUB_ENV"
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy packages apps/api apps/worker
+      - run: uv run mypy packages apps/api apps/worker apps/ops
       - name: pytest (database tests must not be skipped in CI)
         run: |
           uv run pytest -ra -p no:cacheprovider | tee pytest.log

@@ -2410,3 +2410,13 @@ Gegen ein echtes GitHub-Repository noch nicht ausprobiert.
   (darin die Scanner-Dateien aus `1b0c57a` und die wanalyse-Regeldatei aus `ddc35de`).
 - **S5-1:** Formate von ChatGPT, Gemini, Mistral, Open WebUI recherchieren. **S5-6**
   (websecureaudit) zurückgestellt.
+
+## 2026-10-03 – CI wieder grün machen (Repo öffentlich, Actions laufen wieder)
+
+Seit das Repository öffentlich ist, läuft die CI wieder – und schlug fehl: (1) der Runner hat
+`pg_dump` 16, die Testdatenbank ist PostgreSQL 17 → Backup-Tests scheiterten; (2) die CI verlangt
+null übersprungene Tests, YARA- und Presidio-Tests wurden übersprungen; (3) SQLAlchemy warnte
+vor dem Fremdschlüssel-Kreis `scans` ↔ `versions` (seit der Nachprüfung). Behoben: PostgreSQL-17-
+Client aus PGDG, `yr` 1.21.0 mit Prüfsumme, Presidio-venv aus `apps/worker/presidio.txt` mit
+Hashes, mypy auch für `apps/ops`, Zeitlimit 25 min; `use_alter` am Fremdschlüssel
+`scans.paketversion_id`.

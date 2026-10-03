@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luibui.com/spec/sandbox-protokoll.schema.json",
+  "title": "luibui Sandbox-Protokoll",
+  "description": "Was der Sandbox-Server bei einem Paket beobachtet hat (ADR-001). Reine Daten; bewertet wird im Worker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "laeufe"],
+  "properties": {
+    "schema": { "const": "luibui-sandbox/1" },
+    "laeufe": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/lauf" }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "maxLength": 1000 },
+    "lauf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uhr", "dauer_ms", "abgebrochen", "prozesse", "dateien", "verbindungen"],
+      "properties": {
+        "uhr": { "enum": ["echt", "vorgedreht"] },
+        "dauer_ms": { "type": "integer", "minimum": 0, "maximum": 3600000 },
+        "abgebrochen": { "type": "boolean" },
+        "grund": { "$ref": "#/$defs/text" },
+        "prozesse": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["phase", "befehl", "argumente", "skript"],
+            "properties": {
+              "phase": { "enum": ["installation", "mcp"] },
+              "befehl": { "$ref": "#/$defs/text" },
+              "argumente": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/text" } },
+              "skript": { "type": "boolean", "description": "Von npm als Lebenszyklus-Skript gestartet" }
+            }
+          }
+        },
+        "dateien": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pfad", "zugriff"],
+            "properties": {
+              "pfad": { "$ref": "#/$defs/text" },
+              "zugriff": { "enum": ["lesen", "schreiben"] },
+              "inhalt_anfang": { "type": "string", "maxLength": 4096 }
+            }
+          }
+        },
+        "verbindungen": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["art", "ziel"],
+            "properties": {
+              "art": { "enum": ["dns", "tcp", "udp"] },
+              "ziel": { "$ref": "#/$defs/text" },
+              "port": { "type": ["integer", "null"], "minimum": 0, "maximum": 65535 },
+              "daten_anfang": { "type": "string", "maxLength": 4096 }
+            }
+          }
+        },
+        "mcp_tools": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/text" } }
+      }
+    }
+  }
+}

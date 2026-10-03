@@ -2559,3 +2559,23 @@ Aufgaben: S5-1, S5-2, S5-3, S5-4, S5-5, S5-7, S5-8 erledigt; S5-9 bis auf „Mel
 Sprint 6 (Sandbox) braucht einen eigenen Server. Vorschlag mit Bedrohungsmodell:
 `docs/adr/ADR-001-sandbox.md` (Isolation, Sinkhole statt Netz, Köder-Zugangsdaten, Anbindung über
 HTTPS an den Worker). Entscheidung und Buchung: Len.
+
+## 2026-10-03 – Sprint 6 begonnen: was ohne Sandbox-Server geht (S6-4, S6-6)
+
+Len: Isolation mit **nsjail**, zuerst **Node und MCP**. Einen eigenen Server gibt es noch nicht
+(im mittwald-Konto nur der geteilte Space-Server `s-r0ud3w`; ein weiteres Projekt darauf erfüllt
+Regel 1 nicht, siehe ADR-001 „Server“).
+
+Gebaut, ohne dass etwas ausgeführt wird:
+- `spec/sandbox-protokoll.schema.json` (Kopie in `luibui_scan/data/`, Test hält beide gleich):
+  Läufe mit echter oder vorgedrehter Uhr, Prozesse (Phase, ob npm-Skript), Dateizugriffe,
+  Verbindungsversuche mit den ersten Bytes, MCP-Tools. `sandbox/protokoll.py` prüft Größe
+  (5 MB), JSON und Schema, bevor irgendetwas gelesen wird (SB5).
+- `sandbox/koeder.py` (S6-4): je Lauf frische Schein-Zugangsdaten in echten Formaten.
+- `sandbox/befunde.py` (S6-6): F01 nicht erklärte Ziele (H), F02 Köder gelesen oder
+  weitergegeben (K, Sperrliste), F03 Shell außerhalb von npm-Skripten oder Schreiben außerhalb des
+  Paketordners (H), F04 nur mit vorgedrehter Uhr beobachtetes Verhalten (K), F05 Profile, Crontab,
+  Autostart (K). Belege maskiert, Köder-Werte erscheinen nie im Bericht.
+
+**Offen (braucht den Server):** nsjail-Runner mit Sinkhole, Aufruf aus dem Worker und Einbau
+der Befunde in den Bericht, DoD-Test mit den Korpus-Nachbildungen.

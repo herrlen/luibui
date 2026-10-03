@@ -247,16 +247,16 @@
 
 ### Sprint 6 – Sandbox · 04.01. – 15.01.2027
 
-Läuft auf einem **eigenen vServer** (gVisor oder nsjail nötig).
+Läuft auf einem **eigenen vServer** (nsjail, Len 03.10.2026; ADR-001). Server noch nicht vorhanden.
 
 | ID | Task | h |
 |---|---|---|
 | S6-1 | Sandbox-Host einrichten, Isolation (gVisor/nsjail), kein Netz, Ressourcen- und Zeitlimits | 6 |
 | S6-2 | Ausführung von Install-Skripten und MCP-Servern (Start + Tool-Aufrufe mit Testdaten) | 6 |
 | S6-3 | Syscall- und Datei-Protokoll (strace), DNS-/Verbindungsversuche | 4 |
-| S6-4 | **Köder-Zugangsdaten** (Canary-Tokens) in `~/.aws`, `~/.ssh`, `.env` | 3 |
+| S6-4 | ◐ **(03.10.2026)** Erzeugung frischer Köder je Lauf (`luibui_scan/sandbox/koeder.py`: AWS, SSH, GitHub, npm, `.env`, Umgebung) und Erkennung beim Lesen und Weitergeben. Offen: Ablegen im Jail (braucht den Server). **Köder-Zugangsdaten** (Canary-Tokens) in `~/.aws`, `~/.ssh`, `.env` | 3 |
 | S6-5 | Zeitbomben: faketime, wiederholte Aufrufe | 2 |
-| S6-6 | Befunde mit Nachweisgrad „in Sandbox beobachtet“ in den Bericht | 2 |
+| S6-6 | ◐ **(03.10.2026)** Protokoll-Schema `spec/sandbox-protokoll.schema.json`, Prüfung (`sandbox/protokoll.py`) und Umwandlung in F01–F05 mit Nachweisgrad „in Sandbox beobachtet“ (`sandbox/befunde.py`). Offen: Aufruf aus dem Worker. Befunde mit Nachweisgrad „in Sandbox beobachtet“ in den Bericht | 2 |
 
 **DoD:** Alle entschärften Diebstahl-Nachbildungen im Korpus lösen die Köder aus; kein Ausbruch aus der Sandbox im Selbsttest.
 

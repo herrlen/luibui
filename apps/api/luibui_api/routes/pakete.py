@@ -16,9 +16,9 @@ import uuid
 import zipfile
 from datetime import UTC, datetime
 from importlib import resources
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -342,15 +342,58 @@ class PaketEintrag(BaseModel):
     version: str
     beschreibung: str | None
     typ: str | None
+    ziele: list[str]
+    rechte: list[str]
+    """Rights the manifest declares: netzwerk, dateien, shell, zugangsdaten, drittland."""
     ampel: str | None
     note: int | None
     veroeffentlicht_am: datetime
 
 
+EWR = frozenset(
+    {
+        "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU", "IE",
+        "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK", "IS", "LI", "NO",
+    }
+)  # fmt: skip
+RECHTE = ("netzwerk", "dateien", "shell", "zugangsdaten", "drittland")
+TYPEN = ("skill", "mcp-server", "plugin", "tool")
+ZIELE = ("claude", "chatgpt", "gemini", "mistral", "openwebui", "mcp")
+AMPELN = ("gruen", "gelb", "rot")
+
+
+def _dict(wert: object) -> dict[str, Any]:
+    return wert if isinstance(wert, dict) else {}
+
+
+def rechte_von(manifest: dict[str, Any]) -> list[str]:
+    """Same rules as the rights label on the package page (apps/web/lib/rechte.ts)."""
+    r = _dict(manifest.get("rechte"))
+    dateien = _dict(r.get("dateien"))
+    roh = manifest.get("endpunkte")
+    endpunkte = [e for e in roh if isinstance(e, dict)] if isinstance(roh, list) else []
+    an = {
+        "netzwerk": r.get("netzwerk") is True,
+        "dateien": bool(dateien.get("lesen") or dateien.get("schreiben")),
+        "shell": r.get("shell") is True,
+        "zugangsdaten": r.get("zugangsdaten") is True or bool(r.get("umgebungsvariablen")),
+        "drittland": any(str(e.get("land", "")).upper() not in EWR for e in endpunkte),
+    }
+    return [k for k in RECHTE if an[k]]
+
+
 @router.get("/api/v1/register/pakete")
-def pakete(db: DbSession) -> list[PaketEintrag]:
-    """All packages with their newest version that is not withdrawn, newest first. Search and
-    filters follow with S4-4."""
+def pakete(
+    db: DbSession,
+    q: Annotated[str, Query(max_length=100)] = "",
+    typ: str | None = None,
+    ziel: str | None = None,
+    ampel: str | None = None,
+    ohne: Annotated[list[str] | None, Query()] = None,
+) -> list[PaketEintrag]:
+    """Packages with their newest version that is not withdrawn, newest first, at most 200.
+    ``q`` searches name and description; ``ohne`` excludes declared rights (S4-4)."""
+    suche = q.strip().casefold()
     rows = db.execute(
         select(Package, Namespace, PackageVersion, Scan)
         .join(Namespace, Namespace.id == Package.namespace_id)
@@ -366,12 +409,32 @@ def pakete(db: DbSession) -> list[PaketEintrag]:
             continue
         gesehen.add(p.id)
         m = v.manifest
+        name = f"{ns.name}/{p.name}"
+        beschreibung = str(m.get("beschreibung"))[:300] if m.get("beschreibung") else None
+        ziele = (
+            [z for z in (m.get("ziele") or []) if z in ZIELE]
+            if isinstance(m.get("ziele"), list)
+            else []
+        )
+        rechte = rechte_von(m)
+        if suche and suche not in name and suche not in (beschreibung or "").casefold():
+            continue
+        if typ and m.get("typ") != typ:
+            continue
+        if ziel and ziel not in ziele:
+            continue
+        if ampel and scan.ampel_gesamt != ampel:
+            continue
+        if any(o in rechte for o in ohne or []):
+            continue
         eintraege.append(
             PaketEintrag(
-                paket=f"{ns.name}/{p.name}",
+                paket=name,
                 version=v.version,
-                beschreibung=str(m.get("beschreibung"))[:300] if m.get("beschreibung") else None,
+                beschreibung=beschreibung,
                 typ=str(m.get("typ")) if m.get("typ") else None,
+                ziele=ziele,
+                rechte=rechte,
                 ampel=scan.ampel_gesamt,
                 note=scan.note,
                 veroeffentlicht_am=v.published_at,

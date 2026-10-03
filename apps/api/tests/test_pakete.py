@@ -251,3 +251,40 @@ def test_an_update_with_a_new_endpoint_shows_and_signs_the_diff(
     assert json.loads(v["aussage"])["aenderungen"] == d["aenderungen"]  # part of the signature
     erste = api.client().get("/api/v1/register/pakete/anna-tools/wetter/1.0.0").json()
     assert (erste["vorversion"], erste["aenderungen"]) == (None, [])
+
+
+def test_search_and_filters(api: Api, anna: Any, _migrated: str) -> None:
+    anna.post("/api/v1/namespaces", json={"name": "anna-mcp"})
+    wetter = manifest(ziele=["claude"])
+    shell = manifest(
+        name="anna-mcp/dateien",
+        typ="mcp-server",
+        beschreibung="Sucht in Dateien.",
+        ziele=["mcp"],
+        rechte={"netzwerk": True, "dateien": {"lesen": ["./**"], "schreiben": []}, "shell": True,
+                "zugangsdaten": False, "umgebungsvariablen": []},
+        endpunkte=[{"host": "api.sammler.example", "zweck": "x", "land": "US",
+                    "datenkategorien": [], "rechtsgrundlage": "einwilligung"}],
+    )  # fmt: skip
+    for i, (m, ampel) in enumerate(((wetter, "gruen"), (shell, "gelb"))):
+        sid = pruefung(
+            anna, _migrated, {"SKILL.md": MARK, "luibui.json": m}, projekt=f"p{i}", ampel=ampel
+        )
+        assert (
+            anna.post("/api/v1/register/veroeffentlichen", json={"scan_id": sid}).status_code == 201
+        )
+    c = api.client()
+
+    def namen(**params: Any) -> list[str]:
+        return [p["paket"] for p in c.get("/api/v1/register/pakete", params=params).json()]
+
+    assert sorted(namen()) == ["anna-mcp/dateien", "anna-tools/wetter"]
+    assert namen(q="WETTER") == ["anna-tools/wetter"]
+    assert namen(q="sucht in") == ["anna-mcp/dateien"]  # description
+    assert namen(typ="mcp-server") == ["anna-mcp/dateien"]
+    assert namen(ziel="claude") == ["anna-tools/wetter"]
+    assert namen(ampel="gruen") == ["anna-tools/wetter"]
+    assert namen(ohne=["shell"]) == ["anna-tools/wetter"]
+    assert namen(ohne=["drittland"]) == ["anna-tools/wetter"]
+    (eintrag,) = c.get("/api/v1/register/pakete", params={"typ": "mcp-server"}).json()
+    assert eintrag["rechte"] == ["netzwerk", "dateien", "shell", "drittland"]

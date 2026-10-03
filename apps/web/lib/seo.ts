@@ -34,8 +34,8 @@ export function robotsTxt(host: string, proto: string | null): string {
   ].join("\n");
 }
 
-export function sitemapXml(basis: string): string {
-  const eintraege = OEFFENTLICHE_SEITEN.map(
+export function sitemapXml(basis: string, weitere: string[] = []): string {
+  const eintraege = [...OEFFENTLICHE_SEITEN, ...weitere].map(
     (pfad) => `  <url><loc>${basis}${pfad === "/" ? "/" : pfad}</loc></url>`,
   );
   return [

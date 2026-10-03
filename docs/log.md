@@ -2208,3 +2208,18 @@ der PSF in den USA betrieben). Danach kommt die Installationsanleitung auf die P
 **Geprüft:** 4 Tests für den Vergleich, API-Test für die Sprint-4-DoD („ein Update mit neuem
 Endpunkt zeigt den Diff“, auch in der Signatur), 2 Installer-Tests (über zwei Versionen hinweg,
 gefälschte Aussage dazwischen wird ignoriert).
+
+## 2026-10-03 – S4-4: Suche im Register
+
+**Was:** `GET /api/v1/register/pakete` nimmt `q` (Name und Beschreibung, ohne Groß/klein), `typ`,
+`ziel` (aus `ziele` im Manifest), `ampel` und beliebig oft `ohne` (netzwerk, dateien, shell,
+zugangsdaten, drittland) und liefert je Paket die erklärten Rechte – nach denselben Regeln wie
+das Rechte-Label der Paketseite. `luibui.com/pakete` hat dafür ein GET-Formular (verlinkbar,
+funktioniert ohne JavaScript) und zeigt die Rechte als Chips. Die Sitemap führt alle
+veröffentlichten Paketseiten.
+
+Der Formular-Test („nie aus Versehen GET“) erlaubt jetzt genau eine Ausnahme: `method="get"`
+zusammen mit `role="search"`, also ausdrücklich erklärte Suchformulare ohne Geheimnisse.
+
+**Geprüft:** API-Test für Suche, Typ, Ziel, Ampel, „ohne Shell“, „ohne Drittland“ und die
+berechneten Rechte; Web-Test für die Sitemap mit Paketen. Lokal angesehen.

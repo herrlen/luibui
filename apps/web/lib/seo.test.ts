@@ -44,3 +44,11 @@ describe("sitemap", () => {
     expect([...OEFFENTLICHE_SEITEN].sort()).toEqual(["/", ...vorhanden].sort());
   });
 });
+
+describe("sitemap with packages", () => {
+  it("adds package pages after the static ones", () => {
+    const xml = sitemapXml("https://luibui.com", ["/pakete/acme/wetter"]);
+    expect(xml).toContain("<loc>https://luibui.com/pakete/acme/wetter</loc>");
+    expect(xml.match(/<loc>/g)).toHaveLength(OEFFENTLICHE_SEITEN.length + 1);
+  });
+});

@@ -1,6 +1,6 @@
 # ADR-001: Sandbox für dynamische Prüfung (Sprint 6)
 
-Status: **Vorschlag** (2026-10-03), Entscheidung durch Len offen.
+Status: **teilweise entschieden** (2026-10-03): Isolation mit nsjail, zuerst Node und MCP (Len). Offen: der Server.
 
 ## Kontext
 
@@ -16,11 +16,12 @@ einem **eigenen Server** ohne Geheimnisse (Konzept §16, Risiko „Sandbox-Ausbr
    (Konzept: 40–80 € im Monat), Linux, nur für die Sandbox. Kein `MASTER_KEY`, keine
    Datenbank, keine Zugangsdaten zu anderen Diensten, keine Projekt-Dateien außer dem einen Paket
    des laufenden Auftrags. Buchung macht Len.
-2. **Isolation mit gVisor** (`runsc` als Docker-Laufzeit) statt nsjail: gVisor fängt jeden
-   Systemaufruf in einem eigenen Kernel im Nutzerraum ab; ein Kernel-Fehler des Hosts ist so
-   deutlich schwerer erreichbar. nsjail nutzt nur Namespaces und seccomp auf dem Host-Kernel.
-   gVisor liefert mit `--strace` außerdem das Systemaufruf-Protokoll (S6-3) ohne `ptrace` im
-   Container.
+2. **Isolation mit nsjail** (Len, 2026-10-03): eigene Namespaces für Nutzer, Prozesse, Mounts,
+   Netz und IPC, ein seccomp-Filter, cgroup-Limits, nur lesender Root aus einem minimalen Image,
+   beschreibbar nur ein tmpfs. Der Vorschlag war gVisor (eigener Kernel im Nutzerraum); nsjail ist
+   leichter, teilt aber den Host-Kernel – deshalb zählen der eigene Server ohne Geheimnisse (SB1)
+   und ein strenger seccomp-Filter umso mehr. Das Systemaufruf-Protokoll (S6-3) kommt von
+   `strace -f` innerhalb des Jails.
 3. **Kein Netz nach außen.** Der Container bekommt ein eigenes Netz ohne Route ins Internet;
    darin laufen ein Schein-DNS (antwortet jeder Anfrage mit einer Sinkhole-Adresse) und ein
    Sinkhole, das jeden TCP/UDP-Verbindungsversuch mit Ziel, Port und den ersten Bytes
@@ -30,8 +31,8 @@ einem **eigenen Server** ohne Geheimnisse (Konzept §16, Risiko „Sandbox-Ausbr
    (a) eine Köder-Datei gelesen wird, die das Manifest nicht als Recht erklärt, oder (b) ein
    Köder-Wert in einem Verbindungsversuch, einem DNS-Namen oder einer geschriebenen Datei
    auftaucht (dann K, Sperrliste „Diebstahl von Zugangsdaten“).
-5. **Ablauf je Paket** (S6-2, S6-5): Install-Skripte (`npm install` mit Skripten,
-   `pip install` ohne Netz aus mitgelieferten Dateien), danach MCP-Server starten, `initialize`,
+5. **Ablauf je Paket** (S6-2, S6-5): zuerst nur Node und MCP (Len): `npm install` mit Skripten aus
+   mitgelieferten Dateien ohne Netz, danach MCP-Server starten (Node oder angegebener Befehl), `initialize`,
    `tools/list`, jedes Tool einmal mit Testdaten aufrufen. Das Ganze zweimal: mit echter Uhr und
    mit vorgedrehter Uhr (`faketime`, +400 Tage) gegen Zeitbomben. Limits pro Lauf: 2 CPU,
    1 GB RAM, 256 Prozesse, 200 MB Schreibfläche, 120 s.
@@ -49,7 +50,7 @@ einem **eigenen Server** ohne Geheimnisse (Konzept §16, Risiko „Sandbox-Ausbr
 
 | ID | Bedrohung | Gegenmaßnahme |
 |---|---|---|
-| SB1 | Ausbruch aus dem Container auf den Host | gVisor, kein privilegierter Container, keine Host-Mounts außer dem Paket (nur lesend), unprivilegierter Nutzer, Host ohne Geheimnisse, Host wird regelmäßig neu aufgesetzt |
+| SB1 | Ausbruch aus dem Jail auf den Host | nsjail mit seccomp-Filter, kein privilegierter Container, keine Host-Mounts außer dem Paket (nur lesend), unprivilegierter Nutzer, Host ohne Geheimnisse, Host wird regelmäßig neu aufgesetzt |
 | SB2 | Missbrauch als Angriffsplattform (Scans, Spam, Mining) | kein Netz nach außen (nur Sinkhole), CPU- und Zeitlimit |
 | SB3 | Seitenkanal zwischen Läufen | ein Lauf gleichzeitig, frischer Container und frische Schreibfläche je Lauf |
 | SB4 | Erkennen der Sandbox und Stillhalten | realistische Köder und Umgebung, vorgedrehte Uhr; Restrisiko wird im Bericht benannt („nicht beobachtet“ heißt nicht „harmlos“) |
@@ -59,8 +60,9 @@ einem **eigenen Server** ohne Geheimnisse (Konzept §16, Risiko „Sandbox-Ausbr
 
 ## Alternativen
 
-- **nsjail auf dem Host:** leichter und schneller, aber gleicher Kernel; ein Kernel-Exploit
-  reicht zum Ausbruch. Nur als Ergänzung innerhalb von gVisor sinnvoll, nicht nötig.
+- **gVisor (`runsc`):** eigener Kernel im Nutzerraum, stärkere Trennung vom Host-Kernel, etwas
+  langsamer. Vorgeschlagen, nicht gewählt (Len: nsjail). Lässt sich später unter nsjail ergänzen,
+  falls der Bedarf steigt.
 - **Firecracker-MicroVMs:** stärkste Isolation, braucht aber KVM (auf einem vServer meist nicht
   verfügbar) und deutlich mehr Betriebsaufwand.
 - **Sandbox im heutigen mittwald-Container:** ausgeschlossen (Regel 1, Server geteilt mit
@@ -73,8 +75,15 @@ einem **eigenen Server** ohne Geheimnisse (Konzept §16, Risiko „Sandbox-Ausbr
 - Die eigentliche Ausführung (S6-1 bis S6-3, S6-5) braucht den Server; lokal nur mit den
   entschärften Korpus-Paketen.
 
+## Server (offen)
+
+Stand 2026-10-03 im mittwald-Konto: **kein vServer.** Es gibt den Space-Server `s-r0ud3w`
+(2 geteilte vCPU, 8 GB RAM), auf dem luibui und sieben weitere Projekte laufen, und ein Projekt ohne
+eigenen Server. Ein neues Projekt auf `s-r0ud3w` wäre dieselbe Maschine mit demselben Kernel wie
+die anderen Projekte; mittwald-Container laufen zudem unprivilegiert, nsjail braucht aber
+Namespaces und cgroups. Das erfüllt weder Regel 1 („eigener Server“) noch SB1. Nötig ist ein
+eigener vServer (bei mittwald oder einem anderen Anbieter in der EU), den Len bucht.
+
 ## Offene Fragen an Len
 
-1. vServer bei mittwald buchen (Größe: 4 vCPU, 8 GB RAM, 80 GB reichen)?
-2. gVisor wie vorgeschlagen?
-3. Sollen auch Python-Pakete per `pip install` ausgeführt werden oder zuerst nur Node und MCP?
+1. Eigenen vServer buchen (Größe: 2–4 vCPU, 4–8 GB RAM, 40 GB reichen für Node und MCP)?

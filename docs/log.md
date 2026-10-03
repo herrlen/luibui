@@ -2557,5 +2557,5 @@ Aufgaben: S5-1, S5-2, S5-3, S5-4, S5-5, S5-7, S5-8 erledigt; S5-9 bis auf „Mel
 (hängt am DSA-Meldeweg, S3-8); S5-6 (websecureaudit) auf Lens Wunsch zurückgestellt.
 
 Sprint 6 (Sandbox) braucht einen eigenen Server. Vorschlag mit Bedrohungsmodell:
-`docs/adr/ADR-001-sandbox.md` (gVisor, Sinkhole statt Netz, Köder-Zugangsdaten, Anbindung über
+`docs/adr/ADR-001-sandbox.md` (Isolation, Sinkhole statt Netz, Köder-Zugangsdaten, Anbindung über
 HTTPS an den Worker). Entscheidung und Buchung: Len.

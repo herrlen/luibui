@@ -1,0 +1,10 @@
+# pre-commit hook for packages that are checked with luibui (S5-5). Needs the luibui CLI on the
+# PATH; it checks locally, uploads nothing and executes nothing from the package.
+- id: luibui-scan
+  name: luibui scan
+  description: Prüft das Paket lokal mit luibui und bricht ab Rot ab.
+  entry: luibui scan --fail-on rot
+  language: system
+  pass_filenames: false
+  always_run: true
+  args: ["."]

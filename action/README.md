@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: luibui
-        uses: herrlen/luibui/action@main
+        uses: herrlen/luibui/action@v1
         with:
           token: ${{ secrets.LUIBUI_TOKEN }}
           projekt: <Projekt-ID>
@@ -69,10 +69,27 @@ jobs:
     runs-on: docker
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v4
-      - uses: https://github.com/herrlen/luibui/action@main
+      - uses: https://github.com/herrlen/luibui/action@v1
         with:
           token: ${{ secrets.LUIBUI_TOKEN }}
           projekt: <Projekt-ID>
 ```
 
 Der Runner braucht `bash`, `curl`, `jq` und `git` (oder `zip`).
+
+## pre-commit
+
+Lokal vor jedem Commit prüfen, ohne Upload (braucht die luibui-CLI im `PATH`):
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/herrlen/luibui
+    rev: v1
+    hooks:
+      - id: luibui-scan
+        args: ["pfad/zum/paket"]
+```
+
+Der Hook bricht ab Gesamtampel Rot ab. Die lokale Prüfung läuft ohne die Scanner und
+Datenbanken des Servers; maßgeblich bleibt der Bericht aus dem Entwicklerbereich.

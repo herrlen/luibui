@@ -2515,3 +2515,12 @@ Abweichungen, zurückgezogener Version oder lokal Rot/Gesperrt. Nebenbei `luibui
 
 **Warum so:** Die Frage nach der Installation ist „läuft hier noch das, was geprüft wurde?“ –
 das beantworten Hashes, ohne etwas aus dem Paket auszuführen.
+
+## 2026-10-03 – S5-5 abgeschlossen: pre-commit-Hook, Tag `v1`
+
+`.pre-commit-hooks.yaml` im Repository: Hook `luibui-scan` (`language: system`, ruft
+`luibui scan --fail-on rot <pfad>` auf, braucht die CLI im PATH, weil der Monorepo-Wurzelordner
+kein installierbares Paket ist). Test prüft, dass der Eintrag ein gültiger CLI-Aufruf ist.
+Workflow-Snippet und README nennen jetzt `herrlen/luibui/action@v1`; `v1` ist ein Tag, der bei
+kompatiblen Änderungen der Action nachgezogen wird. Codeberg/Forgejo nutzen dieselbe Action per
+voller URL (ohne Code Scanning). Mit echtem Repository noch nicht ausprobiert.

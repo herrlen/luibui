@@ -1,6 +1,6 @@
 // The GitHub Actions workflow shown in the developer area (S5-5). The token never appears in
 // it: it goes into the repository secret LUIBUI_TOKEN.
-export const ACTION = "herrlen/luibui/action@main";
+export const ACTION = "herrlen/luibui/action@v1";
 
 export function ciWorkflow(projektId: string, pfad = "."): string {
   return `name: luibui

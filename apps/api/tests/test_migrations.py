@@ -22,6 +22,7 @@ EXPECTED_TABLES = {
     "findings",
     "finding_status",
     "jobs",
+    "namespaces",
     "packages",
     "versions",
     "audit_log",

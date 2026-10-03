@@ -212,7 +212,7 @@
 
 | ID | Task | h |
 |---|---|---|
-| S4-1 | Organisationen/Namespaces, Namensverwechslungs-Prüfung (H4) | 3 |
+| S4-1 | ✅ **(03.10.2026)** Namespaces, mehrere je Konto (höchstens 5, Len), reservierte Namen und Verwechslungsprüfung (H04), Verwaltung im Konto. Organisationen mit Rollen bleiben nach Sprint 7. Organisationen/Namespaces, Namensverwechslungs-Prüfung (H4) | 3 |
 | S4-2 | **app.luibui.com – Veröffentlichen:** Paket aus einem Projekt/Bericht ins Register (nicht bei gesperrt), Versionen unveränderlich und signiert, Versionsverwaltung | 5 |
 | S4-3 | Paketseite: zwei Ampeln, Note, **Rechte-Label**, Befunde, README (sanitized), Versionen | 6 |
 | S4-4 | Suche mit Filtern (Ziel, Ampel, Typ, Rechte) | 4 |

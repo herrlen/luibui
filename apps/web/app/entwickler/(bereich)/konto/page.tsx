@@ -10,6 +10,7 @@ import type { Guthaben, Ich } from "@/lib/types";
 
 import { Abmelden } from "./Abmelden";
 import { DatenExport, KontoLoeschen } from "./DatenUndLoeschen";
+import { type NamespaceInfo, Namespaces } from "./Namespaces";
 import { EmailAendern, PasswortAendern, ZweiFaktor } from "./Sicherheit";
 import { type TokenInfo, Tokens } from "./Tokens";
 
@@ -22,6 +23,7 @@ export default async function Konto() {
   const tokens = await apiGet<TokenInfo[]>("/api/v1/tokens");
   const guthaben = await apiGet<Guthaben>("/api/v1/guthaben");
   const speicher = await apiGet<{ belegt: number; grenze: number }>("/api/v1/konto/speicher");
+  const namespaces = await apiGet<NamespaceInfo[]>("/api/v1/namespaces");
   return (
     <div className="flex flex-col gap-6">
       <Brotkrumen pfad={[{ text: "Übersicht", href: "/" }, { text: "Konto" }]} />
@@ -97,6 +99,7 @@ export default async function Konto() {
           )}
         </section>
       ) : null}
+      <Namespaces namespaces={namespaces.ok ? namespaces.data : []} />
       <Tokens tokens={tokens.ok ? tokens.data : []} />
       <section aria-labelledby="export" className="flex flex-col gap-3 rounded-[14px] border border-linie bg-surface p-6">
         <h2 id="export" className="font-display text-xl font-bold">

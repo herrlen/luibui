@@ -104,6 +104,7 @@ const KONTO = [
   ["#zwei-faktor", "Zwei-Faktor-Anmeldung"],
   ["#email", "E-Mail-Adresse"],
   ["#guthaben", "Guthaben"],
+  ["#namespaces", "Namespaces"],
   ["#tokens", "API-Tokens"],
   ["#export", "Deine Daten"],
   ["#loeschen", "Konto löschen"],

@@ -179,6 +179,23 @@ class ProjectVersion(Base):
     __table_args__ = (UniqueConstraint("project_id", "number"),)
 
 
+class Namespace(Base):
+    """The ``org`` in ``org/paket`` (S4-1). An account may own several; names are unique
+    regardless of case and checked against look-alikes (``register.verwechslung``)."""
+
+    __tablename__ = "namespaces"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    owner_id: Mapped[uuid.UUID] = _owner()
+    name: Mapped[str] = mapped_column(String(39))
+    created_at: Mapped[datetime] = _created()
+
+    __table_args__ = (
+        Index("uq_namespaces_name_lower", func.lower(name), unique=True),
+        CheckConstraint("name ~ '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){1,38}$'", name="name"),
+    )
+
+
 class StoredFile(Base):
     """One encrypted file of a project version. ``storage_key`` names the blob on the volume."""
 

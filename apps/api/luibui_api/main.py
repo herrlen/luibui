@@ -11,6 +11,7 @@ from luibui_api.routes import (
     health,
     kontakt,
     konto,
+    namespaces,
     projects,
     quickscans,
     scans,
@@ -44,4 +45,5 @@ def create_app() -> FastAPI:
     app.include_router(teilen.router)
     app.include_router(verlauf.router)
     app.include_router(dateien.router)
+    app.include_router(namespaces.router)
     return app

@@ -2056,3 +2056,30 @@ Download über die Website byte-gleich als Anhang.
 
 **Offen:** Git-Projekte (Konzept: Commit bei Bedarf über `safe_git` neu holen). Dateien aus
 entpackten Paketformaten (`.whl` usw.) sind nicht gespeichert; der Befund-Link sagt das.
+
+## 2026-10-03 – S4-1: Namespaces mit Verwechslungsprüfung (H04)
+
+**Entscheidungen Len (03.10.2026):** mehrere Namespaces je Konto; Versionen werden mit einem
+eigenen Ed25519-Schlüssel signiert (S4-2); das Register wird gleich freigeschaltet, nicht hinter
+einem Schalter. Hinweis von Claude dazu: Die Rechtstexte (S3-8, Nutzungsbedingungen mit
+Moderationsregeln, DSA-Meldeweg) fehlen noch; ab der ersten Veröffentlichung ist luibui ein
+Hosting-Dienst für fremde Inhalte.
+
+**Was:**
+- `register.py`: Namensregel (2–39 Zeichen, Kleinbuchstaben, Ziffern, einzelne Bindestriche),
+  reservierte Namen (luibui, Anbieter wie anthropic, openai, google, mistral, bekannte Projekte
+  wie modelcontextprotocol, Wörter wie official, security), Verwechslung: gleiches „Skelett“
+  (Ziffern wie Buchstaben, `rn`/`m`, `vv`/`w`, `cl`/`d`, Bindestriche weg) oder ab fünf
+  Zeichen ein Tippschritt (Damerau-Levenshtein ≤ 1). Eigene Namen dürfen einander ähneln.
+- Tabelle `namespaces` (Migration `0008`, eindeutig ohne Groß/klein, Check auf die Namensregel
+  auch in der Datenbank). `GET/POST /api/v1/namespaces`, `DELETE /api/v1/namespaces/{id}`;
+  Anlegen und Löschen nur mit Browser-Sitzung, höchstens 5 je Konto.
+- Konto: Abschnitt „Namespaces“ (Liste, anlegen, löschen), Untermenü.
+
+**Geprüft:** 30 Tests ohne Datenbank (gültige und ungültige Namen, reservierte Namen samt
+`anthrop1c`, `0penai`, `c1aude`, `rnistral`, `modelcontextprotocoll`, gewöhnliche Namen frei,
+bestehende Namen), 3 API-Tests (Anlegen/Liste/Löschen, fremde und verwechselbare Namen, eigene
+ähnliche erlaubt, Grenze, Token nur lesend); Isolationstest kennt `namespace_id`. Lokal im
+Browser angesehen. Beim Testen gefunden: `c1aude` rutschte durch, weil `cl→d` vor `1→l` lief.
+
+**Offen:** Löschen eines Namespace mit veröffentlichten Paketen verhindern (kommt mit S4-2).

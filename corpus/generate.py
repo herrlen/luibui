@@ -48,6 +48,48 @@ def _pickle_dummy() -> bytes:
     return b"\x80\x02c_dummy\nharmlos\n)R."
 
 
+def _pb(feld: int, wert: bytes | int) -> bytes:
+    """One protobuf field: an int as varint, bytes length-delimited."""
+
+    def varint(n: int) -> bytes:
+        out = b""
+        while True:
+            b, n = n & 0x7F, n >> 7
+            out += bytes([b | (0x80 if n else 0)])
+            if not n:
+                return out
+
+    if isinstance(wert, int):
+        return varint(feld << 3) + varint(wert)
+    return varint(feld << 3 | 2) + varint(len(wert)) + wert
+
+
+def _keras(layer: str) -> bytes:
+    """A .keras ZIP with only its config.json; a Lambda's "code" is the text "echo hallo"."""
+    konfig = {
+        "_hinweis": MARK,
+        "class_name": "Sequential",
+        "config": {"layers": [{"class_name": layer, "config": {
+            "name": "schicht", "function": [base64.b64encode(b"echo hallo").decode(), None, None]
+        }}]},
+    }  # fmt: skip
+    return _zip({"config.json": json.dumps(konfig).encode(), "metadata.json": b"{}"})
+
+
+def _tf_graph(op: str) -> bytes:
+    """GraphDef with one NodeDef (name, op). Never loaded."""
+    return _pb(1, _pb(1, b"knoten") + _pb(2, op.encode()))
+
+
+def _onnx(ort: str, domain: str = "") -> bytes:
+    """ModelProto: doc_string with the marker, opset, a graph with one Identity node and one
+    initializer whose data lies in an external file at ``ort``. Never loaded."""
+    tensor = _pb(8, b"gewichte") + _pb(14, 1) + _pb(13, _pb(1, b"location") + _pb(2, ort.encode()))
+    knoten = _pb(1, b"gewichte") + _pb(2, b"aus") + _pb(4, b"Identity") + _pb(7, domain.encode())
+    graph = _pb(1, knoten) + _pb(2, b"graph") + _pb(5, tensor)
+    return _pb(1, 8) + _pb(6, MARK.encode()) + _pb(7, graph) + _pb(8, _pb(1, b"") + _pb(2, 17))
+
+
 def _gguf(vorlage: str) -> bytes:
     """GGUF v3 header without tensors: the marker as general.name, then the chat template."""
 
@@ -179,6 +221,16 @@ MALICIOUS: dict[str, tuple[Files, str]] = {
         "LB-A02-python-pth",
     ),
     "MOD-01": ({"model.pkl": _pickle_dummy()}, "LB-A16-pickle-code"),
+    "MOD-02": (
+        # A Lambda layer whose "code" is the text "echo hallo", and a graph that would read files.
+        {"modell.keras": _keras("Lambda"), "saved_model.pb": _tf_graph("ReadFile")},
+        "LB-A17-keras-lambda",
+    ),
+    "MOD-03": (
+        # External weights outside the package; the target is a harmless placeholder name.
+        {"modell.onnx": _onnx("../ausserhalb/gewichte.bin")},
+        "LB-A17-onnx-externer-pfad",
+    ),
     "MOD-04": (
         # Reaches a Python attribute from the template; the branch only prints "echo hallo".
         {"modell.gguf": _gguf("{% if ''.__class__ %}echo hallo{% endif %}")},
@@ -253,6 +305,8 @@ BENIGN: dict[str, Files] = {
     "DEP-03": {"uv.toml": _t('[[index]]\nurl = "https://pypi.org/simple"\n')},
     "SEC-01": {"keys/id_ed25519.pub": b"ssh-ed25519 AAAA luibui-test\n"},
     "MOD-01": {"state.pkl": b"\x80\x02ccollections\nOrderedDict\n)R."},
+    "MOD-02": {"modell.keras": _keras("Dense"), "saved_model.pb": _tf_graph("MatMul")},
+    "MOD-03": {"modell.onnx": _onnx("gewichte.bin"), "gewichte.bin": b"\x00" * 16},
     "MOD-04": {
         "modell.gguf": _gguf("{% for m in messages %}{{ m.role }}: {{ m.content }}{% endfor %}")
     },

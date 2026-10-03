@@ -19,6 +19,7 @@ from luibui_scan.analyzers._a_modelle import (
     _a19_config,
     _mod04_gguf,
 )
+from luibui_scan.analyzers._a_modellformate import _a17_keras, _a17_onnx, _a17_tf
 from luibui_scan.analyzers._common import finding, read_bytes, rules_dir, visible
 from luibui_scan.analyzers.base import AnalyzerInfo
 from luibui_scan.analyzers.registry import register
@@ -389,6 +390,9 @@ class DateienAnalyzer:
             _a18_safetensors,
             _a19_config,
             _mod04_gguf,
+            _a17_keras,
+            _a17_tf,
+            _a17_onnx,
             _dokumente,
             key_files,
         ):

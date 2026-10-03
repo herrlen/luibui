@@ -2223,3 +2223,31 @@ zusammen mit `role="search"`, also ausdrücklich erklärte Suchformulare ohne Ge
 
 **Geprüft:** API-Test für Suche, Typ, Ziel, Ampel, „ohne Shell“, „ohne Drittland“ und die
 berechneten Rechte; Web-Test für die Sitemap mit Paketen. Lokal angesehen.
+
+## 2026-10-03 – S4-11: Keras, TensorFlow und ONNX (A17)
+
+**Was:** neue Prüfung A17 im Datei-Analyzer (`_a_modellformate.py`), ohne ML-Bibliothek und
+ohne ein Modell zu laden:
+- **Keras:** `.keras` ist ein ZIP; `config.json` (höchstens 10 MB) wird als JSON nach Layern mit
+  `class_name` `Lambda` durchsucht (H). In `.h5` (HDF5) steht dieselbe Konfiguration als Text;
+  gesucht wird in den ersten 64 MB. `TFOpLambda` (von Keras selbst erzeugt) zählt nicht.
+- **TensorFlow:** `.pb`-Graphen nach NodeDefs mit den Operationen `ReadFile`, `WriteFile`,
+  `MatchingFiles`, `PyFunc`, `PyFuncStateless`, `EagerPyFunc` (H); gesucht wird das Feld `op`
+  mit passender Längenangabe, damit gleichnamige Knoten-Namen nicht anschlagen.
+- **ONNX:** ein kleiner Protobuf-Leser (gemeinsames Budget von 2 Mio. Feldern, Tiefe 12,
+  Tensordaten werden per Länge übersprungen, Datei per `mmap`) liest `external_data` aus
+  Initializern, Sparse-Initializern und Untergraphen in Attributen sowie die Domänen aus
+  `opset_import`, Knoten und Funktionen. Pfad absolut, mit `~`, Laufwerksbuchstabe oder `..` → H;
+  Domäne außerhalb von ONNX/ONNX Runtime → M; nicht lesbar → A18 (M).
+- Korpus: MOD-02 (Lambda-„Code“ ist der Text `echo hallo`, dazu ein Graph mit `ReadFile`) und
+  MOD-03 (externe Gewichte unter `../ausserhalb/`), jeweils mit gutartigem Gegenstück.
+
+**Geprüft:** 23 Tests (Lambda und Dense, HDF5 und `TFOpLambda`, alle sechs TF-Operationen,
+Knoten-Name statt Operation, fünf gefährliche ONNX-Pfade, relative Pfade und `com.microsoft`,
+eigene Domäne, Untergraph, vier kaputte Dateien inklusive endloser Längenangabe, tiefe
+Verschachtelung, Korpuszeilen). Python 1080 Engine-Tests grün.
+
+**Nicht geprüft:** `.tflite` (Flatbuffer, eigene Operatoren dort brauchen einen eigenen Leser).
+**ClamAV (S4-10)** zurückgestellt: Skills und MCP-Server sind fast nur Text und Code,
+Binärdateien meldet A04 schon; ClamAV bräuchte rund 1,2 GB RAM und Signaturen über ein US-CDN.
+Neu bewerten mit einem eigenen vServer. YARA-X mit eigenen Regeln kommt als Nächstes.

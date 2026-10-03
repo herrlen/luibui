@@ -220,8 +220,8 @@
 | S4-6 | ✅ **(03.10.2026)** Beim Veröffentlichen: neue Rechte, Dateipfade, Umgebungsvariablen, Endpunkte, Länder und Datenkategorien gegenüber der vorigen Version, mitsigniert; Paketseite „Neu gegenüber …“, `luibui-install` zeigt sie beim Update (auch über übersprungene Versionen) und mit `--aktualisierungen`. **Diff-Prüfung** (H1): neue Rechte/Endpunkte gegenüber Vorversion hervorheben | 4 |
 | S4-7 | Disclosure-Workflow: neuer K/H-Befund → Autor sofort, öffentlich „Befund offen“ für 14 Tage | 3 |
 | S4-8 | ◐ **(03.10.2026)** Dateibaum, Ansicht mit Befunden an der Zeile und unsichtbaren Zeichen als `<U+…>`, Download als Anhang für hochgeladene Dateien. Offen: Git-Projekte (Commit bei Bedarf neu holen). **app.luibui.com – Dateien:** Dateibaum der geprüften Version, Dateiansicht als escaped Text mit Befunden an der Zeile, Download als Anhang | 5 |
-| S4-10 | ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen; YARA-X mit eigenen Regeln (Matrix BIN-01); gefüllte Hash-Liste (MAL-01) vorgezogen am 27.09.2026 | 2 |
-| S4-11 | Modelle, Teil 3 (Matrix MOD-02, MOD-03): Keras-Lambda, TF-Datei-Ops, ONNX `external_data` (A17), Werkzeug nach Lizenzprüfung | 3 |
+| S4-10 | ◐ **(03.10.2026)** ClamAV zurückgestellt (Vorschlag Claude, Len gefragt): wenig Nutzen für Text-/Code-Pakete, ~1,2 GB RAM, Signaturen über US-CDN; erst mit eigenem vServer. YARA-X mit eigenen Regeln folgt. ClamAV im Worker oder auf dem Worker-vServer inkl. Cronjob für Signaturen; YARA-X mit eigenen Regeln (Matrix BIN-01); gefüllte Hash-Liste (MAL-01) vorgezogen am 27.09.2026 | 2 |
+| S4-11 | ✅ **(03.10.2026)** A17: Keras-Lambda, TensorFlow-Datei- und Python-Ops, ONNX `external_data` außerhalb des Pakets und eigene Operatoren, ohne ML-Bibliothek; Korpus MOD-02, MOD-03. `.tflite` nicht geprüft. Modelle, Teil 3 (Matrix MOD-02, MOD-03): Keras-Lambda, TF-Datei-Ops, ONNX `external_data` (A17), Werkzeug nach Lizenzprüfung | 3 |
 
 **DoD:** Ein geprüftes Paket ist aus dem Entwicklerbereich veröffentlicht und per `luibui install --target claude` nutzbar; ein Update mit neuem Endpunkt zeigt den Diff; die Dateiansicht markiert Befunde an der richtigen Zeile.
 

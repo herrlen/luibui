@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Kopieren } from "@/components/Kopieren";
 import { ReportView } from "@/components/report/ReportView";
 import { datumZeit } from "@/lib/format";
 import { rechte } from "@/lib/rechte";
@@ -160,6 +161,23 @@ export default async function PaketSeite(p: Params) {
           luibui signiert zu jeder Version, was geprüft wurde: Archiv, Bericht, Ampel und Note. Den öffentlichen Schlüssel gibt es
           unter <a href="/api/v1/register/schluessel" className="text-petrol underline">/api/v1/register/schluessel</a>.
         </p>
+      </section>
+
+      <section aria-labelledby="badge" className="flex flex-col gap-3">
+        <h2 id="badge" className="font-display text-xl font-bold">
+          Badge für die README
+        </h2>
+        {/* eslint-disable-next-line @next/next/no-img-element -- our own SVG from the same host */}
+        <img src={`/badge/${d.paket}.svg`} alt={`luibui-Prüfung von ${d.paket}`} height={20} className="h-5 w-fit" />
+        <pre className="overflow-x-auto rounded-[14px] border border-linie bg-surface p-4 font-mono text-xs">
+          {`[![luibui](https://luibui.com/badge/${d.paket}.svg)](https://luibui.com/pakete/${d.paket})`}
+        </pre>
+        <div>
+          <Kopieren
+            text={`[![luibui](https://luibui.com/badge/${d.paket}.svg)](https://luibui.com/pakete/${d.paket})`}
+            label="Markdown kopieren"
+          />
+        </div>
       </section>
 
       {d.versionen.length > 1 ? (

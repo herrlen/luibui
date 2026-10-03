@@ -2343,3 +2343,15 @@ Commit in der Aussage.
 Konzept anpassen („Git-Projekte speichern Dateien wie Uploads“) oder künftig nur den Commit
 speichern und bei Bedarf neu holen (dann gingen Dateiansicht und Veröffentlichen nur noch, solange
 der Commit im Repository erreichbar ist).
+
+## 2026-10-03 – S5-4: Badge für die README
+
+**Was:** `luibui.com/badge/<namespace>/<name>.svg` zeigt „luibui | Gelb · 80“ für die neueste
+nicht zurückgezogene Version (sonst „nicht gefunden“). Ins SVG kommen nur feste Wörter und eine
+ganze Zahl, nie Text aus dem Paket; Namen werden vorher gegen die Namensregeln geprüft. Antwort mit
+`image/svg+xml`, `nosniff`, eigener CSP `default-src 'none'`, eine Stunde Cache. Die Paketseite
+zeigt das Badge und ein Markdown-Snippet mit Kopierknopf. S5-2 (nächtliche Neuprüfung) ist mit
+S4-7 Teil 1 erledigt.
+
+**Geprüft:** 2 Web-Tests (Inhalt, unbekannte Werte erscheinen nicht im SVG), lokal abgerufen und
+gerendert.

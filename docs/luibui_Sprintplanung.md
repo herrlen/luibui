@@ -232,9 +232,9 @@
 | ID | Task | h |
 |---|---|---|
 | S5-1 | Adapter ChatGPT, Gemini, Mistral, Open WebUI (Formate vorher aktuell recherchieren) | 6 |
-| S5-2 | Nächtliche Neuprüfung aller veröffentlichten Pakete, Benachrichtigung bei Verschlechterung | 4 |
+| S5-2 | ✅ **(03.10.2026, als S4-7 Teil 1)** Nächtliche Neuprüfung aller veröffentlichten Pakete, Benachrichtigung bei Verschlechterung | 4 |
 | S5-3 | `luibui audit` für installierte Pakete | 2 |
-| S5-4 | Badge-SVG und Einbettungs-Snippet | 2 |
+| S5-4 | ✅ **(03.10.2026)** `luibui.com/badge/<namespace>/<name>.svg` (Ampel und Note der neuesten Version, nur feste Wörter im SVG), Markdown-Snippet mit Kopierknopf auf der Paketseite. Badge-SVG und Einbettungs-Snippet | 2 |
 | S5-5 | GitHub-Action + Codeberg/Forgejo-Action + pre-commit-Hook (`luibui scan` lokal, SARIF-Upload) | 5 |
 | S5-6 | websecureaudit-Anbindung für Remote-MCP-URLs (interne API, Befunde als Ebene E7) | 4 |
 | S5-7 | Herkunft (H3): Paket gegen Git-Tag abgleichen | 3 |

@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     """Registration, uploads and quick scans. Stays off in production until the worker has no
     internet access and client IPs behind the proxy are trusted (docs/log.md, 2026-09-27)."""
     app_origin: str = "https://app.luibui.com"
+    api_origin: str = "https://api.luibui.com"
+    """Where webhooks are sent (S5-8)."""
     """The only origin whose cookie-authenticated, state-changing requests are accepted (CSRF)."""
     bearer_only_hosts: frozenset[str] = frozenset({"api.luibui.com"})
     """Hosts that accept only Bearer tokens; session cookies are ignored there (rule 11)."""

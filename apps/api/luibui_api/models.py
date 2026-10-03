@@ -157,6 +157,9 @@ class Project(Base):
     is_einzelpruefungen: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     data_key_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     """Per-project data key, encrypted with MASTER_KEY (S2-7)."""
+    webhook_secret_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    """Webhook secret (S5-8), encrypted with MASTER_KEY: the signature check needs it in clear."""
+    webhook_letzter_lauf: Mapped[datetime | None]
     created_at: Mapped[datetime] = _created()
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 

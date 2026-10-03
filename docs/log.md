@@ -2372,3 +2372,27 @@ gerendert.
 **Geprüft:** 4 Tests (Voreinstellung, nur bekannte Arten, pro Konto, Token darf nicht ändern;
 Entscheidungs-Mail mit Inhalt; abgestellt heißt keine Mail; Nachprüfung abgestellt). Lokal
 angesehen.
+
+## 2026-10-03 – S5-8: Prüfung bei Push per Webhook
+
+**Was:**
+- Je Git-Projekt ein Webhook-Geheimnis (32 zufällige Byte, URL-sicher), mit `MASTER_KEY`
+  verschlüsselt gespeichert (Migration `0013`), weil die Signaturprüfung den Klartext braucht;
+  wird beim Einrichten einmal angezeigt, Erneuern macht das alte sofort ungültig, Abschalten
+  löscht es. Einrichten und Abschalten nur mit Browser-Sitzung.
+- `POST api.luibui.com/api/v1/webhooks/<projekt>` ohne Anmeldung, die Signatur ist die Erlaubnis
+  (CLAUDE.md Regel 11): GitHub `X-Hub-Signature-256` (HMAC-SHA256), Forgejo/Gitea eigene
+  Signatur-Kopfzeile, GitLab `X-Gitlab-Token`; Vergleich in konstanter Zeit. Unbekanntes Projekt,
+  kein Webhook, falsche Signatur, zu große Nutzlast (> 5 MB): 404. `ping` → ok. Auslösend nur ein
+  Push auf den Standard-Branch oder ein Tag, und nur wenn die Nutzlast das Repository des Projekts
+  nennt; gelöschte Branches und andere Ereignisse werden mit Grund ignoriert. Höchstens eine
+  Prüfung pro Minute und Projekt. Die Antwort kommt sofort; Guthaben abbuchen, Klonen über
+  `safe_git` und Prüfjob laufen danach (GitHub wartet nur 10 s). Audit `webhook.*`.
+- Projektseite (Git-Projekte): „Bei jedem Push prüfen“ mit URL, Geheimnis und Anleitung für
+  GitHub, Codeberg/Forgejo und GitLab.
+
+**Geprüft:** 13 Tests (signierter Push startet genau eine Prüfung, zweiter in derselben Minute
+nicht; fremder Branch, fremdes Repository, gelöschter Branch; Tag ja, anderes Ereignis nein;
+falsche oder fehlende Signatur, unbekanntes Projekt, nach Erneuern und Abschalten 404; GitLab und
+Forgejo; nur Git-Projekte, nicht mit Token), Isolationstest. Lokal im Browser eingerichtet.
+Gegen ein echtes GitHub-Repository noch nicht ausprobiert.

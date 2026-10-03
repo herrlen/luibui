@@ -11,6 +11,7 @@ import type { Projekt, Pruefungskurz, VerlaufPunkt, Version } from "@/lib/types"
 import { ProjektLoeschen } from "./ProjektLoeschen";
 import { Upload } from "./Upload";
 import { VersionLoeschen } from "./VersionLoeschen";
+import { Webhook, type WebhookInfo } from "./Webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,10 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
   const versionListe = versionen.ok ? versionen.data : [];
   const verlauf = await apiGet<VerlaufPunkt[]>(`/api/v1/projects/${encodeURIComponent(id)}/verlauf`);
   const punkte = verlauf.ok ? verlauf.data : [];
+  const webhook =
+    projekt.data.quelle === "git"
+      ? await apiGet<WebhookInfo>(`/api/v1/projects/${encodeURIComponent(id)}/webhook`)
+      : null;
   // A check can be compared with the finished one before it (list is newest first).
   const fertig = liste.filter((s) => s.status === "fertig");
   const vorgaenger = new Map(fertig.slice(0, -1).map((s, i) => [s.id, fertig[i + 1].id]));
@@ -43,6 +48,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         </p>
       </div>
       <Upload projektId={projekt.data.id} quelle={projekt.data.quelle} gitUrl={projekt.data.git_url} />
+      {webhook?.ok ? <Webhook projektId={projekt.data.id} info={webhook.data} /> : null}
       {versionListe.length ? (
         <section aria-labelledby="versionen">
           <h2 id="versionen" className="font-display text-xl font-bold">

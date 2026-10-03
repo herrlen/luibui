@@ -23,6 +23,7 @@ from luibui_api.routes import (
     teilen,
     tokens,
     verlauf,
+    webhooks,
 )
 from luibui_api.settings import Environment, get_settings
 
@@ -66,4 +67,5 @@ def create_app() -> FastAPI:
     app.include_router(dateien.router)
     app.include_router(namespaces.router)
     app.include_router(pakete.router)
+    app.include_router(webhooks.router)
     return app

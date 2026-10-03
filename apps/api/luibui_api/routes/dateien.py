@@ -76,11 +76,6 @@ def _version(db: DbSession, scan: Scan) -> tuple[ProjectVersion | None, str | No
     project = db.get(Project, scan.project_id) if scan.project_id else None
     if version is None or project is None:
         return None, "Zu dieser Prüfung gehören keine gespeicherten Dateien."
-    if project.quelle == "git":
-        return None, (
-            "Bei Git-Projekten speichert luibui nur den Commit, keine Dateien. Die Ansicht für "
-            "Git-Projekte folgt."
-        )
     if version.files_deleted_at is not None:
         return None, "Die Dateien dieser Version wurden gelöscht."
     return version, None

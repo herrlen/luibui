@@ -288,3 +288,37 @@ def test_search_and_filters(api: Api, anna: Any, _migrated: str) -> None:
     assert namen(ohne=["drittland"]) == ["anna-tools/wetter"]
     (eintrag,) = c.get("/api/v1/register/pakete", params={"typ": "mcp-server"}).json()
     assert eintrag["rechte"] == ["netzwerk", "dateien", "shell", "drittland"]
+
+
+def test_git_projects_show_files_and_publish_with_their_commit(
+    api: Api, anna: Any, _migrated: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from pathlib import Path
+
+    from luibui_api import uploads
+    from luibui_scan.intake.safe_git import CloneResult, canonical_url
+
+    commit = "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d"
+
+    def clone(raw: str, root: Path, work: Path) -> CloneResult:
+        (root / "SKILL.md").write_bytes(MARK + b"# Wetter aus Git\n")
+        (root / "luibui.json").write_bytes(manifest())
+        return CloneResult(canonical_url(raw), commit, ["SKILL.md", "luibui.json"], [], False)
+
+    monkeypatch.setattr(uploads, "clone_into", clone)
+    pid = project(anna, name="git", quelle="git", git_url="https://github.com/anna/wetter")
+    sid = anna.post(
+        f"/api/v1/projects/{pid}/scans", data={"art": "git"}, files={"x": ("", b"")}
+    ).json()["id"]
+    fertig(_migrated, sid)
+    dateien = anna.get(f"/api/v1/scans/{sid}/dateien").json()
+    assert dateien["verfuegbar"] and {d["path"] for d in dateien["dateien"]} == {
+        "SKILL.md",
+        "luibui.json",
+    }
+    r = anna.post("/api/v1/register/veroeffentlichen", json={"scan_id": sid})
+    assert r.status_code == 201, r.text
+    v = api.client().get("/api/v1/register/pakete/anna-tools/wetter").json()["versionen"][0]
+    aussage = json.loads(v["aussage"])
+    assert aussage["repository"] == "https://github.com/anna/wetter.git"
+    assert aussage["commit"] == commit

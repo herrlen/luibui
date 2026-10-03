@@ -117,7 +117,7 @@ def test_other_users_and_other_versions_get_404(api: Api, _migrated: str) -> Non
     )
 
 
-def test_deleted_files_and_git_projects_say_why(api: Api, _migrated: str) -> None:
+def test_deleted_files_say_why(api: Api, _migrated: str) -> None:
     c, sid = _scan_mit_bericht(api, _migrated)
     fid = _ids(c, sid)["SKILL.md"]
     engine = create_engine(_migrated)
@@ -138,5 +138,5 @@ def test_deleted_files_and_git_projects_say_why(api: Api, _migrated: str) -> Non
         )
     engine.dispose()
     liste = c.get(f"/api/v1/scans/{sid}/dateien").json()
-    assert liste["verfuegbar"] is False and "Git" in liste["grund"]
+    assert liste["verfuegbar"] is False and "gelöscht" in liste["grund"]
     assert c.get(f"/api/v1/scans/{sid}/dateien/{fid}").status_code == 404

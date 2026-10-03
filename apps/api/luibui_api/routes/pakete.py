@@ -79,11 +79,8 @@ def _abbruch(code: str, text: str, http: int = status.HTTP_409_CONFLICT) -> HTTP
 def _dateien(db: DbSession, scan: Scan) -> tuple[Project, list[tuple[StoredFile, bytes]]]:
     project = db.get(Project, scan.project_id) if scan.project_id else None
     version = db.get(ProjectVersion, scan.version_id) if scan.version_id else None
-    if project is None or version is None or project.quelle == "git":
-        raise _abbruch(
-            "keine_dateien",
-            "Veröffentlichen geht aus Prüfungen hochgeladener Dateien; Git-Projekte folgen.",
-        )
+    if project is None or version is None:
+        raise _abbruch("keine_dateien", "Zu dieser Prüfung gehören keine gespeicherten Dateien.")
     if version.files_deleted_at is not None or project.data_key_enc is None:
         raise _abbruch("keine_dateien", "Die Dateien dieser Version wurden gelöscht.")
     if version.bytes > MAX_PAKET:
@@ -230,6 +227,11 @@ def veroeffentlichen(body: Veroeffentlichen, caller: SessionCaller, db: DbSessio
         "vorversion": vorige.version if vorige else None,
         "aenderungen": neu,
     }
+    if project.git_url and scan.version_id:
+        # Origin for Git projects: the repository and the commit that was checked (H03 later).
+        pv = db.get(ProjectVersion, scan.version_id)
+        aussage["repository"] = project.git_url
+        aussage["commit"] = pv.commit_sha if pv else None
     data_key, data_key_enc = project_data_key(paket.id, paket.data_key_enc)
     paket.data_key_enc = data_key_enc
     key = new_storage_key()

@@ -2324,3 +2324,22 @@ YARA-Treffer auf den echten Paketen.
 
 Offen in Sprint 4: S4-7 Teil 2 (öffentliche Anzeige, wartet auf die Disclosure-Richtlinie),
 Git-Projekte in Dateiansicht und Veröffentlichen, ClamAV (zurückgestellt).
+
+## 2026-10-03 – Git-Projekte in Dateiansicht und Register
+
+**Befund:** Die Dateiansicht (S4-8) und das Veröffentlichen (S4-2) hatten Git-Projekte
+ausgeschlossen, weil das Konzept (§3) sagt, Git-Projekte speicherten nur den Commit. Der Code
+macht das seit S1-3/S2-7 anders: `create_scan` legt auch bei Git-Prüfungen eine Version mit
+Commit **und** allen Dateien verschlüsselt ab (zählt gegen das Kontingent, letzte 10 Versionen).
+Die Sperre war also unnötig und ist entfernt.
+
+**Was:** Dateiansicht und Veröffentlichen gehen jetzt auch für Git-Projekte. Bei ihnen enthält
+die signierte Aussage zusätzlich `repository` und `commit` (Grundlage für H03, Herkunft).
+
+**Geprüft:** API-Test mit nachgestelltem Klon: Dateien sichtbar, veröffentlicht, Repository und
+Commit in der Aussage.
+
+**Offen (Len):** Konzept §3 und das tatsächliche Verhalten widersprechen sich. Entweder das
+Konzept anpassen („Git-Projekte speichern Dateien wie Uploads“) oder künftig nur den Commit
+speichern und bei Bedarf neu holen (dann gingen Dateiansicht und Veröffentlichen nur noch, solange
+der Commit im Repository erreichbar ist).

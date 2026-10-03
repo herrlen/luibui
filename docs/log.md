@@ -2524,3 +2524,14 @@ kein installierbares Paket ist). Test prüft, dass der Eintrag ein gültiger CLI
 Workflow-Snippet und README nennen jetzt `herrlen/luibui/action@v1`; `v1` ist ein Tag, der bei
 kompatiblen Änderungen der Action nachgezogen wird. Codeberg/Forgejo nutzen dieselbe Action per
 voller URL (ohne Code Scanning). Mit echtem Repository noch nicht ausprobiert.
+
+## 2026-10-03 – S5-1 abgeschlossen: Gemini-Extension, Open WebUI
+
+`luibui-install --ziel gemini` installiert MCP-Server-Pakete als Gemini-CLI-Extension unter
+`~/.gemini/extensions/<name>/`; fehlt im Paket eine `gemini-extension.json`, schreibt der Installer
+eine (Name, Version, bereinigte Beschreibung, `mcpServers` mit `${extensionPath}${/}<einstieg>`).
+Sie zählt zu den Dateien im Lockfile, `luibui audit` sieht sie nicht als Änderung. Bringt das
+Paket eine eigene mit, gilt die geprüfte des Autors. `--ziel openwebui` schreibt die SKILL.md als
+`<name>-<version>.md` für Workspace → Skills → Import. Damit sind alle sechs Ziele der DoD
+abgedeckt (Claude, ChatGPT, Gemini, Mistral, Open WebUI, MCP). Bewusst nicht: Python-Tools für Open
+WebUI (Servercode mit pip-Installation aus dem Frontmatter) und der Import per Open-WebUI-API.

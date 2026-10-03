@@ -266,7 +266,7 @@ def test_upload_writes_the_checked_archive(register: Register, tmp_path: Path) -
     assert [p.name for p in tmp_path.iterdir() if p.name.startswith(".luibui-")] == []
 
 
-@pytest.mark.parametrize("ziel", ["gemini", "upload"])
+@pytest.mark.parametrize("ziel", ["mistral", "upload", "openwebui"])
 def test_skill_targets_need_a_skill_md(register: Register, tmp_path: Path, ziel: str) -> None:
     register.veroeffentlichen(archiv=zip_von({"README.md": MARK + b"# kein Skill\n"}))
     code, text = run("acme/wetter", "--ziel", ziel, "--ordner", str(tmp_path / "z"), "--ja")
@@ -320,3 +320,32 @@ def test_audit_of_old_lock_entries_fetches_the_archive(register: Register, tmp_p
     (tmp_path / "s" / "wetter" / "SKILL.md").write_text("anders")
     code, text = run("--audit")
     assert code == 1 and "Geändert: SKILL.md" in text
+
+
+def test_mcp_server_becomes_a_gemini_extension(
+    register: Register, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "nutzer"))
+    archiv = zip_von({"server.py": MARK + b"print(1)\n", "README.md": b"# Server\n"})
+    register.veroeffentlichen(paket="acme/server", typ="mcp-server", archiv=archiv)
+    code, text = run("acme/server", "--ziel", "gemini", "--ja")
+    assert code == 0, text
+    ordner = tmp_path / "nutzer" / ".gemini" / "extensions" / "server"
+    ext = json.loads((ordner / "gemini-extension.json").read_text())
+    assert ext["name"] == "server" and ext["version"] == "1.0.0"
+    assert ext["mcpServers"]["server"] == {
+        "command": "python3",
+        "args": ["${extensionPath}${/}server.py"],
+    }
+    assert "\x1b" not in ext["description"]  # package text is cleaned
+    assert "gemini extensions list" in text
+    # The generated manifest belongs to the installation: audit sees no change.
+    assert run("--audit")[0] == 0
+
+
+def test_openwebui_gets_the_skill_as_markdown(register: Register, tmp_path: Path) -> None:
+    register.veroeffentlichen()
+    code, text = run("acme/wetter", "--ziel", "openwebui", "--ordner", str(tmp_path), "--ja")
+    assert code == 0, text
+    assert (tmp_path / "wetter-1.0.0.md").read_bytes().startswith(MARK)
+    assert "Workspace → Skills" in text

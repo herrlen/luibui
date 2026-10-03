@@ -1,9 +1,11 @@
-"""``luibui-install namespace/name[@version] --ziel claude|chatgpt|gemini|mistral|upload|mcp``.
+"""``luibui-install namespace/name[@version] --ziel <ziel>``.
 
+Targets: claude, chatgpt, gemini, mistral, openwebui, upload, mcp.
 Skills (``SKILL.md``) go into the skill folder of the client: Claude Code, Codex/ChatGPT,
-Gemini CLI or Mistral Vibe (S5-1, docs/plattform-formate.md). ``upload`` writes the checked
-archive as a ZIP for clients that only take uploads in the browser (ChatGPT, Gemini app,
-Open WebUI imports the SKILL.md from it). ``mcp`` unpacks and prints a config snippet.
+Gemini CLI or Mistral Vibe (S5-1, docs/plattform-formate.md). MCP servers with ``--ziel gemini``
+become a Gemini CLI extension. ``upload`` writes the checked archive as a ZIP for clients that
+only take uploads in the browser (ChatGPT, Gemini app); ``openwebui`` writes the SKILL.md for
+Open WebUI's skill import. ``mcp`` unpacks and prints a config snippet.
 
 1. Fetch the version, verify luibui's signature, the archive's SHA-256 and size (register.py).
 2. Show what luibui found: light, grade, rights from luibui.json. Red needs ``--trotzdem``.
@@ -129,7 +131,13 @@ SKILL_ORDNER = {
     ),
     "mistral": (Path(".vibe") / "skills", "Mistral Vibe lädt den Skill beim nächsten Start."),
 }
-ZIELE = [*SKILL_ORDNER, "upload", "mcp"]
+ZIELE = [*SKILL_ORDNER, "openwebui", "upload", "mcp"]
+GEMINI_EXTENSIONS = Path(".gemini") / "extensions"
+
+
+def _gemini_extension(v: Version, ziel: str) -> bool:
+    """An MCP server for Gemini CLI becomes an extension (gemini-extension.json)."""
+    return ziel == "gemini" and v.manifest.get("typ") == "mcp-server"
 
 
 def _nur_skill(v: Version, ziel: str) -> None:
@@ -142,25 +150,46 @@ def _nur_skill(v: Version, ziel: str) -> None:
 
 def _ordner(v: Version, ziel: str, basis: Path | None) -> Path:
     ns, name = v.paket.split("/")
+    if _gemini_extension(v, ziel):
+        return (basis or Path.home() / GEMINI_EXTENSIONS) / name
     if ziel in SKILL_ORDNER:
         _nur_skill(v, ziel)
         return (basis or Path.home() / SKILL_ORDNER[ziel][0]) / name
     if ziel == "upload":
         _nur_skill(v, ziel)
         return (basis or Path.cwd()) / f"{name}-{v.version}.zip"
+    if ziel == "openwebui":
+        _nur_skill(v, ziel)
+        return (basis or Path.cwd()) / f"{name}-{v.version}.md"
     return (basis or luibui_home() / "pakete") / ns / name / v.version
+
+
+def _mcp_befehl(einstieg: str, pfad: str) -> dict[str, Any]:
+    if einstieg.endswith(".py"):
+        return {"command": "python3", "args": [pfad]}
+    if einstieg.endswith((".js", ".mjs", ".cjs")):
+        return {"command": "node", "args": [pfad]}
+    return {"command": pfad, "args": []}
 
 
 def _mcp_schnipsel(v: Version, ordner: Path) -> dict[str, Any]:
     einstieg = str(v.manifest.get("einstieg") or "")
     pfad = str(ordner / einstieg) if einstieg else str(ordner)
-    if einstieg.endswith(".py"):
-        befehl = {"command": "python3", "args": [pfad]}
-    elif einstieg.endswith((".js", ".mjs", ".cjs")):
-        befehl = {"command": "node", "args": [pfad]}
-    else:
-        befehl = {"command": pfad, "args": []}
-    return {"mcpServers": {v.paket.split("/")[1]: befehl}}
+    return {"mcpServers": {v.paket.split("/")[1]: _mcp_befehl(einstieg, pfad)}}
+
+
+def gemini_extension_json(v: Version) -> dict[str, Any]:
+    """Manifest of a Gemini CLI extension for an MCP server package (docs/plattform-formate.md).
+    Paths use ``${extensionPath}`` so the extension works wherever Gemini keeps it."""
+    name = v.paket.split("/")[1]
+    einstieg = str(v.manifest.get("einstieg") or "").lstrip("/")
+    pfad = "${extensionPath}" + "".join("${/}" + t for t in einstieg.split("/") if t)
+    return {
+        "name": name,
+        "version": v.version,
+        "description": sauber(v.manifest.get("beschreibung") or v.paket, 300),
+        "mcpServers": {name: _mcp_befehl(einstieg, pfad)},
+    }
 
 
 def _lock(v: Version, ziel: str, ordner: Path, dateien: dict[str, str]) -> Path:
@@ -226,9 +255,27 @@ def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
     with tempfile.TemporaryDirectory(dir=ordner.parent, prefix=".luibui-") as tmp:
         neu = Path(tmp) / "paket"
         anzahl = entpacken(v.archiv, neu)
-        skill = args.ziel in SKILL_ORDNER or args.ziel == "upload"
+        skill = not _gemini_extension(v, args.ziel) and (
+            args.ziel in SKILL_ORDNER or args.ziel in ("upload", "openwebui")
+        )
         if skill and not (neu / "SKILL.md").is_file():
             raise InstallError("Im Paket liegt keine SKILL.md im Hauptordner.")
+        if args.ziel == "openwebui":
+            # Open WebUI keeps skills in its database: a Markdown file for Workspace → Skills.
+            fertig = Path(tmp) / "skill.md"
+            fertig.write_bytes((neu / "SKILL.md").read_bytes())
+            fertig.replace(ordner)
+            print(f"Gespeichert: {ordner}", file=out)
+            print(
+                "In Open WebUI unter Workspace → Skills → Import einlesen. Weitere Dateien des "
+                "Pakets (Skripte, Referenzen) nutzt Open WebUI nicht.",
+                file=out,
+            )
+            return EXIT_OK
+        if _gemini_extension(v, args.ziel) and not (neu / "gemini-extension.json").exists():
+            (neu / "gemini-extension.json").write_text(
+                json.dumps(gemini_extension_json(v), indent=2, ensure_ascii=False) + "\n"
+            )
         if args.ziel == "upload":
             # The archive itself, already checked against luibui's signature and hash.
             fertig = Path(tmp) / "upload.zip"
@@ -248,7 +295,11 @@ def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
         neu.rename(ordner)
     lock = _lock(v, args.ziel, ordner, dateien)
     print(f"Installiert: {anzahl} Dateien. Eingetragen in {lock}.", file=out)
-    if args.ziel in SKILL_ORDNER:
+    if _gemini_extension(v, args.ziel):
+        print(
+            "Gemini CLI lädt die Extension beim nächsten Start (gemini extensions list).", file=out
+        )
+    elif args.ziel in SKILL_ORDNER:
         print(SKILL_ORDNER[args.ziel][1], file=out)
     else:
         print("\nIn die MCP-Konfiguration deines Clients eintragen:", file=out)
@@ -359,7 +410,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--ordner",
         help="anderer Zielordner (Standard: ~/.claude/skills, ~/.agents/skills, ~/.gemini/skills, "
-        "~/.vibe/skills, bei upload der aktuelle Ordner, bei mcp ~/.luibui/pakete)",
+        "~/.vibe/skills, ~/.gemini/extensions für MCP-Server, bei upload und openwebui der "
+        "aktuelle Ordner, bei mcp ~/.luibui/pakete)",
     )
     p.add_argument("--ja", action="store_true", help="ohne Rückfrage installieren")
     p.add_argument("--ersetzen", action="store_true", help="vorhandene Installation ersetzen")

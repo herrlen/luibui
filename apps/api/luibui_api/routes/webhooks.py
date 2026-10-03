@@ -126,6 +126,7 @@ def _pruefen(project_id: uuid.UUID) -> None:
                 project=project,
                 name=project.name,
             )
+            scan.ausloeser = "webhook"
             if buchung is not None:
                 buchung.scan_id = scan.id
             audit(db, user.id, "webhook.pruefung", "scan", scan.id)

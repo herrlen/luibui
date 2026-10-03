@@ -157,3 +157,49 @@ def test_only_git_projects_and_only_with_a_session(api: Api) -> None:
     assert r.status_code in (401, 403)
     info = a.get(f"/api/v1/projects/{git}/webhook").json()
     assert info["aktiv"] is False and info["geheimnis"] is None
+
+
+def test_new_findings_of_a_push_check_are_mailed(
+    api: Api, klone: list[str], _migrated: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from luibui_api import mail
+    from luibui_api.db import _sessionmaker
+    from luibui_api.nachpruefung import push_auswerten
+    from luibui_api.settings import get_settings
+
+    from .test_guthaben import FakeSMTP
+    from .test_nachpruefung import sql
+
+    monkeypatch.setenv("SMTP_PASSWORD", "test")
+    monkeypatch.setattr(mail.smtplib, "SMTP", FakeSMTP)
+    FakeSMTP.sent = []
+    get_settings.cache_clear()
+
+    a, pid, geheimnis = einrichten(api)
+    # An earlier manual check with one critical finding.
+    alt = a.post(f"/api/v1/projects/{pid}/scans", data={"art": "git"}, files={"x": ("", b"")})
+    befund = {"fingerprint": "alt", "schwere": "K", "titel": "Alter Befund", "datei": "x"}
+    sql(_migrated, "UPDATE scans SET status = 'fertig', report = CAST(:r AS jsonb) "
+            "WHERE id = :id", r=json.dumps({"befunde": [befund]}), id=alt.json()["id"])  # fmt: skip
+    assert github(api, pid, push(), geheimnis).json() == {"status": "geplant"}
+    (sid,) = [r[0] for r in db_rows(_migrated, "SELECT id FROM scans WHERE ausloeser = 'webhook'")]
+    neu = {"fingerprint": "neu", "schwere": "H", "titel": "Neue Lücke", "datei": "SKILL.md"}
+    sql(_migrated, "UPDATE scans SET status = 'fertig', report = CAST(:r AS jsonb) "
+            "WHERE id = :id", r=json.dumps({"befunde": [befund, neu]}), id=sid)  # fmt: skip
+
+    jetzt = datetime.now(UTC)
+    with _sessionmaker()() as db:
+        assert push_auswerten(db, jetzt) == 1
+        assert push_auswerten(db, jetzt) == 0
+    (m,) = [m for m in FakeSMTP.sent if "Push" in m["Subject"]]
+    inhalt = m.get_content()
+    assert m["To"] == "anna@example.org"
+    assert "Neue Lücke" in inhalt and "Alter Befund" not in inhalt and str(sid) in inhalt
+
+    # Switched off in the account: no mail.
+    assert a.post("/api/v1/konto/benachrichtigungen", json={"push": False}).status_code == 200
+    sql(_migrated, "UPDATE scans SET nachpruefung_ausgewertet_at = NULL WHERE id = :id", id=sid)
+    FakeSMTP.sent = []
+    with _sessionmaker()() as db:
+        push_auswerten(db, jetzt)
+    assert FakeSMTP.sent == []

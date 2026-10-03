@@ -31,10 +31,10 @@ def entscheidungs_mails(post: list[Any]) -> list[Any]:
 def test_settings_default_on_and_only_known_kinds(api: Api) -> None:
     a = api.user("anna@example.org")
     d = a.get("/api/v1/konto/benachrichtigungen").json()
-    assert d["einstellungen"] == {"nachpruefung": True, "einspruch": True}
-    assert set(d["beschreibungen"]) == {"nachpruefung", "einspruch"}
+    assert d["einstellungen"] == {"nachpruefung": True, "einspruch": True, "push": True}
+    assert set(d["beschreibungen"]) == {"nachpruefung", "einspruch", "push"}
     r = a.post("/api/v1/konto/benachrichtigungen", json={"einspruch": False, "werbung": True})
-    assert r.json()["einstellungen"] == {"nachpruefung": True, "einspruch": False}
+    assert r.json()["einstellungen"] == {"nachpruefung": True, "einspruch": False, "push": True}
     b = api.user("bert@example.org")
     assert b.get("/api/v1/konto/benachrichtigungen").json()["einstellungen"]["einspruch"] is True
     token = a.post("/api/v1/tokens", json={"name": "ci"}).json()["token"]

@@ -2535,3 +2535,12 @@ Paket eine eigene mit, gilt die geprüfte des Autors. `--ziel openwebui` schreib
 `<name>-<version>.md` für Workspace → Skills → Import. Damit sind alle sechs Ziele der DoD
 abgedeckt (Claude, ChatGPT, Gemini, Mistral, Open WebUI, MCP). Bewusst nicht: Python-Tools für Open
 WebUI (Servercode mit pip-Installation aus dem Frontmatter) und der Import per Open-WebUI-API.
+
+## 2026-10-03 – S5-9: Mail nach Push-Prüfungen
+
+Migration `0014`: `scans.ausloeser` (`webhook` für Prüfungen, die ein Push startet). Die
+Nachprüfungs-Schleife der API (alle 5 Minuten, mit Advisory-Lock) wertet fertige Push-Prüfungen
+aus: kritische und hohe Befunde, deren Fingerprint in der vorigen fertigen Prüfung des Projekts
+fehlte, gehen per Mail an den Eigentümer (neue Einstellung „push“, standardmäßig an). Die Spalten
+`nachpruefung_ausgewertet_at`/`nachpruefung_neu` dienen auch hier als „ausgewertet“ und Anzahl.
+Offen bleibt nur „Meldungen“, das am DSA-Meldeweg (S3-8, Len/Anwalt) hängt.

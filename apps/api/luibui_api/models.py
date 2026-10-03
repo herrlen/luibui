@@ -257,7 +257,10 @@ class Scan(Base):
     listed as single checks."""
     nachpruefung_ausgewertet_at: Mapped[datetime | None]
     nachpruefung_neu: Mapped[int | None] = mapped_column(Integer)
-    """New critical or high findings compared with the check the version was published from."""
+    """New critical or high findings compared with the check the version was published from
+    (re-check) or with the project's previous check (``ausloeser`` webhook)."""
+    ausloeser: Mapped[str | None] = mapped_column(String(20))
+    """``webhook`` for a check started by a push (S5-8); None for everything else."""
     error: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = _created()
     started_at: Mapped[datetime | None]

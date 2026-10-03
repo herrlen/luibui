@@ -159,6 +159,64 @@ def auswerten(db: Session, jetzt: datetime) -> int:
     return gemeldet
 
 
+def push_auswerten(db: Session, jetzt: datetime) -> int:
+    """Checks started by a push (S5-9): new critical/high findings against the project's previous
+    finished check go to the owner by mail."""
+    scans = db.scalars(
+        select(Scan).where(
+            Scan.ausloeser == "webhook",
+            Scan.nachpruefung_ausgewertet_at.is_(None),
+            Scan.status.in_(("fertig", "fehlgeschlagen")),
+        )
+    ).all()
+    gemeldet = 0
+    for scan in scans:
+        scan.nachpruefung_ausgewertet_at = jetzt
+        if scan.status != "fertig" or scan.project_id is None:
+            db.commit()
+            continue
+        vorher = db.scalar(
+            select(Scan)
+            .where(
+                Scan.project_id == scan.project_id,
+                Scan.status == "fertig",
+                Scan.created_at < scan.created_at,
+                Scan.id != scan.id,
+            )
+            .order_by(Scan.created_at.desc())
+            .limit(1)
+        )
+        alt = _schwer(vorher.report) if vorher else {}
+        neu = [b for fp, b in _schwer(scan.report).items() if fp not in alt]
+        scan.nachpruefung_neu = len(neu)
+        db.commit()
+        user = db.get(User, scan.owner_id) if scan.owner_id else None
+        if neu and user is not None:
+            _push_mail(scan, user, neu)
+            gemeldet += 1
+    return gemeldet
+
+
+def _push_mail(scan: Scan, user: User, neu: list[dict[str, object]]) -> None:
+    zeilen = [
+        f"- [{b.get('schwere')}] {str(b.get('titel', ''))[:120]} "
+        f"({str(b.get('datei') or 'Paket')[:120]})"
+        for b in neu[:MAX_MAIL_BEFUNDE]
+    ]
+    if len(neu) > MAX_MAIL_BEFUNDE:
+        zeilen.append(f"- … und {len(neu) - MAX_MAIL_BEFUNDE} weitere")
+    link = f"{get_settings().app_origin}/pruefungen/{scan.id}"
+    benachrichtigung.senden(
+        user,
+        "push",
+        "luibui: Neue Befunde nach einem Push",
+        "Hallo,\n\ndie Prüfung, die dein letzter Push ausgelöst hat, hat "
+        f"{len(neu)} kritische oder hohe Befunde, die es in der Prüfung davor nicht gab:\n\n"
+        + "\n".join(zeilen)
+        + f"\n\nZum Bericht: {link}",
+    )
+
+
 def lauf(db: Session, jetzt: datetime) -> None:
     """One tick: only the holder of the advisory lock works; others return at once."""
     if not db.scalar(text("SELECT pg_try_advisory_lock(:k)"), {"k": SPERRE}):
@@ -168,6 +226,7 @@ def lauf(db: Session, jetzt: datetime) -> None:
             n = starten(db, jetzt)
             log.info("re-check: %s versions queued", n)
         auswerten(db, jetzt)
+        push_auswerten(db, jetzt)
     finally:
         db.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": SPERRE})
         db.commit()

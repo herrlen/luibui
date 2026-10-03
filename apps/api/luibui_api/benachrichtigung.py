@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 ARTEN: dict[str, str] = {
     "nachpruefung": "Neue Befunde in meinen veröffentlichten Paketen (nächtliche Nachprüfung)",
     "einspruch": "Entscheidung der Moderation über meine Einsprüche",
+    "push": "Neue kritische oder hohe Befunde bei Prüfungen, die ein Push ausgelöst hat",
 }
 FUSS = "\n\n-- \nluibui · luibui.com · Benachrichtigungen ändern: Konto → Benachrichtigungen.\n"
 

@@ -19,9 +19,11 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from luibui_api import benachrichtigung
 from luibui_api.audit import audit
 from luibui_api.auth import Caller, CurrentCaller, DbSession, get_caller, get_owned
-from luibui_api.models import FindingStatus, Project, Scan
+from luibui_api.models import FindingStatus, Project, Scan, User
+from luibui_api.settings import get_settings
 
 router = APIRouter(tags=["befunde"])
 
@@ -292,4 +294,34 @@ def entscheiden(
     )
     db.commit()
     db.refresh(f)
-    return _einspruch(db, f)[0]
+    e = _einspruch(db, f)[0]
+    autor = db.get(User, f.owner_id)
+    if autor is not None:
+        _entscheidung_mailen(autor, e, f.project_id)
+    return e
+
+
+ERGEBNIS_TEXT = {
+    "fehlalarm": (
+        "Die Moderation gibt dir recht: Der Befund ist ein Fehlalarm, die Regel wird angepasst. "
+        "Bei der nächsten Prüfung des Projekts steht er auf „behoben“."
+    ),
+    "bestritten": (
+        "Die Moderation lässt den Befund stehen. Er bleibt mit dem Vermerk „vom Autor "
+        "bestritten“ sichtbar."
+    ),
+}
+
+
+def _entscheidung_mailen(autor: User, e: Einspruch, project_id: uuid.UUID) -> None:
+    ort = f"{e.datei}:{e.zeile}" if e.datei and e.zeile else (e.datei or "Paket")
+    notiz = f"\n\nNotiz der Moderation:\n{e.moderation_notiz}" if e.moderation_notiz else ""
+    link = f"{get_settings().app_origin}/projekte/{project_id}"
+    benachrichtigung.senden(
+        autor,
+        "einspruch",
+        "luibui: Entscheidung über deinen Einspruch",
+        f"Hallo,\n\ndu hast im Projekt „{e.projekt[:100]}“ einen Befund bestritten:\n\n"
+        f"{e.titel[:200]} ({e.rule_id}, {ort[:200]})\n\n"
+        f"{ERGEBNIS_TEXT.get(e.moderation or '', '')}{notiz}\n\nZum Projekt: {link}",
+    )

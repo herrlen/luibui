@@ -2355,3 +2355,20 @@ S4-7 Teil 1 erledigt.
 
 **Geprüft:** 2 Web-Tests (Inhalt, unbekannte Werte erscheinen nicht im SVG), lokal abgerufen und
 gerendert.
+
+## 2026-10-03 – S5-9: Benachrichtigungen
+
+**Was:**
+- `benachrichtigung.py`: Arten `nachpruefung` und `einspruch`, standardmäßig an; gespeichert in
+  `users.benachrichtigungen` (Migration `0012`, fehlender Schlüssel heißt „an“). Mails zum Konto
+  (Bestätigung, Passwort, Adresse) kommen immer. Jede Benachrichtigung endet mit dem Hinweis, wo
+  sie sich abstellen lässt; eine nicht zustellbare Mail bricht nie die auslösende Aktion ab.
+- `GET/POST /api/v1/konto/benachrichtigungen` (Ändern nur mit Browser-Sitzung, unbekannte
+  Schlüssel werden ignoriert); Abschnitt „Benachrichtigungen“ im Konto, speichert beim Klicken.
+- Neu: Mail an den Autor, wenn die Moderation über seinen Einspruch entscheidet (Projekt, Befund,
+  Ergebnis in Worten, Notiz der Moderation, Link) – offener Punkt aus S3-7.
+- Die Mail der nächtlichen Nachprüfung richtet sich nach der Einstellung.
+
+**Geprüft:** 4 Tests (Voreinstellung, nur bekannte Arten, pro Konto, Token darf nicht ändern;
+Entscheidungs-Mail mit Inhalt; abgestellt heißt keine Mail; Nachprüfung abgestellt). Lokal
+angesehen.

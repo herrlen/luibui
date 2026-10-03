@@ -22,7 +22,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import exists, select, text
 from sqlalchemy.orm import Session
 
-from luibui_api import mail
+from luibui_api import benachrichtigung
 from luibui_api.audit import audit
 from luibui_api.db import _sessionmaker
 from luibui_api.models import Namespace, Package, PackageVersion, Scan, User
@@ -117,16 +117,16 @@ def _mail(db: Session, scan: Scan, v: PackageVersion, neu: list[dict[str, object
     if len(neu) > MAX_MAIL_BEFUNDE:
         zeilen.append(f"- … und {len(neu) - MAX_MAIL_BEFUNDE} weitere")
     link = f"{get_settings().app_origin}/pruefungen/{scan.id}"
-    mail.senden(
-        user.email,
+    benachrichtigung.senden(
+        user,
+        "nachpruefung",
         f"luibui: Neue Befunde in {ns.name}/{paket.name} {v.version}",
         "Hallo,\n\nluibui prüft veröffentlichte Pakete jede Nacht mit den aktuellen Regeln und "
         f"Schwachstellen-Daten. In {ns.name}/{paket.name} {v.version} gibt es jetzt "
         f"{len(neu)} kritische oder hohe Befunde, die es bei der Veröffentlichung noch nicht "
         "gab:\n\n" + "\n".join(zeilen) + f"\n\nZum Bericht: {link}\n\nBitte prüfe sie und "
         "veröffentliche bei Bedarf eine neue Version oder ziehe diese zurück. Bis auf Weiteres "
-        "zeigen wir das nicht öffentlich an.\n\n"
-        "-- \nluibui · luibui.com · Diese Mail wurde automatisch verschickt.\n",
+        "zeigen wir das nicht öffentlich an.",
     )
 
 
@@ -154,11 +154,8 @@ def auswerten(db: Session, jetzt: datetime) -> int:
             audit(db, None, "paket.nachpruefung_befund", "version", v.id)
         db.commit()
         if neu:
-            try:
-                _mail(db, scan, v, neu)
-                gemeldet += 1
-            except mail.MailError:
-                log.warning("re-check mail for version %s could not be sent", v.id)
+            _mail(db, scan, v, neu)
+            gemeldet += 1
     return gemeldet
 
 

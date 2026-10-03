@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
-from luibui_api import mail
+from luibui_api import benachrichtigung, mail
 from luibui_api.audit import audit
 from luibui_api.auth import DbSession, SessionCaller, cookie_name
 from luibui_api.errors import fehler
@@ -202,6 +202,36 @@ def email_aendern(body: EmailAendern, caller: SessionCaller, db: DbSession) -> d
             "Die Mail konnte gerade nicht verschickt werden. Bitte später erneut.",
         ) from None
     return antwort
+
+
+class Benachrichtigungen(BaseModel):
+    einstellungen: dict[str, bool]
+    beschreibungen: dict[str, str]
+
+
+@router.get("/benachrichtigungen")
+def benachrichtigungen(caller: SessionCaller) -> Benachrichtigungen:
+    return Benachrichtigungen(
+        einstellungen=benachrichtigung.einstellungen(caller.user),
+        beschreibungen=benachrichtigung.ARTEN,
+    )
+
+
+@router.post("/benachrichtigungen")
+def benachrichtigungen_setzen(
+    body: dict[str, bool], caller: SessionCaller, db: DbSession
+) -> Benachrichtigungen:
+    """Only known kinds; unknown keys are ignored."""
+    user = db.merge(caller.user)
+    aktuell = benachrichtigung.einstellungen(user)
+    user.benachrichtigungen = {
+        art: bool(body.get(art, aktuell[art])) for art in benachrichtigung.ARTEN
+    }
+    db.commit()
+    return Benachrichtigungen(
+        einstellungen=benachrichtigung.einstellungen(user),
+        beschreibungen=benachrichtigung.ARTEN,
+    )
 
 
 # --- export ------------------------------------------------------------------------------------

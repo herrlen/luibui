@@ -101,6 +101,10 @@ class User(Base):
     totp_confirmed_at: Mapped[datetime | None]
     is_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     email_verified_at: Mapped[datetime | None]
+    benachrichtigungen: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, server_default=text("'{}'::jsonb")
+    )
+    """Which mails the account wants (S5-9); a missing key means yes (benachrichtigung.ARTEN)."""
     last_login_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = _created()
 

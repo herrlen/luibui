@@ -105,6 +105,7 @@ const KONTO = [
   ["#zwei-faktor", "Zwei-Faktor-Anmeldung"],
   ["#email", "E-Mail-Adresse"],
   ["#guthaben", "Guthaben"],
+  ["#benachrichtigungen", "Benachrichtigungen"],
   ["#namespaces", "Namespaces"],
   ["#tokens", "API-Tokens"],
   ["#export", "Deine Daten"],

@@ -25,6 +25,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
 
+from luibui_install.audit import Befund, datei_hashes, pruefe_eintrag
 from luibui_install.entpacken import entpacken
 from luibui_install.register import InstallError, Version, info, laden, verlauf
 
@@ -162,7 +163,7 @@ def _mcp_schnipsel(v: Version, ordner: Path) -> dict[str, Any]:
     return {"mcpServers": {v.paket.split("/")[1]: befehl}}
 
 
-def _lock(v: Version, ziel: str, ordner: Path) -> Path:
+def _lock(v: Version, ziel: str, ordner: Path, dateien: dict[str, str]) -> Path:
     datei = luibui_home() / "luibui.lock"
     datei.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -181,6 +182,7 @@ def _lock(v: Version, ziel: str, ordner: Path) -> Path:
             "ziel": ziel,
             "ordner": str(ordner),
             "installiert_am": datetime.now(UTC).isoformat(timespec="seconds"),
+            "dateien": dateien,
         }
     )
     neu = datei.with_suffix(".tmp")
@@ -239,11 +241,12 @@ def installieren(args: argparse.Namespace, out: TextIO, eingabe: TextIO) -> int:
                 file=out,
             )
             return EXIT_OK
+        dateien = datei_hashes(neu)
         if ordner.exists():
             alt = Path(tmp) / "alt"
             ordner.rename(alt)
         neu.rename(ordner)
-    lock = _lock(v, args.ziel, ordner)
+    lock = _lock(v, args.ziel, ordner, dateien)
     print(f"Installiert: {anzahl} Dateien. Eingetragen in {lock}.", file=out)
     if args.ziel in SKILL_ORDNER:
         print(SKILL_ORDNER[args.ziel][1], file=out)
@@ -284,6 +287,53 @@ def aktualisierungen(out: TextIO) -> int:
     return EXIT_OK
 
 
+def lock_eintraege() -> list[dict[str, Any]] | None:
+    try:
+        daten = json.loads((luibui_home() / "luibui.lock").read_text("utf-8"))
+    except (OSError, ValueError):
+        return None
+    return [p for p in daten.get("pakete", []) if isinstance(p, dict)]
+
+
+def befund_ausgeben(b: Befund, out: TextIO) -> None:
+    zustand = "verändert" if b.problem else "unverändert"
+    print(f"{sauber(b.paket)} {sauber(b.version)} ({sauber(b.ziel)}): {zustand}", file=out)
+    print(f"  Ordner: {sauber(b.ordner)}", file=out)
+    if b.fehler:
+        print(f"  Fehler: {sauber(b.fehler)}", file=out)
+    for titel, pfade in (
+        ("Geändert", b.geaendert),
+        ("Fehlt", b.fehlt),
+        ("Hinzugekommen", b.neu),
+    ):
+        for pfad in pfade[:20]:
+            print(f"  {titel}: {sauber(pfad, 200)}", file=out)
+        if len(pfade) > 20:
+            print(f"  {titel}: … und {len(pfade) - 20} weitere", file=out)
+    for h in b.hinweise:
+        print(f"  {sauber(h)}", file=out)
+
+
+def audit(out: TextIO, register: bool = True) -> int:
+    """Exit code 1 if an installed package was changed, is missing or was withdrawn."""
+    eintraege = lock_eintraege()
+    if not eintraege:
+        print("Noch nichts installiert.", file=out)
+        return EXIT_OK
+    probleme = 0
+    for e in eintraege:
+        b = pruefe_eintrag(e, register=register)
+        befund_ausgeben(b, out)
+        probleme += b.problem
+    print(
+        f"\n{len(eintraege)} Pakete geprüft, {probleme} mit Abweichungen."
+        if probleme
+        else f"\n{len(eintraege)} Pakete geprüft, alle unverändert.",
+        file=out,
+    )
+    return EXIT_FEHLER if probleme else EXIT_OK
+
+
 def liste(out: TextIO) -> int:
     try:
         daten = json.loads((luibui_home() / "luibui.lock").read_text("utf-8"))
@@ -316,6 +366,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--trotzdem", action="store_true", help="auch bei roter Ampel installieren")
     p.add_argument("--liste", action="store_true", help="installierte Pakete anzeigen")
     p.add_argument(
+        "--audit",
+        action="store_true",
+        help="installierte Pakete gegen die geprüften Dateien und das Register abgleichen",
+    )
+    p.add_argument(
         "--aktualisierungen",
         action="store_true",
         help="neuere Versionen der installierten Pakete und was sie neu dürfen",
@@ -330,6 +385,8 @@ def main(
     args = build_parser().parse_args(argv)
     if args.liste:
         return liste(out)
+    if args.audit:
+        return audit(out)
     if args.aktualisierungen:
         return aktualisierungen(out)
     if not args.paket:

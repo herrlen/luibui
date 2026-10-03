@@ -233,7 +233,7 @@
 |---|---|---|
 | S5-1 | ◐ **(03.10.2026)** Formate recherchiert (`docs/plattform-formate.md`). `luibui-install --ziel chatgpt|gemini|mistral` schreibt Skills nach `~/.agents/skills`, `~/.gemini/skills`, `~/.vibe/skills`; `--ziel upload` speichert das geprüfte Archiv für ChatGPT Web, Gemini-App und Open WebUI. Offen: Gemini-Extension für MCP, Open-WebUI-Import per API, Open-WebUI-Python-Tools (eigene Prüfung nötig). Adapter ChatGPT, Gemini, Mistral, Open WebUI (Formate vorher aktuell recherchieren) | 6 |
 | S5-2 | ✅ **(03.10.2026, als S4-7 Teil 1)** Nächtliche Neuprüfung aller veröffentlichten Pakete, Benachrichtigung bei Verschlechterung | 4 |
-| S5-3 | `luibui audit` für installierte Pakete | 2 |
+| S5-3 | ✓ **(03.10.2026)** `luibui audit` (und `luibui-install --audit`): installierte Dateien gegen die beim Installieren gespeicherten SHA-256 (ältere Einträge: Archiv neu laden und Signatur prüfen), zurückgezogene und neuere Versionen mit ihren Neuerungen, `--scan` prüft die Ordner lokal neu. Dazu `luibui scan --sarif DATEI`. `luibui audit` für installierte Pakete | 2 |
 | S5-4 | ✅ **(03.10.2026)** `luibui.com/badge/<namespace>/<name>.svg` (Ampel und Note der neuesten Version, nur feste Wörter im SVG), Markdown-Snippet mit Kopierknopf auf der Paketseite. Badge-SVG und Einbettungs-Snippet | 2 |
 | S5-5 | ◐ **(03.10.2026)** GitHub-Action in `action/` (Upload per Projekt-Token, Warten, SARIF nach Code Scanning, Schwelle), Projekt-Token, SARIF-Endpunkt, CI-Snippet im Projekt. Offen: Codeberg/Forgejo-Action, pre-commit-Hook, Release-Tag der Action. GitHub-Action + Codeberg/Forgejo-Action + pre-commit-Hook (`luibui scan` lokal, SARIF-Upload) | 5 |
 | S5-6 | websecureaudit-Anbindung für Remote-MCP-URLs (interne API, Befunde als Ebene E7) | 4 |

@@ -262,3 +262,11 @@ def test_fail_on_rejects_unknown_level(capsys: pytest.CaptureFixture[str]) -> No
     with pytest.raises(SystemExit) as exc:
         main(["scan", ".", "--fail-on", "gruen"])
     assert exc.value.code == 2
+
+
+def test_sarif_output(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+    ziel = tmp_path / "luibui.sarif"
+    code, _, _ = run(capsys, str(skill_dir(tmp_path)), "--sarif", str(ziel))
+    assert code == 0
+    sarif = json.loads(ziel.read_text())
+    assert sarif["version"] == "2.1.0" and sarif["runs"][0]["tool"]["driver"]["name"] == "luibui"

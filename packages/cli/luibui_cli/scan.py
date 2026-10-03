@@ -24,6 +24,7 @@ from luibui_scan.intake import (
 from luibui_scan.intake.safe_git import GIT_LIMITS
 from luibui_scan.models import Finding, Pruefumfang, ScanArt
 from luibui_scan.report import build_report, hinweise, sort_findings
+from luibui_scan.sarif import bericht_als_sarif
 from luibui_scan.scan import Eingabe, ScanResult, scan_prepared
 from luibui_scan.scoring import AmpelDsgvo, AmpelSicherheit, Freigabe
 
@@ -72,6 +73,12 @@ def add_parser(subparsers: Any) -> None:
     parser.add_argument("pfad", type=Path, help="Ordner, .zip-Datei oder einzelne Datei")
     parser.add_argument("--json", action="store_true", help="Ergebnis als JSON ausgeben")
     parser.add_argument(
+        "--sarif",
+        type=Path,
+        metavar="DATEI",
+        help="Bericht zusätzlich als SARIF 2.1.0 in DATEI schreiben (GitHub Code Scanning)",
+    )
+    parser.add_argument(
         "--fail-on",
         choices=_STUFEN[1:],
         metavar="{gelb,rot,gesperrt}",
@@ -96,6 +103,9 @@ def run(args: argparse.Namespace, out: TextIO, err: TextIO) -> int:
         result = scan_prepared(scratch, eingabe, ScanArt.LOKAL)
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+    if args.sarif is not None:
+        sarif = bericht_als_sarif(build_report(result, name=source.resolve().name or str(source)))
+        args.sarif.write_text(json.dumps(sarif, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.json:
         report = build_report(result, name=source.resolve().name or str(source))
         json.dump(report, out, indent=2, ensure_ascii=True)

@@ -4,7 +4,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from luibui_cli import scan
+from luibui_cli import audit, scan
 from luibui_scan import __version__ as engine_version
 
 
@@ -16,6 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"luibui-scan {engine_version}")
     subparsers = parser.add_subparsers(dest="command", metavar="<befehl>")
     scan.add_parser(subparsers)
+    audit.add_parser(subparsers)
     return parser
 
 

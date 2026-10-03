@@ -2502,3 +2502,16 @@ korrigierte Version. Befristet bis 2026-11-03 in `apps/web/osv-scanner.toml` aus
 
 **Offen:** Prüfen, ob schon veröffentlichte Berichte betroffen sind: nur Pakete mit eigener
 `osv-scanner.toml`; die nächtliche Nachprüfung prüft Register-Versionen ohnehin neu.
+
+## 2026-10-03 – S5-3: `luibui audit`
+
+**Was:** `luibui-install` speichert beim Installieren im Lockfile die SHA-256 jeder Datei.
+`luibui audit` (auch `luibui-install --audit`) vergleicht damit jede Installation: geänderte,
+fehlende und hinzugekommene Dateien; Einträge von vorher laden die Version neu aus dem Register
+(Signatur und Hash wie beim Installieren) und vergleichen mit dem Archiv. Vom Register: Version
+zurückgezogen, neuere Version samt signierter Neuerungen. `--scan` prüft die installierten Ordner
+zusätzlich lokal mit den aktuellen Regeln, `--ohne-register` arbeitet offline. Rückgabewert 1 bei
+Abweichungen, zurückgezogener Version oder lokal Rot/Gesperrt. Nebenbei `luibui scan --sarif`.
+
+**Warum so:** Die Frage nach der Installation ist „läuft hier noch das, was geprüft wurde?“ –
+das beantworten Hashes, ohne etwas aus dem Paket auszuführen.

@@ -3,12 +3,12 @@ import { KONTAKT, Rechtstext } from "./Rechtstext";
 export function Nutzungsbedingungen() {
   const mail = <a href={`mailto:${KONTAKT}`}>{KONTAKT}</a>;
   return (
-    <Rechtstext titel="Nutzungsbedingungen" stand="27. September 2026">
+    <Rechtstext titel="Nutzungsbedingungen" stand="4. Oktober 2026">
       <p>Diese Bedingungen gelten für den Schnellscan auf luibui.com und den Entwicklerbereich auf app.luibui.com.</p>
       <section>
         <h2>1. Anbieter</h2>
         <p>
-          Len Messerschmidt, Norderreihe 21, 22767 Hamburg, E-Mail: {mail}
+          Studio Luy UG (haftungsbeschränkt), Norderreihe 21, 22767 Hamburg, E-Mail: {mail}
         </p>
       </section>
       <section>

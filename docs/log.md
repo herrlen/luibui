@@ -2579,3 +2579,16 @@ Gebaut, ohne dass etwas ausgeführt wird:
 
 **Offen (braucht den Server):** nsjail-Runner mit Sinkhole, Aufruf aus dem Worker und Einbau
 der Befunde in den Bericht, DoD-Test mit den Korpus-Nachbildungen.
+
+## 2026-10-04 – Betreiber ist die Studio Luy UG (haftungsbeschränkt)
+
+Impressum mit den Angaben der Studio Luy UG (haftungsbeschränkt), Norderreihe 21, 22767 Hamburg,
+Geschäftsführerin Keren Suh, HRB 195975 (AG Hamburg), USt-IdNr. DE459298622; dazu EU-Streitschlichtung
+und Verbraucherstreitbeilegung. Kontaktblock (hallo@luibui.com, Kontaktformular) bleibt. Betreibername
+außerdem in Datenschutzerklärung (Verantwortlicher), Nutzungsbedingungen (Anbieter), Widerrufsbelehrung
+und Beleg angepasst.
+
+**Offen (Len):** Hinweise auf § 19 UStG (Kleinunternehmer) in Nutzungsbedingungen, Aufladen, Beleg und
+CLAUDE.md passen nicht mehr sicher zu einer UG mit USt-IdNr. — nicht geändert. Verantwortlicher nach
+§ 18 Abs. 2 MStV steht weiter als Len Messerschmidt im Impressum. `LICENSE` nennt Len Messerschmidt als
+Rechteinhaber. Bereits ausgestellte Belege zeigen beim Aufruf jetzt den neuen Betreiber.

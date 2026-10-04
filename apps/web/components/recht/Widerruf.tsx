@@ -4,7 +4,7 @@ import { KONTAKT, Rechtstext } from "./Rechtstext";
 // is prescribed and deliberately kept in "Sie".
 export function Widerruf() {
   return (
-    <Rechtstext titel="Widerrufsbelehrung" stand="27. September 2026">
+    <Rechtstext titel="Widerrufsbelehrung" stand="4. Oktober 2026">
       <p>
         Diese Belehrung gilt für den kostenpflichtigen Kauf von Guthaben. Der Schnellscan und die kostenlosen Prüfungen
         sind kein entgeltlicher Vertrag; dafür gibt es nichts zu widerrufen.
@@ -16,7 +16,7 @@ export function Widerruf() {
           Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsschlusses.
         </p>
         <p>
-          Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Len Messerschmidt, Norderreihe 21, 22767 Hamburg,{" "}
+          Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Studio Luy UG (haftungsbeschränkt), Norderreihe 21, 22767 Hamburg,{" "}
           <a href={`mailto:${KONTAKT}`}>{KONTAKT}</a>) mittels einer eindeutigen Erklärung (z. B. ein mit der Post
           versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können
           dafür das <a href="#muster">Muster-Widerrufsformular</a> verwenden, das aber nicht vorgeschrieben ist.
@@ -62,7 +62,7 @@ export function Widerruf() {
       <section>
         <h2 id="muster">Muster-Widerrufsformular</h2>
         <p className="whitespace-pre-line rounded-[14px] border border-linie bg-surface p-4 font-mono text-sm">
-          {`An Len Messerschmidt, Norderreihe 21, 22767 Hamburg, ${KONTAKT}:
+          {`An Studio Luy UG (haftungsbeschränkt), Norderreihe 21, 22767 Hamburg, ${KONTAKT}:
 
 Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*)
 

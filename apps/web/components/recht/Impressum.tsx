@@ -2,17 +2,17 @@ import { KONTAKT, Rechtstext } from "./Rechtstext";
 
 export function Impressum() {
   return (
-    <Rechtstext titel="Impressum" stand="27. September 2026">
+    <Rechtstext titel="Impressum" stand="4. Oktober 2026">
       <section>
-        <h2>Angaben nach § 5 DDG</h2>
+        <h2>Angaben gemäß § 5 DDG</h2>
         <p>
-          Len Messerschmidt
+          Studio Luy UG (haftungsbeschränkt)
           <br />
           Norderreihe 21
           <br />
           22767 Hamburg
           <br />
-          Deutschland
+          Vertretungsberechtigte Geschäftsführerin: Keren Suh
         </p>
       </section>
       <section>
@@ -27,22 +27,37 @@ export function Impressum() {
         <p>Eine Telefonnummer wird nicht vorgehalten. Anfragen beantworten wir schriftlich, in der Regel innerhalb von zwei Werktagen.</p>
       </section>
       <section>
-        <h2>Vertretungsberechtigte Person</h2>
-        <p>Len Messerschmidt (Einzelunternehmen, keine Eintragung im Handelsregister).</p>
+        <h2>Eintragung im Handelsregister</h2>
+        <p>
+          Registergericht: Amtsgericht Hamburg
+          <br />
+          Registernummer: HRB 195975
+        </p>
       </section>
       <section>
-        <h2>Umsatzsteuer</h2>
-        <p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).</p>
+        <h2>Umsatzsteuer-Identifikationsnummer</h2>
+        <p>
+          Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:
+          <br />
+          DE459298622
+        </p>
       </section>
       <section>
         <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
         <p>Len Messerschmidt, Anschrift wie oben.</p>
       </section>
       <section>
-        <h2>Verbraucherstreitbeilegung</h2>
+        <h2>EU-Streitschlichtung</h2>
         <p>
-          Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer
-          Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).
+          Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:{" "}
+          <a href="https://ec.europa.eu/consumers/odr/">https://ec.europa.eu/consumers/odr/</a>.
+        </p>
+      </section>
+      <section>
+        <h2>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h2>
+        <p>
+          Zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle sind wir nicht
+          verpflichtet und nicht bereit.
         </p>
       </section>
       <section>

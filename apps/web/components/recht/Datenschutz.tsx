@@ -5,11 +5,11 @@ import { KONTAKT, Rechtstext, Zeilen } from "./Rechtstext";
 export function Datenschutz() {
   const mail = <a href={`mailto:${KONTAKT}`}>{KONTAKT}</a>;
   return (
-    <Rechtstext titel="Datenschutzerklärung" stand="27. September 2026">
+    <Rechtstext titel="Datenschutzerklärung" stand="4. Oktober 2026">
       <section>
         <h2>1. Verantwortlicher</h2>
         <p>
-          Len Messerschmidt
+          Studio Luy UG (haftungsbeschränkt)
           <br />
           Norderreihe 21
           <br />

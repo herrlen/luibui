@@ -9,6 +9,13 @@ import type { Beleg } from "@/lib/types";
 export const metadata = { title: "Beleg – luibui" };
 export const dynamic = "force-dynamic";
 
+// Seller of record changed on 2026-10-04 (Berlin time). A receipt keeps the seller that issued it.
+const UG_AB = Date.parse("2026-10-04T00:00:00+02:00");
+
+function aussteller(datum: string): string {
+  return Date.parse(datum) < UG_AB ? "Len Messerschmidt" : "Studio Luy UG (haftungsbeschränkt)";
+}
+
 function euro(cent: number): string {
   return `${Math.floor(cent / 100)},${String(cent % 100).padStart(2, "0")} €`;
 }
@@ -29,7 +36,7 @@ export default async function BelegSeite({ params }: { params: Promise<{ id: str
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="text-sm leading-[1.6]">
           <p className="font-display text-2xl font-bold">luibui</p>
-          <p>Studio Luy UG (haftungsbeschränkt)</p>
+          <p>{aussteller(d.datum)}</p>
           <p>Norderreihe 21, 22767 Hamburg</p>
           <p>hallo@luibui.com</p>
         </div>

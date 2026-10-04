@@ -44,7 +44,7 @@ export function Impressum() {
       </section>
       <section>
         <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
-        <p>Len Messerschmidt, Anschrift wie oben.</p>
+        <p>Keren Suh, Anschrift wie oben.</p>
       </section>
       <section>
         <h2>EU-Streitschlichtung</h2>
